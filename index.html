@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<!--
+  =====================================================================================
+  Wolfram Fiedler ACOUSTIX GUITAR – Akkordfolgengenerator
+  Single-file web app: HTML + CSS + native JavaScript. No frameworks, no build step,
+  no external fonts / libraries / images / APIs. Works offline once saved as index.html.
+
+  FILE OVERVIEW
+    1. HTML      – semantic structure (header, generator, progression, player, sound options)
+    2. CSS       – light, high-contrast theme, responsive layout, visible keyboard focus
+    3. JS part A – MUSIC THEORY (keys, spelling, qualities, template database, generator,
+                   transposition / realisation, voicing, song-reference database)
+    4. JS part B – AUDIO ENGINE (one AudioContext, master gain, compressor, synthetic
+                   instruments, optional user-supplied sample pack, metronome clicks)
+    5. JS part C – TRANSPORT (look-ahead scheduler on the audio clock, count-in, visuals)
+    6. JS part D – UI / STATE (controls, rendering, events)
+
+  HONEST LIMITS (also shown in the UI)
+    * All five built-in instruments are SYNTHESISED with Web Audio oscillators, filters and
+      envelopes. They are NOT recordings of real instruments.
+    * Real .sf2 SoundFont files are NOT supported (no SF2 parser is included). Instead the
+      app can load a "sample pack": audio files (WAV/MP3/OGG/...) whose file names contain a
+      note name (e.g. piano_C4.wav, F#3.mp3), chosen by the user or listed in a manifest.
+    * A browser page cannot scan local folders. Local files must be picked by the user.
+  =====================================================================================
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wolfram Fiedler ACOUSTIX GUITAR – Akkordfolgengenerator</title>
+<style>
+/* ================================================================================
+   CSS – light theme. Colour tokens are defined once; all text/background pairs were
+   chosen for WCAG 2.2 AA contrast (text >= 4.5:1, UI borders >= 3:1).
+   ================================================================================ */
+:root {
+  --bg: #ffffff;
+  --surface: #f5f6f8;
+  --text: #1b1d21;
+  --muted: #4f5560;          /* 7.6:1 on white */
+  --line: #c9cdd4;           /* decorative separators only */
+  --control-line: #767c86;   /* 4.2:1 on white – used for control borders */
+  --accent: #1d4f9f;         /* 8.4:1 on white */
+  --accent-ink: #ffffff;
+  --accent-soft: #e4edfb;
+  --danger: #9b2420;
+  --radius: 10px;
+}
+* { box-sizing: border-box; }
+html { font-size: 112.5%; -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.5;
+}
+.wrap { max-width: 62rem; margin: 0 auto; padding: 1rem 1rem 3rem; }
+.skip { position: absolute; left: -999px; top: 0; background: var(--accent); color: #fff; padding: .6rem 1rem; }
+.skip:focus { left: 0; z-index: 10; }
+h1 { font-size: 1.7rem; line-height: 1.2; margin: .6rem 0 .3rem; overflow-wrap: anywhere; }
+h2 { font-size: 1.25rem; margin: 0 0 .8rem; }
+.lead { color: var(--muted); margin: 0 0 1.2rem; }
+section.panel { border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem; margin: 0 0 1.1rem; background: var(--bg); }
+.grid { display: grid; gap: .9rem 1rem; grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); }
+.field { display: flex; flex-direction: column; gap: .3rem; min-width: 0; }
+label, .label { font-weight: 600; font-size: .95rem; }
+select, button, input[type="file"] { font: inherit; color: var(--text); }
+select {
+  min-height: 2.8rem; padding: .4rem .6rem; border: 2px solid var(--control-line);
+  border-radius: 8px; background: #fff; width: 100%;
+}
+select:disabled { background: var(--surface); color: var(--muted); }
+button {
+  min-height: 2.8rem; min-width: 2.8rem; padding: .45rem 1.1rem; border-radius: 8px; cursor: pointer;
+  border: 2px solid var(--control-line); background: #fff; font-weight: 600;
+}
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+button:disabled { cursor: not-allowed; background: var(--surface); color: var(--muted); border-color: var(--line); }
+button:not(:disabled):hover { background: var(--accent-soft); }
+button.primary:not(:disabled):hover { background: #163d7c; }
+.row { display: flex; flex-wrap: wrap; gap: .7rem; align-items: center; }
+.row.spaced { margin-top: 1rem; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; box-shadow: 0 0 0 2px #fff; }
+.check { display: flex; align-items: center; gap: .55rem; min-height: 2.8rem; font-weight: 600; }
+.check input { width: 1.4rem; height: 1.4rem; accent-color: var(--accent); }
+.hint { color: var(--muted); font-size: .9rem; margin: .4rem 0 0; }
+
+/* progression */
+.prog-meta { color: var(--muted); margin: 0 0 .8rem; }
+.bars { list-style: none; margin: 0; padding: 0; display: grid; gap: .7rem; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); }
+.bar { border: 2px solid var(--line); border-radius: var(--radius); padding: .6rem .7rem; background: #fff; min-width: 0; }
+.bar.active { border-color: var(--accent); background: var(--accent-soft); }
+.barno { display: block; font-size: .85rem; color: var(--muted); font-weight: 600; margin-bottom: .3rem; }
+.chords { display: grid; gap: .4rem; grid-template-columns: repeat(var(--n, 1), minmax(0, 1fr)); }
+.chord { padding: .25rem .3rem; border-radius: 6px; min-width: 0; border: 2px solid transparent; }
+.chord.active { background: var(--accent); color: var(--accent-ink); }
+.chord.active .rn, .chord.active .beats { color: var(--accent-ink); }
+.cn { display: block; font-size: 1.6rem; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+.rn { display: block; font-size: .95rem; color: var(--muted); }
+.beats { display: block; font-size: .8rem; color: var(--muted); }
+.hide-roman .rn { display: none; }
+.empty { color: var(--muted); padding: 1rem 0; }
+
+/* player */
+.beatrow { display: flex; gap: .45rem; align-items: center; min-height: 2rem; }
+.dot { width: 1.1rem; height: 1.1rem; border-radius: 50%; border: 2px solid var(--control-line); background: #fff; }
+.dot.strong { width: 1.5rem; height: 1.5rem; }
+.dot.on { background: var(--accent); border-color: var(--accent); }
+.pos { font-weight: 600; min-width: 12rem; }
+.slider-row { display: grid; grid-template-columns: 1fr auto; gap: .6rem; align-items: center; }
+.slider-line { display: flex; align-items: center; gap: .6rem; }
+.slider-line input[type="range"] { flex: 1; min-width: 0; }
+output.big { font-size: 1.6rem; font-weight: 700; min-width: 5.2ch; text-align: right; font-variant-numeric: tabular-nums; }
+input[type="range"] { width: 100%; height: 2.4rem; accent-color: var(--accent); background: transparent; }
+input[type="range"]::-webkit-slider-runnable-track { height: .55rem; background: #b6bcc6; border-radius: 6px; }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 1.7rem; height: 1.7rem; margin-top: -.58rem; border-radius: 50%; background: var(--accent); border: 3px solid #fff; box-shadow: 0 0 0 2px var(--accent); }
+input[type="range"]::-moz-range-track { height: .55rem; background: #b6bcc6; border-radius: 6px; }
+input[type="range"]::-moz-range-thumb { width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--accent); border: 3px solid #fff; box-shadow: 0 0 0 2px var(--accent); }
+.status { min-height: 1.5rem; margin: .8rem 0 0; font-weight: 600; }
+.status.err { color: var(--danger); }
+
+details { border-top: 1px solid var(--line); padding-top: .7rem; margin-top: .8rem; }
+summary { cursor: pointer; font-weight: 700; min-height: 2.4rem; display: flex; align-items: center; }
+details ul { padding-left: 1.2rem; margin: .4rem 0; }
+details li { margin: .35rem 0; }
+a { color: var(--accent); }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (max-width: 30rem) {
+  html { font-size: 106.25%; }
+  h1 { font-size: 1.4rem; }
+  .wrap { padding: .7rem .7rem 3rem; }
+  .bars { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cn { font-size: 1.35rem; }
+  .pos { min-width: 0; width: 100%; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+<div class="wrap">
+
+<!-- ============================== HEADER ============================== -->
+<header>
+  <h1>Wolfram Fiedler ACOUSTIX GUITAR – Chord Progression Generator</h1>
+  <p class="lead">Generate common pop and jazz chord progressions, transpose them to any key and practise along with them.
+  All sounds are synthesised in your browser – no internet connection is needed.</p>
+</header>
+
+<main id="main">
+
+<!-- ============================== GENERATOR ============================== -->
+<section class="panel" aria-labelledby="h-gen">
+  <h2 id="h-gen">Generator</h2>
+  <div class="grid">
+    <div class="field"><label for="selStyle">Style</label>
+      <select id="selStyle"><option value="pop">Pop</option><option value="jazz">Jazz</option></select></div>
+    <div class="field"><label for="selLength">Progression length</label>
+      <select id="selLength"><option value="4">4 bars</option><option value="6">6 bars</option><option value="8">8 bars</option></select></div>
+    <div class="field"><label for="selMood">Mood</label>
+      <select id="selMood"></select></div>
+    <div class="field"><label for="selKey">Key</label>
+      <select id="selKey"></select></div>
+    <div class="field"><label for="selComplexity">Harmonic complexity</label>
+      <select id="selComplexity"><option value="simple">Simple</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select></div>
+  </div>
+  <div class="row spaced">
+    <button type="button" id="btnGenerate" class="primary">Generate Progression</button>
+    <button type="button" id="btnAnother">Generate Another</button>
+    <button type="button" id="btnReset">Reset</button>
+  </div>
+  <p class="hint">Changing the key transposes the current progression. Generating a new progression, or resetting, stops playback.</p>
+</section>
+
+<!-- ============================== PROGRESSION ============================== -->
+<section class="panel" aria-labelledby="h-prog">
+  <h2 id="h-prog">Progression</h2>
+  <p class="prog-meta" id="progMeta">No progression yet.</p>
+  <div class="check"><input type="checkbox" id="chkRoman" checked><label for="chkRoman">Show Roman numerals</label></div>
+  <div id="barsHost"><p class="empty">Press “Generate Progression” to create a chord progression.</p></div>
+  <details>
+    <summary>Harmonic background and references</summary>
+    <div id="refsHost"></div>
+  </details>
+</section>
+
+<!-- ============================== PLAYER ============================== -->
+<section class="panel" aria-labelledby="h-play">
+  <h2 id="h-play">Player</h2>
+  <div class="row">
+    <button type="button" id="btnPlay" class="primary" disabled>Play</button>
+    <button type="button" id="btnStop" disabled>Stop</button>
+    <div class="check"><input type="checkbox" id="chkLoop" checked><label for="chkLoop">Repeat (loop)</label></div>
+  </div>
+
+  <div class="row spaced">
+    <div class="beatrow" id="beatDots" aria-hidden="true"></div>
+    <div class="pos" id="posText">Stopped</div>
+  </div>
+
+  <div class="grid spaced" style="margin-top:1rem">
+    <div class="field"><label for="selMeter">Time signature</label>
+      <select id="selMeter"><option>2/4</option><option>3/4</option><option selected>4/4</option><option>6/8</option></select></div>
+    <div class="field"><label for="selInst">Instrument</label>
+      <select id="selInst">
+        <option value="piano">Piano (synthesised)</option>
+        <option value="guitar">Guitar (synthesised)</option>
+        <option value="organ">Organ (synthesised)</option>
+        <option value="pad">Synth Pad (synthesised)</option>
+        <option value="strings">Strings (synthesised)</option>
+        <option value="samples" disabled>Loaded samples (none loaded)</option>
+      </select></div>
+    <div class="field"><label for="selCountIn">Count-in</label>
+      <select id="selCountIn"><option value="0">Off</option><option value="1" selected>1 bar</option><option value="2">2 bars</option></select></div>
+    <div class="field"><label for="selAccent">First-beat accent</label>
+      <select id="selAccent"><option value="off">Off</option><option value="soft" selected>Soft</option><option value="strong">Strong</option></select></div>
+  </div>
+  <p class="hint" id="meterHint"></p>
+  <div class="check"><input type="checkbox" id="chkMetro" checked><label for="chkMetro">Metronome</label></div>
+
+  <div style="margin-top:.8rem">
+    <label for="rngBpm">Tempo</label>
+    <div class="slider-line">
+      <button type="button" id="btnBpmMinus" aria-label="Decrease tempo by 1 BPM">−</button>
+      <input type="range" id="rngBpm" min="40" max="220" step="1" value="100">
+      <button type="button" id="btnBpmPlus" aria-label="Increase tempo by 1 BPM">+</button>
+      <output class="big" id="outBpm" for="rngBpm">100 BPM</output>
+    </div>
+  </div>
+
+  <div style="margin-top:.8rem">
+    <label for="rngVol">Volume</label>
+    <div class="slider-line">
+      <input type="range" id="rngVol" min="0" max="100" step="1" value="70">
+      <output class="big" id="outVol" for="rngVol">70 %</output>
+    </div>
+  </div>
+
+  <p class="status" id="status" role="status" aria-live="polite"></p>
+
+  <details>
+    <summary>Sound options and limits</summary>
+    <p>The five built-in instruments are <strong>synthesised</strong> with oscillators, filters and envelopes. They are not recordings of real instruments and work fully offline.</p>
+    <p>Optionally you can add a <strong>sample pack</strong>. It is played by pitch-shifting your audio files, so each file name must contain a note name, for example <code>piano_C4.wav</code>, <code>F#3.mp3</code> or <code>Bb2.ogg</code>. Samples must be WAV, MP3, OGG or another format your browser can decode.</p>
+    <p><strong>.sf2 SoundFonts cannot be played</strong> – this single-file app contains no SoundFont parser. Please export samples from your SoundFont as individual audio files named by note.</p>
+    <div class="field" style="max-width:26rem">
+      <label for="fileSamples">Choose sample files from your device</label>
+      <input type="file" id="fileSamples" multiple accept="audio/*,.wav,.mp3,.ogg,.flac,.m4a,.sf2,.sf3">
+    </div>
+    <div class="row spaced">
+      <button type="button" id="btnServer">Load pack from /soundfonts/manifest.json</button>
+    </div>
+    <p class="hint">The server option only works when this page is served over http(s) and a manifest exists at <code>/soundfonts/manifest.json</code> in the form
+      <code>{"name":"My pack","samples":[{"note":"C4","file":"C4.wav"}, …]}</code>. Files are fetched from <code>/soundfonts/</code> only when you press the button; nothing is loaded silently and no directory listing is attempted.</p>
+    <p class="status" id="soundStatus" role="status" aria-live="polite"></p>
+  </details>
+</section>
+
+</main>
+</div>
+
+<script>
+'use strict';
+/* =====================================================================================
+   PART A – MUSIC THEORY
+   Pure functions and data, no DOM or Audio access (so it can be unit-tested in Node).
+   The block between THEORY-BEGIN and THEORY-END is self-contained.
+   ===================================================================================== */
+// <THEORY-BEGIN>
+
+/* ---------- A1. Basic note arithmetic ---------- */
+const SHARP = '\u266F', FLAT = '\u266D';                       // ♯ ♭
+function mod(n, m) { return ((n % m) + m) % m; }
+const LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+const LETTER_PC = [0, 2, 4, 5, 7, 9, 11];                      // pitch class of each natural note
+const SCALES = { major: [0, 2, 4, 5, 7, 9, 11], minor: [0, 2, 3, 5, 7, 8, 10] }; // minor = natural minor
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+const PC_SHARP = ['C', 'C' + SHARP, 'D', 'D' + SHARP, 'E', 'F', 'F' + SHARP, 'G', 'G' + SHARP, 'A', 'A' + SHARP, 'B'];
+const PC_FLAT  = ['C', 'D' + FLAT, 'D', 'E' + FLAT, 'E', 'F', 'G' + FLAT, 'G', 'A' + FLAT, 'A', 'B' + FLAT, 'B'];
+
+/* ---------- A2. Keys ----------
+   Each key stores its tonic as letter + accidental. Spelling of chord roots is derived by
+   letter arithmetic (a 3rd above C is always some kind of E), which is what keeps sharps and
+   flats consistent: F# major gives E# (not F), Ab major gives Db (not C#), etc.
+   Conventional key list: major C Db D Eb E F F# G Ab A Bb B; minor C C# D Eb E F F# G G# A Bb B. */
+function makeKey(mode, letter, acc) {
+  const li = LETTERS.indexOf(letter);
+  const pc = mod(LETTER_PC[li] + acc, 12);
+  const flatMajor = [5, 10, 3, 8, 1];            // F Bb Eb Ab Db major use flats
+  const flatMinor = [2, 7, 0, 5, 10, 3];         // D G C F Bb Eb minor use flats
+  const flats = mode === 'major' ? flatMajor.includes(pc) : flatMinor.includes(pc);
+  const name = letter + (acc > 0 ? SHARP : acc < 0 ? FLAT : '');
+  return { id: mode + '-' + name, mode: mode, letter: li, acc: acc, pc: pc, flats: flats, name: name, label: name + ' ' + mode };
+}
+const MAJOR_KEYS = [['C',0],['D',-1],['D',0],['E',-1],['E',0],['F',0],['F',1],['G',0],['A',-1],['A',0],['B',-1],['B',0]].map(function (k) { return makeKey('major', k[0], k[1]); });
+const MINOR_KEYS = [['C',0],['C',1],['D',0],['E',-1],['E',0],['F',0],['F',1],['G',0],['G',1],['A',0],['B',-1],['B',0]].map(function (k) { return makeKey('minor', k[0], k[1]); });
+const ALL_KEYS = MAJOR_KEYS.concat(MINOR_KEYS);
+
+/* Spell the note found on scale degree `degree` (1..7) of the key's scale, altered by `alt`
+   semitones. If that would need a double accidental (e.g. F## in F# major) the note is
+   respelled enharmonically with the key's preferred accidental type. */
+function spellNote(key, degree, alt) {
+  const scale = SCALES[key.mode];
+  const letterIdx = (key.letter + degree - 1) % 7;
+  const pc = mod(key.pc + scale[degree - 1] + alt, 12);
+  let acc = mod(pc - LETTER_PC[letterIdx] + 6, 12) - 6;        // -6..5
+  if (Math.abs(acc) > 1) return { pc: pc, name: (key.flats ? PC_FLAT : PC_SHARP)[pc] };
+  return { pc: pc, name: LETTERS[letterIdx] + (acc > 0 ? SHARP : acc < 0 ? FLAT : '') };
+}
+
+/* ---------- A3. Chord qualities ----------
+   iv   = intervals in semitones above the root (14 = ninth, 21 = thirteenth, ...)
+   sym  = text appended to the root name       rn = suffix used in Roman numerals
+   minor= Roman numeral is written in lower case     say = spoken form for screen readers */
+const QUAL = {
+  'maj':   { sym: '',          iv: [0,4,7],           rn: '',        minor: false, say: 'major' },
+  'maj7':  { sym: 'maj7',      iv: [0,4,7,11],        rn: 'maj7',    minor: false, say: 'major seven' },
+  'maj9':  { sym: 'maj9',      iv: [0,4,7,11,14],     rn: 'maj9',    minor: false, say: 'major nine' },
+  '6':     { sym: '6',         iv: [0,4,7,9],         rn: '6',       minor: false, say: 'six' },
+  'add9':  { sym: 'add9',      iv: [0,4,7,14],        rn: 'add9',    minor: false, say: 'add nine' },
+  'sus2':  { sym: 'sus2',      iv: [0,2,7],           rn: 'sus2',    minor: false, say: 'suspended two' },
+  'sus4':  { sym: 'sus4',      iv: [0,5,7],           rn: 'sus4',    minor: false, say: 'suspended four' },
+  'm':     { sym: 'm',         iv: [0,3,7],           rn: '',        minor: true,  say: 'minor' },
+  'm7':    { sym: 'm7',        iv: [0,3,7,10],        rn: '7',       minor: true,  say: 'minor seven' },
+  'm9':    { sym: 'm9',        iv: [0,3,7,10,14],     rn: '9',       minor: true,  say: 'minor nine' },
+  'm6':    { sym: 'm6',        iv: [0,3,7,9],         rn: '6',       minor: true,  say: 'minor six' },
+  'madd9': { sym: 'madd9',     iv: [0,3,7,14],        rn: 'add9',    minor: true,  say: 'minor add nine' },
+  '7':     { sym: '7',         iv: [0,4,7,10],        rn: '7',       minor: false, say: 'dominant seven' },
+  '9':     { sym: '9',         iv: [0,4,7,10,14],     rn: '9',       minor: false, say: 'dominant nine' },
+  '13':    { sym: '13',        iv: [0,4,10,14,21],    rn: '13',      minor: false, say: 'dominant thirteen' },
+  '7b9':   { sym: '7' + FLAT + '9',  iv: [0,4,7,10,13],  rn: '7' + FLAT + '9', minor: false, say: 'seven flat nine' },
+  '7alt':  { sym: '7alt',      iv: [0,4,10,13,20],    rn: '7alt',    minor: false, say: 'seven altered' },
+  '9#11':  { sym: '9' + SHARP + '11', iv: [0,4,10,14,18], rn: '9' + SHARP + '11', minor: false, say: 'nine sharp eleven' },
+  'm7b5':  { sym: 'm7' + FLAT + '5',  iv: [0,3,6,10],  rn: '\u00F87', minor: true,  say: 'minor seven flat five' },
+  'dim':   { sym: '\u00B0',    iv: [0,3,6],           rn: '\u00B0',  minor: true,  say: 'diminished' },
+  'dim7':  { sym: '\u00B07',   iv: [0,3,6,9],         rn: '\u00B07', minor: true,  say: 'diminished seven' }
+};
+
+/* ---------- A4. Chord definitions used by templates ----------
+   R(romanRoot, simple, intermediate, advanced, options)
+   The three quality arguments list the allowed qualities at each complexity level; one is
+   picked at generation time. Options: of (secondary dominant target), label (fixed Roman
+   label), sub (tritone-substitute definition, used at "advanced"). */
+function parseRoman(rom) {
+  let alt = 0, s = rom;
+  while (s[0] === 'b' || s[0] === '#') { alt += s[0] === '#' ? 1 : -1; s = s.slice(1); }
+  return { deg: ['i','ii','iii','iv','v','vi','vii'].indexOf(s.toLowerCase()) + 1, alt: alt };
+}
+function arr(x) { return Array.isArray(x) ? x : [x]; }
+function R(rom, s, i, a, opts) {
+  const p = parseRoman(rom);
+  return Object.assign({ deg: p.deg, alt: p.alt, q: { s: arr(s), i: arr(i), a: arr(a) } }, opts || {});
+}
+function romanLabel(def, qual) {
+  if (def.label) return def.label;
+  const Q = QUAL[qual];
+  if (def.of) return 'V' + Q.rn + '/' + def.of;                // secondary dominant, e.g. V7/ii
+  const base = Q.minor ? ROMAN[def.deg - 1].toLowerCase() : ROMAN[def.deg - 1];
+  return (def.alt > 0 ? SHARP : def.alt < 0 ? FLAT : '') + base + Q.rn;
+}
+
+/* Pop chord pools (quality lists per level). Sus4 is only ever used in a bar of its own and is
+   always followed by its resolution inside the same bar (see generateProgression). */
+const POP_MAJ = {
+  I:   R('I',   'maj', ['maj','add9','sus2'], ['maj7','add9','sus2','6']),
+  IV:  R('IV',  'maj', ['maj','add9','sus2'], ['maj7','add9','sus2','6']),
+  V:   R('V',   'maj', ['maj','sus4','7'],    ['sus4','7','add9','maj']),
+  vi:  R('vi',  'm',   ['m','m7','madd9'],    ['m7','madd9','m9']),
+  ii:  R('ii',  'm',   ['m','m7'],            ['m7','m9']),
+  iii: R('iii', 'm',   ['m','m7'],            ['m7'])
+};
+const POP_MIN = {
+  i:   R('i',   'm',   ['m','m7','madd9'],    ['m7','madd9','m9']),
+  iv:  R('iv',  'm',   ['m','m7'],            ['m7','m9']),
+  III: R('III', 'maj', ['maj','add9'],        ['maj7','add9','sus2']),
+  VI:  R('VI',  'maj', ['maj','add9'],        ['maj7','add9']),
+  VII: R('VII', 'maj', ['maj','sus2','add9'], ['maj','add9','sus2']),
+  V:   R('V',   'maj', ['maj','sus4','7'],    ['sus4','7'])
+};
+
+/* Jazz chord pools. Extensions are chosen so that they are diatonic (e.g. no m9 on iii, whose
+   ninth would be the flat 9 of a Phrygian chord). Dominants may be replaced by their tritone
+   substitute (a dominant a tritone away, built with 9, #11) at the "advanced" level. */
+const SUBV    = R('bII',  '9#11', '9#11', '9#11', { label: 'subV7' });
+const SUBV_II = R('bIII', '9#11', '9#11', '9#11', { label: 'subV7/ii' });
+const JM = {
+  I:    R('I',   'maj7', 'maj7', ['maj9','maj7','6']),
+  IV:   R('IV',  'maj7', 'maj7', ['maj9','maj7']),
+  ii:   R('ii',  'm7',   'm7',   ['m9','m7']),
+  iii:  R('iii', 'm7',   'm7',   'm7'),
+  vi:   R('vi',  'm7',   'm7',   ['m9','m7']),
+  V:    R('V',   '7',    ['7','9'], ['13','9','7alt'], { sub: SUBV }),
+  vii:  R('vii', 'm7b5', 'm7b5', 'm7b5'),
+  VI:   R('vi',  '7',    '7',    ['7b9','7alt'], { of: 'ii', sub: SUBV_II }),   // V7/ii
+  III:  R('iii', '7',    '7',    ['7b9','7alt'], { of: 'vi' }),                  // V7/vi
+  bVII: R('bvii','7',    '7',    ['9','13']),                                    // backdoor dominant
+  iv:   R('iv',  'm7',   'm7',   ['m7','m9']),
+  dim:  R('#i',  'dim7', 'dim7', 'dim7')                                         // passing diminished
+};
+const JB = Object.assign({}, JM, {                                              // blues: dominant I and IV
+  I:  R('I',  '7', '9', '13'),
+  IV: R('IV', '7', '9', '13'),
+  '#iv': R('#iv', 'dim7', 'dim7', 'dim7')
+});
+const JEXT = { ii: R('ii', 'm9', 'm9', 'm9'), V: R('V', '9', '9', '13', { sub: SUBV }), I: R('I', 'maj9', 'maj9', 'maj9') };
+const JN = {
+  i:   R('i',   'm7',   ['m7','m6'], ['m9','m6','m7']),
+  ii:  R('ii',  'm7b5', 'm7b5', 'm7b5'),
+  V:   R('V',   '7',    '7b9',  ['7alt','7b9'], { sub: R('bII', '9#11', '9#11', '9#11', { label: 'subV7' }) }),
+  iv:  R('iv',  'm7',   'm7',   ['m7','m9']),
+  III: R('III', 'maj7', 'maj7', ['maj9','maj7']),
+  VI:  R('VI',  'maj7', 'maj7', ['maj9','maj7']),
+  VII: R('VII', '7',    '7',    ['9','13'])
+};
+const JNB = Object.assign({}, JN, {                                              // minor blues
+  i:  R('i',  'm7', 'm7', ['m9','m7','m6']),
+  VI: R('VI', '7',  '7',  ['9','13']),
+  V:  R('V',  '7',  '7',  ['7b9','13'])
+});
+
+/* ---------- A5. Template database ----------
+   A template = harmonic idea expressed in Roman numerals ("forms" for 4/6/8 bars; "|" separates
+   bars, spaces separate the (max. two) chords inside a bar). The tokens refer to `defs`.
+   `moods` guide the mood weighting. `refs` point into REFERENCES (only verified attributions).
+   All templates are GENERAL harmonic templates, not transcriptions of specific songs. */
+function loopForms(bars, turn) {          // 4-bar loop -> 4, 6 (loop + first two bars) and 8 bars (loop twice, optional turnaround)
+  const e8 = bars.slice(0, 3).concat([turn || bars[3]]);
+  return { 4: bars.join(' | '), 6: bars.concat(bars.slice(0, 2)).join(' | '), 8: bars.concat(e8).join(' | ') };
+}
+const SRC = {
+  omtPop: 'https://human.libretexts.org/Bookshelves/Music/Music_Theory/Open_Music_Theory_2e_(Gotham_et_al.)/07%3A_Popular_Music/7.09%3A_Four-Chord_Schemas',
+  axis: 'https://en.wikipedia.org/wiki/I%E2%80%93V%E2%80%93vi%E2%80%93IV_progression',
+  oolimo: 'https://www.oolimo.com/en/chord-progressions/I-V-VIm-IV',
+  hein: 'https://ethanhein.substack.com/p/identifying-standard-pop-chord-progressions',
+  hwts: 'https://howtowritesongs.org/2023/10/08/10-essential-chord-progressions-for-songwriters/',
+  violet: 'https://violetrecording.com/common-chord-progressions/',
+  umbrella: 'https://musiciangoods.com/en-cz/blogs/music-theory/pop-chord-progression-piano',
+  standByMe: 'https://pitchinnovations.com/blog/10-timeless-chord-progressions-every-producer-should-know/',
+  leaves: 'https://www.learnjazzstandards.com/blog/learning-jazz/jazz-advice/navigate-autumn-leaves/',
+  form: 'https://pressbooks.pub/harmonyandmusicianshipwithsolfege/chapter/form-in-jazz-standards',
+  tritone: 'https://ethanhein.substack.com/p/identifying-tritone-substitutions',
+  tritone2: 'https://www.learnjazzstandards.com/blog/learning-jazz/jazz-theory/tritone-substitution-types/',
+  omtJazz: 'https://pressbooks.nebraska.edu/openmusictheory/?p=503',
+  bettersax: 'https://bettersax.com/these-3-songs-will-teach-you-jazz/',
+  hooktheory: 'https://www.hooktheory.com/blog/jazz-chord-progressions/',
+  blues: 'http://www.personal.kent.edu/~sbirch/Theory/21341%20CMT/Blues/Blues%20changes%203.doc'
+};
+
+const TEMPLATES = [
+  /* ===== POP / MAJOR ===== */
+  { id: 'pop-axis', style: 'pop', mode: 'major', name: 'I\u2013V\u2013vi\u2013IV (axis / singer-songwriter loop)',
+    note: 'Three major chords plus the relative minor vi, which adds a touch of melancholy to the major-key loop.',
+    moods: ['Happy','Uplifting','Emotional','Driving'], defs: POP_MAJ, forms: loopForms(['I','V','vi','IV'], 'V'), refs: ['let-it-be','with-or-without-you','im-yours','hey-soul-sister'], src: [SRC.axis, SRC.omtPop] },
+  { id: 'pop-sensitive', style: 'pop', mode: 'major', name: 'vi\u2013IV\u2013I\u2013V (rotation of the axis loop)',
+    note: 'Starts on the minor vi, which gives the loop a more serious, bittersweet character; no strong V\u2013I closure.',
+    moods: ['Emotional','Melancholic','Driving','Uplifting'], defs: POP_MAJ, forms: loopForms(['vi','IV','I','V']), refs: [], src: [SRC.omtPop, SRC.hein] },
+  { id: 'pop-doowop', style: 'pop', mode: 'major', name: 'I\u2013vi\u2013IV\u2013V (doo-wop / \u201950s progression)',
+    note: 'Same four chords as the axis loop in a different order; the final V pulls strongly back to I.',
+    moods: ['Happy','Relaxed','Uplifting'], defs: POP_MAJ, forms: loopForms(['I','vi','IV','V']), refs: ['stand-by-me'], src: [SRC.omtPop, SRC.hein] },
+  { id: 'pop-iv-i-v-vi', style: 'pop', mode: 'major', name: 'IV\u2013I\u2013V\u2013vi (rotation, \u201Cpop-punk\u201D loop)',
+    note: 'Opens on the subdominant for a lifting, unexpected start; the vi at the end avoids a full cadence.',
+    moods: ['Uplifting','Driving','Happy'], defs: POP_MAJ, forms: loopForms(['IV','I','V','vi']), refs: ['umbrella'], src: [SRC.omtPop, SRC.umbrella] },
+  { id: 'pop-i-v-iv-i', style: 'pop', mode: 'major', name: 'I\u2013V\u2013IV\u2013I',
+    note: 'Pure primary chords; the IV\u2013I plagal motion gives a relaxed, open feel.',
+    moods: ['Happy','Relaxed','Driving'], defs: POP_MAJ, forms: loopForms(['I','V','IV','I']), refs: [], src: [SRC.violet] },
+  { id: 'pop-i-iv-v-i', style: 'pop', mode: 'major', name: 'I\u2013IV\u2013V\u2013I',
+    note: 'The classic three-chord cadence: tension from IV to V, release on I.',
+    moods: ['Happy','Relaxed','Driving'], defs: POP_MAJ, forms: loopForms(['I','IV','V','I']), refs: [], src: [SRC.violet] },
+  { id: 'pop-i-iv-vi-v', style: 'pop', mode: 'major', name: 'I\u2013IV\u2013vi\u2013V',
+    note: 'Moves up the scale from IV to vi and ends on the dominant, which leads back to I.',
+    moods: ['Happy','Uplifting','Relaxed'], defs: POP_MAJ, forms: loopForms(['I','IV','vi','V']), refs: [], src: [SRC.omtPop] },
+  { id: 'pop-i-iii-iv-v', style: 'pop', mode: 'major', name: 'I\u2013iii\u2013IV\u2013V',
+    note: 'The iii chord adds a soft, wistful colour on the way up to IV and V.',
+    moods: ['Relaxed','Emotional','Happy'], defs: POP_MAJ, forms: loopForms(['I','iii','IV','V']), refs: [], src: [SRC.hein] },
+  { id: 'pop-canon', style: 'pop', mode: 'major', name: 'I\u2013V\u2013vi\u2013iii\u2013IV\u2013I\u2013IV\u2013V (canon sequence)',
+    note: 'A descending-fifths sequence in the style of Pachelbel\u2019s Canon; two chords per bar in the 4-bar form.',
+    moods: ['Emotional','Relaxed','Uplifting','Melancholic'], defs: POP_MAJ,
+    forms: { 4: 'I V | vi iii | IV I | IV V', 6: 'I | V | vi iii | IV I | IV | V', 8: 'I | V | vi | iii | IV | I | IV | V' }, refs: [], src: [SRC.violet] },
+
+  /* ===== POP / MINOR ===== */
+  { id: 'pop-min-i-VI-III-VII', style: 'pop', mode: 'minor', name: 'i\u2013VI\u2013III\u2013VII (minor-key axis loop)',
+    note: 'The axis loop heard from its relative minor; a driving, modern pop and rock progression.',
+    moods: ['Driving','Uplifting','Emotional','Melancholic'], defs: POP_MIN, forms: loopForms(['i','VI','III','VII']), refs: [], src: [SRC.omtPop, SRC.violet] },
+  { id: 'pop-min-VI-VII-i-i', style: 'pop', mode: 'minor', name: 'VI\u2013VII\u2013i\u2013i',
+    note: 'Rising VI\u2013VII lifts into the tonic (\u201Chopscotch\u201D feel); the 8-bar form swaps the last VII for V.',
+    moods: ['Driving','Melancholic','Uplifting'], defs: POP_MIN, forms: loopForms(['VI','VII','i','i'], 'V'), refs: [], src: [SRC.omtPop] },
+  { id: 'pop-min-i-VII-VI-V', style: 'pop', mode: 'minor', name: 'i\u2013VII\u2013VI\u2013V (descending minor line)',
+    note: 'A stepwise descent in the bass; the major V (from harmonic minor) makes a strong pull back to i.',
+    moods: ['Melancholic','Emotional','Driving'], defs: POP_MIN, forms: loopForms(['i','VII','VI','V']), refs: [], src: [SRC.omtPop] },
+  { id: 'pop-min-i-iv-VII-III', style: 'pop', mode: 'minor', name: 'i\u2013iv\u2013VII\u2013III',
+    note: 'A circle-of-fourths flavoured minor loop with the dark minor iv.',
+    moods: ['Melancholic','Emotional','Relaxed'], defs: POP_MIN, forms: loopForms(['i','iv','VII','III']), refs: [], src: [SRC.hwts] },
+  { id: 'pop-min-III-VII-i-VI', style: 'pop', mode: 'minor', name: 'III\u2013VII\u2013i\u2013VI (rotation of the axis loop)',
+    note: 'Begins on the relative major, so it sounds hopeful before settling on the minor tonic.',
+    moods: ['Emotional','Uplifting','Relaxed'], defs: POP_MIN, forms: loopForms(['III','VII','i','VI']), refs: [], src: [SRC.omtPop] },
+  { id: 'pop-min-i-VI-iv-V', style: 'pop', mode: 'minor', name: 'i\u2013VI\u2013iv\u2013V',
+    note: 'A classic minor cadence: the major V (harmonic minor) resolves back to i.',
+    moods: ['Melancholic','Driving','Emotional'], defs: POP_MIN, forms: loopForms(['i','VI','iv','V']), refs: [], src: [SRC.violet] },
+
+  /* ===== JAZZ / MAJOR ===== */
+  { id: 'jz-ii-V-I', style: 'jazz', mode: 'major', name: 'ii7\u2013V7\u2013Imaj7',
+    note: 'The basic jazz cadence. At \u201CAdvanced\u201D the V7 may become an altered dominant or a tritone substitute (\u266DII7).',
+    moods: ['Happy','Uplifting','Driving'], defs: JM,
+    forms: { 4: 'ii V | I | ii V | I', 6: 'ii V | I | I | ii V | I | I', 8: 'ii V | I | I | ii V | I | vi | ii V | I' }, refs: ['blues-for-alice'], src: [SRC.omtJazz, SRC.leaves] },
+  { id: 'jz-ii-V-I-ext', style: 'jazz', mode: 'major', name: 'iim9\u2013V13\u2013Imaj9 (extended ii\u2013V\u2013I)',
+    note: 'The same cadence with ninth and thirteenth extensions. Offered at Intermediate and Advanced level only.',
+    moods: ['Relaxed','Emotional','Happy'], defs: JEXT, levels: ['intermediate','advanced'],
+    forms: { 4: 'ii V | I | ii V | I', 6: 'ii V | I | I | ii V | I | I', 8: 'ii V | I | I | ii V | I | I | ii V | I' }, refs: [], src: [SRC.omtJazz] },
+  { id: 'jz-turnaround', style: 'jazz', mode: 'major', name: 'Imaj7\u2013vi7\u2013ii7\u2013V7 (I\u2013vi\u2013ii\u2013V turnaround)',
+    note: 'The most common jazz turnaround. At \u201CAdvanced\u201D tritone substitutions may replace V7.',
+    moods: ['Happy','Relaxed','Uplifting'], defs: JM,
+    forms: { 4: 'I | vi | ii | V', 6: 'I | vi | ii | V | I vi | ii V', 8: 'I | vi | ii | V | I | vi | ii V | I' }, refs: ['a-foggy-day'], src: [SRC.bettersax, SRC.omtJazz, SRC.tritone2] },
+  { id: 'jz-iii-VI-ii-V', style: 'jazz', mode: 'major', name: 'iii7\u2013VI7\u2013ii7\u2013V7 (with secondary dominant)',
+    note: 'VI7 is the secondary dominant V7/ii leading to ii7; at \u201CAdvanced\u201D it can be altered or replaced by its tritone substitute.',
+    moods: ['Driving','Uplifting','Emotional'], defs: JM,
+    forms: { 4: 'iii | VI | ii | V', 6: 'iii VI | ii V | I | I | ii V | I', 8: 'iii | VI | ii | V | iii | VI | ii V | I' }, refs: [], src: [SRC.bettersax, SRC.omtJazz] },
+  { id: 'jz-dim-passing', style: 'jazz', mode: 'major', name: 'Imaj7\u2013\u266Fi\u00B07\u2013ii7\u2013V7 (diminished passing chord)',
+    note: 'A diminished seventh chord on the raised first degree connects I and ii chromatically.',
+    moods: ['Relaxed','Happy'], defs: JM,
+    forms: { 4: 'I | dim | ii | V', 6: 'I | dim | ii | V | I | I', 8: 'I | dim | ii | V | I | vi | ii V | I' }, refs: [], src: [SRC.omtJazz] },
+  { id: 'jz-fifths-major', style: 'jazz', mode: 'major', name: 'vi7\u2013ii7\u2013V7\u2013Imaj7\u2013IVmaj7\u2013vii\u00F87\u2013III7\u2013vi7 (diatonic fifths)',
+    note: 'The diatonic circle-of-fifths sequence (\u201Cimperfect circle\u201D) with a secondary dominant III7 returning to vi.',
+    moods: ['Emotional','Melancholic','Relaxed'], defs: JM,
+    forms: { 4: 'vi ii | V I | IV vii | III vi', 6: 'vi | ii | V | I | IV vii | III vi', 8: 'vi | ii | V | I | IV | vii | III | vi' }, refs: ['fly-me-to-the-moon'], src: [SRC.form] },
+  { id: 'jz-blues-major', style: 'jazz', mode: 'major', name: 'Jazz blues (condensed forms)',
+    note: 'Dominant-seventh blues harmony with a diminished passing chord after IV7 and a ii\u2013V turnaround; shortened from the 12-bar form.',
+    moods: ['Driving','Relaxed','Happy'], defs: JB,
+    forms: { 4: 'I | IV #iv | I VI | ii V', 6: 'I | IV #iv | I | VI | ii V | I V', 8: 'I | IV #iv | I | VI | ii | V | I VI | ii V' }, refs: ['cousin-mary'], src: [SRC.blues, SRC.tritone] },
+  { id: 'jz-backdoor', style: 'jazz', mode: 'major', name: 'iv7\u2013\u266DVII7\u2013Imaj7 (backdoor ii\u2013V)',
+    note: 'The \u201Cbackdoor\u201D approach to the tonic from the minor iv and the dominant on \u266DVII.',
+    moods: ['Relaxed','Emotional'], defs: JM,
+    forms: { 4: 'iv bVII | I | ii V | I', 6: 'iv bVII | I | I | ii V | I | I', 8: 'iv bVII | I | I | ii V | I | vi | ii V | I' }, refs: [], src: [SRC.bettersax] },
+
+  /* ===== JAZZ / MINOR ===== */
+  { id: 'jz-min-ii-V-i', style: 'jazz', mode: 'minor', name: 'ii\u00F87\u2013V7\u2013i7 (minor ii\u2013V\u2013i)',
+    note: 'Half-diminished ii and a dominant from harmonic minor; the V7 may carry \u266D9 or alterations, or be tritone-substituted.',
+    moods: ['Melancholic','Emotional','Driving'], defs: JN,
+    forms: { 4: 'ii V | i | ii V | i', 6: 'ii V | i | i | ii V | i | i', 8: 'ii V | i | i | ii V | i | iv | ii V | i' }, refs: ['autumn-leaves'], src: [SRC.hooktheory, SRC.leaves] },
+  { id: 'jz-min-fifths', style: 'jazz', mode: 'minor', name: 'iv7\u2013\u266DVII7\u2013IIImaj7\u2013VImaj7\u2013ii\u00F87\u2013V7\u2013i (diatonic fifths in minor)',
+    note: 'The circle-of-fifths chain through the relative major into a minor ii\u2013V\u2013i.',
+    moods: ['Melancholic','Emotional','Relaxed'], defs: JN,
+    forms: { 4: 'iv VII | III VI | ii V | i', 6: 'iv | VII | III | VI | ii V | i', 8: 'iv | VII | III | VI | ii | V | i | i' }, refs: ['autumn-leaves-seq'], src: [SRC.form, SRC.leaves] },
+  { id: 'jz-min-turnaround', style: 'jazz', mode: 'minor', name: 'i7\u2013VImaj7\u2013ii\u00F87\u2013V7 (minor turnaround)',
+    note: 'A minor-key turnaround through the major VI to the minor ii\u2013V.',
+    moods: ['Melancholic','Relaxed'], defs: JN,
+    forms: { 4: 'i | VI | ii | V', 6: 'i | VI | ii | V | i VI | ii V', 8: 'i | VI | ii | V | i | iv | ii V | i' }, refs: [], src: [SRC.omtJazz] },
+  { id: 'jz-min-blues', style: 'jazz', mode: 'minor', name: 'Minor blues (condensed forms)',
+    note: 'Minor i and iv with a dominant seventh on \u266DVI moving to V7 before returning to i.',
+    moods: ['Driving','Melancholic'], defs: JNB,
+    forms: { 4: 'i | iv | VI V | i', 6: 'i | iv | i | VI | V | i V', 8: 'i | iv | i | i | VI | V | i | i V' }, refs: ['thrill-is-gone'], src: [SRC.tritone] }
+];
+
+/* ---------- A6. Song reference database ----------
+   RULES: only songs whose harmonic pattern is documented by the listed source are included.
+   `originalKey` is filled only when the source states it (otherwise null).
+   `verifiedChords` is null because exact chord transcriptions were NOT verified and large
+   transcriptions must not be reproduced; the roman-numeral pattern is what the source states.
+   Song titles are short references only. Unverified attributions are deliberately omitted. */
+const REFERENCES = {
+  'let-it-be':          { title: 'Let It Be', artist: 'Paul McCartney (The Beatles)', style: 'Pop/Rock', originalKey: null, pattern: 'I\u2013V\u2013vi\u2013IV', verifiedChords: null, sourceUrl: SRC.hwts, note: 'Named by the source as the familiar sound of this loop.' },
+  'with-or-without-you':{ title: 'With or Without You', artist: 'U2', style: 'Rock', originalKey: null, pattern: 'I\u2013V\u2013vi\u2013IV', verifiedChords: null, sourceUrl: SRC.oolimo, note: 'Listed by the source among songs using this loop.' },
+  'im-yours':           { title: 'I\u2019m Yours', artist: 'Jason Mraz', style: 'Pop', originalKey: null, pattern: 'I\u2013V\u2013vi\u2013IV', verifiedChords: null, sourceUrl: SRC.oolimo, note: 'Listed by the source among songs using this loop.' },
+  'hey-soul-sister':    { title: 'Hey, Soul Sister', artist: 'Train', style: 'Pop', originalKey: null, pattern: 'I\u2013V\u2013vi\u2013IV', verifiedChords: null, sourceUrl: SRC.oolimo, note: 'Listed by the source among songs using this loop.' },
+  'umbrella':           { title: 'Umbrella', artist: 'Rihanna', style: 'Pop', originalKey: null, pattern: 'IV\u2013I\u2013V\u2013vi', verifiedChords: null, sourceUrl: SRC.umbrella, note: 'Named by the source as the classic example of this rotation.' },
+  'stand-by-me':        { title: 'Stand by Me', artist: 'Ben E. King', style: 'Soul/Pop', originalKey: null, pattern: 'I\u2013vi\u2013IV\u2013V (variation)', verifiedChords: null, sourceUrl: SRC.standByMe, note: 'The source describes it as relying on a variation of this pattern; treat the match as approximate.' },
+  'fly-me-to-the-moon': { title: 'Fly Me to the Moon', artist: 'Bart Howard', style: 'Jazz standard', originalKey: null, pattern: 'diatonic circle of fifths (imperfect circle)', verifiedChords: null, sourceUrl: SRC.form, note: 'Cited by the source as an example of the diatonic sequence.' },
+  'autumn-leaves-seq':  { title: 'Autumn Leaves', artist: 'Joseph Kosma', style: 'Jazz standard', originalKey: 'G minor (as stated by the source)', pattern: 'diatonic sequence; major and minor ii\u2013V\u2013I', verifiedChords: null, sourceUrl: SRC.leaves, note: 'The source describes the tune as almost entirely major and minor ii\u2013V\u2013I progressions; the sequence is also cited as a diatonic circle of fifths.' },
+  'autumn-leaves':      { title: 'Autumn Leaves', artist: 'Joseph Kosma', style: 'Jazz standard', originalKey: 'G minor (as stated by the source)', pattern: 'minor ii\u2013V\u2013i (and major ii\u2013V\u2013I)', verifiedChords: null, sourceUrl: SRC.hooktheory, note: 'Cited by the source as a prime example of the minor ii\u2013V\u2013i.' },
+  'blues-for-alice':    { title: 'Blues for Alice', artist: 'Charlie Parker', style: 'Jazz blues', originalKey: null, pattern: 'ii\u2013V chains with tritone substitutions', verifiedChords: null, sourceUrl: SRC.omtJazz, note: 'The source discusses its movement through ii\u2013V space with tritone substitutions.' },
+  'a-foggy-day':        { title: 'A Foggy Day', artist: 'George Gershwin', style: 'Jazz standard', originalKey: null, pattern: 'I\u2013vi\u2013ii\u2013V with tritone substitutions', verifiedChords: null, sourceUrl: SRC.tritone2, note: 'The source says it uses substitutions in its first four chord changes.' },
+  'cousin-mary':        { title: 'Cousin Mary', artist: 'John Coltrane', style: 'Jazz blues', originalKey: 'A\u266D (as stated by the source)', pattern: 'blues with subV7/IV in bar 9', verifiedChords: null, sourceUrl: SRC.tritone, note: 'The source names the D7 in measure nine as the tritone substitute of the dominant of IV.' },
+  'thrill-is-gone':     { title: 'The Thrill Is Gone', artist: 'B.B. King', style: 'Blues', originalKey: null, pattern: 'minor blues', verifiedChords: null, sourceUrl: SRC.tritone, note: 'Named by the source as the archetypal minor blues.' }
+};
+
+/* ---------- A7. Metres ----------
+   A bar is divided into "pulses" (the smallest clicked unit):
+     2/4,3/4,4/4: pulse = quarter note, BPM = quarter notes per minute
+     6/8:         pulse = eighth note, written as six eighths but felt in TWO dotted-quarter
+                  groups (1 2 3 | 4 5 6); BPM counts dotted quarters, so one eighth lasts
+                  60 / BPM / 3 seconds.
+   `half` = pulse index where the 2nd chord of a two-chord bar starts (e.g. 4/4 -> beat 3). */
+const METERS = {
+  '2/4': { pulses: 2, ppb: 1, half: 1, strong: [0] },
+  '3/4': { pulses: 3, ppb: 1, half: 2, strong: [0] },
+  '4/4': { pulses: 4, ppb: 1, half: 2, strong: [0] },
+  '6/8': { pulses: 6, ppb: 3, half: 3, strong: [0, 3] }
+};
+const MOODS = ['Happy', 'Uplifting', 'Emotional', 'Melancholic', 'Relaxed', 'Driving'];
+/* Pop only: per mood, qualities that are preferred when several are allowed at the current level. */
+const MOOD_PREF = {
+  Happy: ['add9', '6', 'maj', 'm'],
+  Uplifting: ['add9', 'sus2', 'maj7', 'maj'],
+  Emotional: ['maj7', 'm7', 'madd9', 'sus4'],
+  Melancholic: ['m7', 'madd9', 'maj7', 'sus2'],
+  Relaxed: ['maj7', 'm7', 'add9', '6'],
+  Driving: ['sus4', 'sus2', 'maj', 'm']
+};
+
+/* ---------- A8. Generator ----------
+   1. filter templates by style, mode (from the key), requested length and complexity level
+   2. weight them by mood (x5 if the template is tagged with the mood), avoid the previous one
+   3. expand the chosen form into bars; pick a quality for every chord from its allowed list
+   Result is KEY-INDEPENDENT (scale degrees only); realize() turns it into real chords. */
+function parseForm(str) { return str.split('|').map(function (b) { return b.trim().split(/\s+/); }); }
+function pickQuality(def, levelKey, mood, style, allowSus, rng) {
+  let list = def.q[levelKey].slice();
+  if (!allowSus) list = list.filter(function (q) { return q !== 'sus4'; });
+  if (!list.length) list = [def.q.s[0]];
+  if (style === 'pop' && rng() < 0.65) {
+    const pref = MOOD_PREF[mood] || [];
+    for (let i = 0; i < pref.length; i++) if (list.indexOf(pref[i]) >= 0) return pref[i];
+  }
+  return list[Math.floor(rng() * list.length)];
+}
+function generateProgression(settings, rng, avoidId) {
+  rng = rng || Math.random;
+  const levelKey = { simple: 's', intermediate: 'i', advanced: 'a' }[settings.complexity];
+  let cands = TEMPLATES.filter(function (t) {
+    return t.style === settings.style && t.mode === settings.mode && t.forms[settings.length] &&
+           (!t.levels || t.levels.indexOf(settings.complexity) >= 0);
+  });
+  if (avoidId && cands.length > 1) cands = cands.filter(function (t) { return t.id !== avoidId; });
+  const weights = cands.map(function (t) { return t.moods.indexOf(settings.mood) >= 0 ? 5 : 1; });
+  let r = rng() * weights.reduce(function (a, b) { return a + b; }, 0), idx = 0;
+  while (idx < weights.length - 1 && r >= weights[idx]) { r -= weights[idx]; idx++; }
+  const tpl = cands[idx];
+
+  const bars = parseForm(tpl.forms[settings.length]).map(function (tokens) {
+    const single = tokens.length === 1;
+    let chords = tokens.map(function (tok) {
+      let def = tpl.defs[tok];
+      if (def.sub && settings.complexity === 'advanced' && rng() < 0.5) def = def.sub;   // tritone substitution
+      const qual = pickQuality(def, levelKey, settings.mood, settings.style, single && settings.style === 'pop', rng);
+      return { deg: def.deg, alt: def.alt, qual: qual, label: romanLabel(def, qual) };
+    });
+    if (single && chords[0].qual === 'sus4') {                  // sus4 is always resolved within its own bar
+      const c = chords[0];
+      const res = rng() < 0.7 ? 'maj' : '7';
+      chords = [c, { deg: c.deg, alt: c.alt, qual: res, label: romanLabel({ deg: c.deg, alt: c.alt }, res) }];
+    }
+    return chords;
+  });
+  return { templateId: tpl.id, style: settings.style, mode: settings.mode, length: settings.length,
+           mood: settings.mood, complexity: settings.complexity, bars: bars };
+}
+
+/* ---------- A9. Realisation = transposition + voicing ----------
+   Every chord root is spelled from (key, degree, alteration); no semitone shifting of strings,
+   so transposition to all 24 keys is exact by construction.
+   Voicing: bass note in MIDI 40..51, upper voices as close as possible to a centre that follows
+   the previous chord (smooth voice leading), kept inside MIDI 55..78. */
+function realize(prog, key) {
+  let center = 64;
+  const bars = prog.bars.map(function (chords) {
+    return { chords: chords.map(function (ch) {
+      const root = spellNote(key, ch.deg, ch.alt);
+      const Q = QUAL[ch.qual];
+      const pcs = [];
+      Q.iv.forEach(function (i) { const pc = mod(root.pc + i, 12); if (pcs.indexOf(pc) < 0) pcs.push(pc); });
+      const bass = 40 + mod(root.pc - 4, 12);
+      const upper = [];
+      pcs.forEach(function (pc) {
+        let m = pc + 12 * Math.round((center - pc) / 12);
+        if (m < 55) m += 12;
+        if (m > 78) m -= 12;
+        if (upper.indexOf(m) < 0) upper.push(m);
+      });
+      upper.sort(function (a, b) { return a - b; });
+      center = Math.max(60, Math.min(68, upper.reduce(function (a, b) { return a + b; }, 0) / upper.length));
+      return {
+        name: root.name + Q.sym, rootName: root.name, sym: Q.sym, rn: ch.label, qual: ch.qual,
+        speak: root.name.replace(SHARP, ' sharp').replace(FLAT, ' flat') + ' ' + Q.say,
+        rootPc: root.pc, pcs: pcs, bass: bass, upper: upper
+      };
+    }) };
+  });
+  return { templateId: prog.templateId, bars: bars };
+}
+// <THEORY-END>
+
+/* =====================================================================================
+   PART B – AUDIO ENGINE
+   One AudioContext (created lazily after a user gesture), one master gain, one compressor.
+   Signal flow:
+       voice -> instBus --+
+                          +--> master (volume) --> compressor (limiter) --> destination
+       click -> clickBus -+
+   Volume therefore acts on every instrument AND the metronome. Volume changes use
+   setTargetAtTime for a click-free fade; 0 % is ramped to exactly 0.
+   ===================================================================================== */
+const AudioEngine = (function () {
+  let ctx = null, master = null, comp = null, instBus = null, clickBus = null;
+  let volume01 = 0.7;
+  const voices = new Set();                 // every live note/click, so Stop can silence all of them
+  const MAX_VOICES = 56;                    // polyphony cap (oldest voice is released first)
+  let sampleBank = null;                    // { name, samples: [{ midi, buf }] } or null
+
+  function midiToFreq(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+
+  /* Instrument recipes (all synthetic). osc: [waveform, frequency multiple, relative gain, detune cents]
+     lp: [start cutoff fn, end cutoff fn, filter time constant] (null = fixed)  env: amplitude shape
+     perc = percussive (decays by itself, e.g. piano/guitar); sus = sustained until release. */
+  const INST = {
+    piano:   { osc: [['triangle',1,1,0], ['sine',2,.40,0], ['sine',3,.15,3], ['sine',1,.35,7]],
+               lp: [function (f) { return Math.min(12000, f * 10); }, function (f) { return Math.max(500, f * 3); }, 0.5],
+               env: { type: 'perc', atk: 0.004, level: 0.30, tc1: 0.40, t2: 1.0, tc2: 2.2 }, rel: 0.14, gain: 0.95 },
+    guitar:  { osc: [['sawtooth',1,.55,0], ['triangle',1,.50,4], ['sine',2,.20,0]],
+               lp: [function (f) { return Math.min(5200, f * 14); }, function (f) { return Math.max(400, f * 2.2); }, 0.16],
+               env: { type: 'perc', atk: 0.003, level: 0.25, tc1: 0.25, t2: 0.6, tc2: 1.5 }, rel: 0.10, gain: 0.85, strum: 0.016 },
+    organ:   { osc: [['sine',1,1,0], ['sine',2,.70,0], ['sine',3,.35,0], ['sine',4,.25,0], ['sine',1,.25,6]],
+               lp: [function () { return 7000; }, null, 0],
+               env: { type: 'sus', atk: 0.02 }, rel: 0.07, gain: 0.9 },
+    pad:     { osc: [['sawtooth',1,.5,-9], ['sawtooth',1,.5,0], ['sawtooth',1,.5,9]],
+               lp: [function (f) { return Math.min(2200, 800 + f * 0.9); }, null, 0],
+               env: { type: 'sus', atk: 0.45 }, rel: 0.5, gain: 0.7 },
+    strings: { osc: [['sawtooth',1,.5,-7], ['sawtooth',1,.5,6], ['triangle',1,.4,0]],
+               lp: [function (f) { return Math.min(3800, f * 6); }, null, 0],
+               env: { type: 'sus', atk: 0.22 }, rel: 0.35, gain: 0.75 }
+  };
+
+  /* Create the context. Must be called from a user gesture (button click). */
+  function ensure() {
+    if (ctx) return ctx;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) throw new Error('Web Audio API is not supported by this browser.');
+    ctx = new AC({ latencyHint: 'interactive' });
+    master = ctx.createGain();
+    master.gain.value = volume01 * volume01;
+    comp = ctx.createDynamicsCompressor();             // peak limiting: protects against over-driven chords
+    comp.threshold.value = -12; comp.knee.value = 10; comp.ratio.value = 10; comp.attack.value = 0.003; comp.release.value = 0.2;
+    instBus = ctx.createGain(); instBus.gain.value = 1;
+    clickBus = ctx.createGain(); clickBus.gain.value = 0.55;
+    instBus.connect(master); clickBus.connect(master);
+    master.connect(comp); comp.connect(ctx.destination);
+    return ctx;
+  }
+  function resume() { return ctx && ctx.state !== 'running' ? ctx.resume() : Promise.resolve(); }
+
+  /* Volume 0..100 (%). Perceptual (squared) curve. Applied immediately to the master node. */
+  function setVolume(pct) {
+    volume01 = Math.max(0, Math.min(1, pct / 100));
+    if (!ctx) return;
+    const t = ctx.currentTime, target = volume01 * volume01;
+    master.gain.cancelScheduledValues(t);
+    master.gain.setValueAtTime(master.gain.value, t);
+    if (target === 0) master.gain.linearRampToValueAtTime(0, t + 0.03);
+    else master.gain.setTargetAtTime(target, t, 0.02);
+  }
+
+  /* Build a voice wrapper around an envelope node and its sources. */
+  function makeVoice(env, sources, tailSeconds, extra) {
+    const v = { ended: false, disposed: false, env: env, sources: sources };
+    function dispose() {
+      if (v.disposed) return;
+      v.disposed = true; v.ended = true; voices.delete(v);
+      try { env.disconnect(); } catch (e) { /* already disconnected */ }
+      if (extra) extra.forEach(function (n) { try { n.disconnect(); } catch (e) { /* ignore */ } });
+    }
+    sources[0].onended = dispose;
+    /* release(): let the note fade out starting at time rt. Holds the current level first so the
+       fade starts from where the envelope actually is (no click). */
+    v.release = function (rt, tc) {
+      if (v.ended) return;
+      v.ended = true;
+      rt = Math.max(rt, ctx.currentTime);
+      const g = env.gain;
+      if (g.cancelAndHoldAtTime) g.cancelAndHoldAtTime(rt); else g.cancelScheduledValues(rt);
+      g.setTargetAtTime(0, rt, tc);
+      const stopAt = rt + tc * 7 + 0.05;
+      sources.forEach(function (s) { try { s.stop(stopAt); } catch (e) { /* not started or already stopped */ } });
+    };
+    /* kill(): immediate, click-free silence (used by Stop). Also silences notes that were
+       scheduled but have not started yet. */
+    v.kill = function () {
+      if (v.disposed) return;
+      v.ended = true;
+      const now = ctx.currentTime, g = env.gain;
+      if (g.cancelAndHoldAtTime) g.cancelAndHoldAtTime(now); else g.cancelScheduledValues(now);
+      g.setTargetAtTime(0, now, 0.008);
+      sources.forEach(function (s) { try { s.stop(now + 0.06); } catch (e) { /* ignore */ } });
+      voices.delete(v);
+    };
+    voices.add(v);
+    return v;
+  }
+
+  /* Start one note. `level` is the final peak amplitude of this voice (already normalised by chord size). */
+  function startVoice(inst, midi, t, level) {
+    if (voices.size >= MAX_VOICES) { const oldest = voices.values().next().value; if (oldest) oldest.kill(); }
+    if (inst === 'samples' && sampleBank) return startSample(midi, t, level);
+    const spec = INST[inst] || INST.piano;
+    const f = midiToFreq(midi);
+    const env = ctx.createGain();
+    const peak = level * spec.gain;
+    const sum = spec.osc.reduce(function (a, o) { return a + o[2]; }, 0);
+    env.gain.setValueAtTime(0, t);
+    env.gain.linearRampToValueAtTime(peak, t + (spec.env.atk));
+    let tail;
+    if (spec.env.type === 'perc') {
+      // two-stage natural decay: quick drop to `level`, then a long fade (like struck/plucked strings)
+      env.gain.setTargetAtTime(peak * spec.env.level, t + spec.env.atk, spec.env.tc1);
+      env.gain.setTargetAtTime(0, t + spec.env.t2, spec.env.tc2);
+      tail = 9;
+    } else tail = 60;                                         // sustained: released explicitly; 60 s is only a safety net
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.Q.value = 0.7;
+    lp.frequency.setValueAtTime(Math.max(200, spec.lp[0](f)), t);
+    if (spec.lp[1]) lp.frequency.setTargetAtTime(Math.max(200, spec.lp[1](f)), t, spec.lp[2]);
+    lp.connect(env); env.connect(instBus);
+    const sources = [], gains = [];
+    spec.osc.forEach(function (o) {
+      const osc = ctx.createOscillator(), g = ctx.createGain();
+      osc.type = o[0]; osc.frequency.value = f * o[1]; osc.detune.value = o[3];
+      g.gain.value = o[2] / sum;
+      osc.connect(g); g.connect(lp);
+      osc.start(t); osc.stop(t + tail);
+      sources.push(osc); gains.push(g);
+    });
+    const v = makeVoice(env, sources, tail, gains.concat([lp]));
+    v.relTc = spec.rel;
+    return v;
+  }
+
+  /* Sample voice: nearest loaded sample, pitch-shifted with playbackRate. */
+  function startSample(midi, t, level) {
+    let best = sampleBank.samples[0];
+    sampleBank.samples.forEach(function (s) { if (Math.abs(s.midi - midi) < Math.abs(best.midi - midi)) best = s; });
+    const src = ctx.createBufferSource();
+    src.buffer = best.buf;
+    src.playbackRate.value = Math.pow(2, (midi - best.midi) / 12);
+    const env = ctx.createGain();
+    env.gain.setValueAtTime(0, t);
+    env.gain.linearRampToValueAtTime(level * 0.9, t + 0.005);
+    src.connect(env); env.connect(instBus);
+    src.start(t);
+    const v = makeVoice(env, [src], 0, null);
+    v.relTc = 0.25;
+    return v;
+  }
+
+  /* Metronome click: short triangle burst, distinguishable by pitch and loudness. */
+  function click(t, freq, gain) {
+    const osc = ctx.createOscillator(), env = ctx.createGain();
+    osc.type = 'triangle'; osc.frequency.value = freq;
+    env.gain.setValueAtTime(0, t);
+    env.gain.linearRampToValueAtTime(gain, t + 0.002);
+    env.gain.exponentialRampToValueAtTime(0.0001, t + 0.055);
+    osc.connect(env); env.connect(clickBus);
+    osc.start(t); osc.stop(t + 0.08);
+    makeVoice(env, [osc], 0, null);
+  }
+
+  function killAll() { Array.from(voices).forEach(function (v) { v.kill(); }); }
+  function setSampleBank(b) { sampleBank = b; }
+
+  return {
+    ensure: ensure, resume: resume, setVolume: setVolume, startVoice: startVoice, click: click, killAll: killAll,
+    setSampleBank: setSampleBank, hasSamples: function () { return !!sampleBank; },
+    get ctx() { return ctx; }, strumOf: function (inst) { return (INST[inst] && INST[inst].strum) || 0; },
+    releaseTc: function (inst) { return (INST[inst] && INST[inst].rel) || 0.25; }
+  };
+})();
+
+/* =====================================================================================
+   PART C – TRANSPORT (scheduler)
+   TIMING MODEL
+   * Everything is expressed in PULSES (see METERS). The scheduler walks pulse by pulse.
+   * A single timer (setTimeout, re-armed each tick) wakes up every ~25 ms and schedules all
+     pulses that start within the next LOOKAHEAD seconds directly on the audio clock
+     (AudioContext.currentTime). Count-in clicks, metronome clicks and chord onsets are all
+     derived from the SAME pulse events, so they can never drift apart.
+   * The time of the next pulse is advanced by the pulse length computed from the CURRENT
+     tempo. A tempo change therefore only affects pulses that are not yet scheduled.
+   * Visual updates do not use the timer: each pulse also pushes {time, bar, pulse} into a
+     queue, and a requestAnimationFrame loop shows an event when the audio clock reaches it.
+   * Chords are released when the next chord starts (or at the end of the sequence), so a
+     tempo change never leaves a note hanging.
+   ===================================================================================== */
+const Transport = (function () {
+  const TICK_MS = 25;
+  const T = { running: false, runId: 0, timer: null, raf: 0, nextTime: 0, pulse: 0, endTime: 0, ending: false,
+              meter: null, prog: null, ciPulses: 0, loop: true, visual: [], current: [], hooks: null };
+
+  function lookahead() { return document.hidden ? 1.6 : 0.2; }          // background tabs throttle timers -> schedule further ahead
+  function pulseSeconds(bpm, meter) { return 60 / bpm / meter.ppb; }
+
+  /* Settings read live from the UI on every pulse (tempo, metronome, accent, instrument). */
+  function schedulePulse(t) {
+    const m = T.meter, h = T.hooks, barLen = m.pulses, gp = T.pulse;
+    const live = h.live();
+    if (gp < T.ciPulses) {                                            // ---- count-in: always audible
+      const pip = gp % barLen;
+      clickAt(t, pip, m, live.accent);
+      T.visual.push({ t: t, kind: 'count', bar: Math.floor(gp / barLen) + 1, pip: pip });
+      return true;
+    }
+    const q = gp - T.ciPulses, total = T.prog.bars.length * barLen;
+    if (!T.loop && q >= total) {                                      // ---- exact end of a non-looping run
+      T.ending = true; T.endTime = t; releaseCurrent(t);
+      return false;
+    }
+    const qq = q % total, barIdx = Math.floor(qq / barLen), pip = qq % barLen;
+    const bar = T.prog.bars[barIdx];
+    let chordIdx = 0;
+    if (bar.chords.length === 2 && pip >= m.half) chordIdx = 1;
+    const startsHere = pip === 0 || (bar.chords.length === 2 && pip === m.half);
+    if (startsHere) startChord(bar.chords[chordIdx], t, live);
+    if (live.metronome) clickAt(t, pip, m, live.accent);
+    T.visual.push({ t: t, kind: 'play', bar: barIdx, chord: chordIdx, pip: pip });
+    return true;
+  }
+
+  function clickAt(t, pip, m, accent) {
+    let f, g;
+    const strong = m.strong.indexOf(pip) >= 0;
+    if (pip === 0 && accent !== 'off') { f = accent === 'strong' ? 2000 : 1500; g = accent === 'strong' ? 1.0 : 0.85; }
+    else if (strong || m.ppb === 1) { f = accent === 'strong' ? 900 : 1000; g = accent === 'strong' ? 0.40 : 0.55; }
+    else { f = 800; g = 0.2; }                                        // 6/8: weak eighths between the two main beats
+    AudioEngine.click(t, f, g);
+  }
+
+  function startChord(ch, t, live) {
+    releaseCurrent(t);
+    const notes = [ch.bass].concat(ch.upper), n = notes.length;
+    const norm = 0.5 / Math.sqrt(n);
+    const strum = AudioEngine.strumOf(live.instrument);
+    T.current = notes.map(function (midi, i) {
+      return AudioEngine.startVoice(live.instrument, midi, t + i * strum, (i === 0 ? 1 : 0.85) * norm);
+    });
+  }
+  function releaseCurrent(t) {
+    T.current.forEach(function (v) { v.release(t, v.relTc || 0.15); });
+    T.current = [];
+  }
+
+  function tick(id) {
+    if (!T.running || id !== T.runId) return;
+    const ctx = AudioEngine.ctx, h = T.hooks;
+    if (T.ending) {
+      if (ctx.currentTime >= T.endTime + 0.05) { h.finished(); return; }
+    } else {
+      while (T.nextTime < ctx.currentTime + lookahead()) {
+        if (!schedulePulse(T.nextTime)) break;
+        T.nextTime += pulseSeconds(h.live().bpm, T.meter);
+        T.pulse++;
+      }
+      if (T.visual.length > 4000) T.visual.splice(0, T.visual.length - 4000);
+    }
+    T.timer = setTimeout(function () { tick(id); }, TICK_MS);
+  }
+
+  function visualLoop(id) {
+    if (!T.running || id !== T.runId) return;
+    const ctx = AudioEngine.ctx;
+    const now = ctx.currentTime - (ctx.outputLatency || ctx.baseLatency || 0);
+    let last = null;
+    while (T.visual.length && T.visual[0].t <= now) last = T.visual.shift();
+    if (last) T.hooks.show(last);
+    T.raf = requestAnimationFrame(function () { visualLoop(id); });
+  }
+
+  /* start(): called from the Play button. hooks = { live(), show(ev), finished(), error(msg), started() } */
+  async function start(prog, meterKey, countInBars, loop, hooks) {
+    if (T.running) return;                                            // guard: no double start, no double timers
+    T.running = true;
+    const id = ++T.runId;
+    T.hooks = hooks;
+    try {
+      const ctx = AudioEngine.ensure();
+      await AudioEngine.resume();
+      if (!T.running || id !== T.runId) return;                       // stopped while the context was resuming
+      if (ctx.state !== 'running') throw new Error('The browser blocked audio. Click Play again.');
+      T.meter = METERS[meterKey]; T.prog = prog; T.loop = loop;
+      T.ciPulses = countInBars * T.meter.pulses;
+      T.pulse = 0; T.ending = false; T.visual = []; T.current = [];
+      T.nextTime = ctx.currentTime + 0.12;                            // small lead-in so the first pulse is never late
+      hooks.started();
+      tick(id);
+      visualLoop(id);
+    } catch (e) {
+      T.running = false; T.runId++;
+      hooks.error(e.message || String(e));
+    }
+  }
+
+  /* stop(): immediately silences everything that is sounding or already scheduled. */
+  function stop() {
+    T.running = false; T.runId++;
+    clearTimeout(T.timer); T.timer = null;
+    cancelAnimationFrame(T.raf); T.raf = 0;
+    T.visual = []; T.current = [];
+    if (AudioEngine.ctx) AudioEngine.killAll();
+  }
+  return { start: start, stop: stop, isRunning: function () { return T.running; } };
+})();
+
+/* =====================================================================================
+   PART D – UI AND STATE
+   State holds the abstract (key-independent) progression and its realisation in the
+   current key. DOM nodes for the bars are created once per progression/metre change and
+   only their classes are toggled during playback (no DOM re-creation while playing).
+   ===================================================================================== */
+(function () {
+  const $ = function (id) { return document.getElementById(id); };
+  const E = {};
+  ['selStyle','selLength','selMood','selKey','selComplexity','btnGenerate','btnAnother','btnReset','progMeta','chkRoman','barsHost',
+   'refsHost','btnPlay','btnStop','chkLoop','beatDots','posText','selMeter','selInst','selCountIn','selAccent','meterHint','chkMetro',
+   'rngBpm','outBpm','btnBpmMinus','btnBpmPlus','rngVol','outVol','status','fileSamples','btnServer','soundStatus']
+    .forEach(function (id) { E[id] = $(id); });
+
+  const DEFAULTS = { style: 'pop', length: '4', mood: 'Happy', key: 'major-C', complexity: 'simple', bpm: 100, volume: 70,
+                     instrument: 'piano', meter: '4/4', countIn: '1', metronome: true, accent: 'soft', loop: true, roman: true };
+  const state = { abstract: null, realized: null, barEls: [], chordEls: [], activeBar: -1, activeChord: null };
+
+  /* ---------- helpers ---------- */
+  function currentKey() { return ALL_KEYS.filter(function (k) { return k.id === E.selKey.value; })[0]; }
+  function setStatus(msg, isErr) { E.status.textContent = msg || ''; E.status.className = 'status' + (isErr ? ' err' : ''); }
+  function meterNow() { return METERS[E.selMeter.value]; }
+  function el(tag, cls, text) { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+
+  /* ---------- populate selects ---------- */
+  function fillSelects() {
+    MOODS.forEach(function (m) { const o = el('option', '', m); o.value = m; E.selMood.appendChild(o); });
+    [['Major keys', MAJOR_KEYS], ['Minor keys', MINOR_KEYS]].forEach(function (grp) {
+      const og = document.createElement('optgroup'); og.label = grp[0];
+      grp[1].forEach(function (k) { const o = el('option', '', k.label); o.value = k.id; og.appendChild(o); });
+      E.selKey.appendChild(og);
+    });
+  }
+  function applyDefaults() {
+    E.selStyle.value = DEFAULTS.style; E.selLength.value = DEFAULTS.length; E.selMood.value = DEFAULTS.mood;
+    E.selKey.value = DEFAULTS.key; E.selComplexity.value = DEFAULTS.complexity;
+    E.rngBpm.value = DEFAULTS.bpm; E.rngVol.value = DEFAULTS.volume;
+    E.selInst.value = DEFAULTS.instrument; E.selMeter.value = DEFAULTS.meter; E.selCountIn.value = DEFAULTS.countIn;
+    E.chkMetro.checked = DEFAULTS.metronome; E.selAccent.value = DEFAULTS.accent;
+    E.chkLoop.checked = DEFAULTS.loop; E.chkRoman.checked = DEFAULTS.roman;
+    updateBpm(); updateVolume(); updateRomanVisibility(); buildBeatDots(); updateMeterHint();
+  }
+
+  /* ---------- tempo / volume ---------- */
+  function updateBpm() {
+    const v = Number(E.rngBpm.value);
+    E.outBpm.textContent = v + ' BPM';
+    E.rngBpm.setAttribute('aria-valuetext', v + ' beats per minute');
+  }
+  function setBpm(v) { E.rngBpm.value = Math.max(40, Math.min(220, v)); updateBpm(); }
+  function updateVolume() {
+    const v = Number(E.rngVol.value);
+    E.outVol.textContent = v + ' %';
+    E.rngVol.setAttribute('aria-valuetext', v + ' percent');
+    AudioEngine.setVolume(v);
+  }
+
+  /* ---------- meter UI ---------- */
+  function updateMeterHint() {
+    const hints = {
+      '2/4': '2/4: two quarter-note beats per bar. Count: 1 2. BPM counts quarter notes.',
+      '3/4': '3/4: three quarter-note beats per bar. Count: 1 2 3. BPM counts quarter notes.',
+      '4/4': '4/4: four quarter-note beats per bar. Count: 1 2 3 4. BPM counts quarter notes.',
+      '6/8': '6/8: six written eighth notes, felt as two dotted-quarter beats. Count: 1 2 3 | 4 5 6, with main beats on 1 and 4. BPM counts dotted quarters; the metronome clicks every eighth note with the main beats stressed.'
+    };
+    E.meterHint.textContent = hints[E.selMeter.value];
+  }
+  function buildBeatDots() {
+    const m = meterNow();
+    E.beatDots.textContent = '';
+    for (let i = 0; i < m.pulses; i++) E.beatDots.appendChild(el('span', 'dot' + (m.strong.indexOf(i) >= 0 ? ' strong' : '')));
+  }
+  function beatRange(m, count, idx) {
+    function r(a, b) { return a === b ? String(a) : a + '\u2013' + b; }
+    if (count === 1) return r(1, m.pulses);
+    return idx === 0 ? r(1, m.half) : r(m.half + 1, m.pulses);
+  }
+
+  /* ---------- rendering the progression ---------- */
+  function renderProgression() {
+    E.barsHost.textContent = '';
+    state.barEls = []; state.chordEls = []; state.activeBar = -1; state.activeChord = null;
+    if (!state.realized) {
+      E.barsHost.appendChild(el('p', 'empty', 'Press \u201CGenerate Progression\u201D to create a chord progression.'));
+      E.progMeta.textContent = 'No progression yet.';
+      E.refsHost.textContent = '';
+      E.btnPlay.disabled = true;
+      return;
+    }
+    const m = meterNow(), ol = el('ol', 'bars');
+    state.realized.bars.forEach(function (bar, bi) {
+      const li = el('li', 'bar');
+      li.appendChild(el('span', 'barno', 'Bar ' + (bi + 1)));
+      const wrap = el('div', 'chords');
+      wrap.style.setProperty('--n', bar.chords.length);
+      const chordEls = [];
+      bar.chords.forEach(function (ch, ci) {
+        const c = el('div', 'chord');
+        const name = el('span', 'cn', ch.name); name.setAttribute('aria-hidden', 'true');
+        c.appendChild(name);
+        c.appendChild(el('span', 'vh', 'Bar ' + (bi + 1) + ', beats ' + beatRange(m, bar.chords.length, ci) + ': ' + ch.speak));
+        c.appendChild(el('span', 'rn', ch.rn));
+        c.appendChild(el('span', 'beats', 'Beats ' + beatRange(m, bar.chords.length, ci)));
+        wrap.appendChild(c); chordEls.push(c);
+      });
+      li.appendChild(wrap); ol.appendChild(li);
+      state.barEls.push(li); state.chordEls.push(chordEls);
+    });
+    E.barsHost.appendChild(ol);
+    const a = state.abstract, tpl = TEMPLATES.filter(function (t) { return t.id === a.templateId; })[0];
+    const cap = function (s) { return s.charAt(0).toUpperCase() + s.slice(1); };
+    E.progMeta.textContent = tpl.name + ' \u00B7 ' + cap(a.style) + ' \u00B7 ' + a.length + ' bars \u00B7 ' + a.mood + ' \u00B7 ' +
+      cap(a.complexity) + ' \u00B7 ' + currentKey().label;
+    renderRefs(tpl);
+    E.btnPlay.disabled = Transport.isRunning();
+  }
+  function renderRefs(tpl) {
+    const h = E.refsHost; h.textContent = '';
+    h.appendChild(el('p', '', tpl.note));
+    h.appendChild(el('p', 'hint', 'This is a general harmonic template. It is not a transcription of any particular song, and the app never claims that a specific song uses exactly the chords shown.'));
+    if (tpl.refs.length) {
+      h.appendChild(el('p', 'label', 'Songs cited by the listed sources for this pattern:'));
+      const ul = el('ul');
+      tpl.refs.forEach(function (id) {
+        const r = REFERENCES[id], li = el('li');
+        li.appendChild(document.createTextNode(r.title + ' \u2013 ' + r.artist + ' (' + r.style + '). Pattern: ' + r.pattern +
+          (r.originalKey ? '. Original key: ' + r.originalKey : '. Original key: not verified') + '. ' + r.note + ' '));
+        const a = el('a', '', 'Source'); a.href = r.sourceUrl; a.target = '_blank'; a.rel = 'noopener noreferrer';
+        li.appendChild(a); ul.appendChild(li);
+      });
+      h.appendChild(ul);
+    } else h.appendChild(el('p', 'hint', 'No song attribution has been verified for this template, so none is shown.'));
+    h.appendChild(el('p', 'label', 'Background reading:'));
+    const ul2 = el('ul');
+    tpl.src.forEach(function (u) {
+      const li = el('li'), a = el('a', '', u); a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      li.appendChild(a); ul2.appendChild(li);
+    });
+    h.appendChild(ul2);
+  }
+  function updateRomanVisibility() { E.barsHost.classList.toggle('hide-roman', !E.chkRoman.checked); }
+
+  /* ---------- playback highlighting ---------- */
+  function clearHighlight() {
+    if (state.activeBar >= 0 && state.barEls[state.activeBar]) state.barEls[state.activeBar].classList.remove('active');
+    if (state.activeChord) state.activeChord.classList.remove('active');
+    state.activeBar = -1; state.activeChord = null;
+    Array.prototype.forEach.call(E.beatDots.children, function (d) { d.classList.remove('on'); });
+  }
+  function showEvent(ev) {
+    const m = meterNow();
+    Array.prototype.forEach.call(E.beatDots.children, function (d, i) { d.classList.toggle('on', i === ev.pip); });
+    if (ev.kind === 'count') {
+      clearBarMarks();
+      E.posText.textContent = 'Count-in: bar ' + ev.bar + ' \u00B7 beat ' + (ev.pip + 1);
+      return;
+    }
+    if (state.activeBar !== ev.bar) {
+      clearBarMarks();
+      state.activeBar = ev.bar; state.barEls[ev.bar].classList.add('active');
+    }
+    const c = state.chordEls[ev.bar][ev.chord];
+    if (state.activeChord !== c) { if (state.activeChord) state.activeChord.classList.remove('active'); c.classList.add('active'); state.activeChord = c; }
+    E.posText.textContent = 'Bar ' + (ev.bar + 1) + ' of ' + state.barEls.length + ' \u00B7 beat ' + (ev.pip + 1) + (m.ppb === 3 ? ' of 6' : '');
+  }
+  function clearBarMarks() {
+    if (state.activeBar >= 0 && state.barEls[state.activeBar]) state.barEls[state.activeBar].classList.remove('active');
+    if (state.activeChord) state.activeChord.classList.remove('active');
+    state.activeBar = -1; state.activeChord = null;
+  }
+
+  /* ---------- play / stop ---------- */
+  function setPlayingUI(on) {
+    E.btnPlay.disabled = on || !state.realized;
+    E.btnStop.disabled = !on;
+  }
+  function stopPlayback(message) {
+    const was = Transport.isRunning();
+    Transport.stop();
+    clearHighlight();
+    E.posText.textContent = 'Stopped';
+    setPlayingUI(false);
+    if (message && was) setStatus(message);
+  }
+  function play() {
+    if (!state.realized || Transport.isRunning()) return;
+    setStatus('');
+    setPlayingUI(true);
+    Transport.start(state.realized, E.selMeter.value, Number(E.selCountIn.value), E.chkLoop.checked, {
+      live: function () {
+        return { bpm: Number(E.rngBpm.value), metronome: E.chkMetro.checked, accent: E.selAccent.value, instrument: E.selInst.value };
+      },
+      show: showEvent,
+      started: function () { /* UI already switched */ },
+      finished: function () { stopPlayback('Finished.'); },
+      error: function (msg) { stopPlayback(); setStatus(msg, true); }
+    });
+  }
+
+  /* ---------- generating ---------- */
+  function readSettings() {
+    return { style: E.selStyle.value, length: Number(E.selLength.value), mood: E.selMood.value,
+             complexity: E.selComplexity.value, mode: currentKey().mode };
+  }
+  function generate(avoid) {
+    stopPlayback('Playback stopped because a new progression was generated.');
+    state.abstract = generateProgression(readSettings(), Math.random, avoid ? avoid : null);
+    state.realized = realize(state.abstract, currentKey());
+    renderProgression();
+    setPlayingUI(false);
+  }
+  function onKeyChange() {
+    if (!state.abstract) return;
+    const k = currentKey();
+    if (state.abstract.mode === k.mode) {                              // same mode: transpose the current progression
+      stopPlayback('Playback stopped because the key changed.');
+      state.realized = realize(state.abstract, k);
+      renderProgression(); setPlayingUI(false);
+    } else generate(null);                                             // major <-> minor: templates differ, generate a new one
+  }
+  function reset() {
+    stopPlayback();
+    applyDefaults();
+    state.abstract = null; state.realized = null;
+    renderProgression(); setStatus('Settings reset.');
+    setPlayingUI(false);
+  }
+
+  /* ---------- sample pack loading (optional) ---------- */
+  function setSoundStatus(msg, isErr) { E.soundStatus.textContent = msg; E.soundStatus.className = 'status' + (isErr ? ' err' : ''); }
+  function noteFromName(name) {                                         // "piano_F#3.wav" -> MIDI 54
+    const m = /(?:^|[^A-Za-z])([A-Ga-g])([#b\u266F\u266D]?)(-?\d)(?!\d)/.exec(name);
+    if (!m) return null;
+    const pc = LETTER_PC[LETTERS.indexOf(m[1].toUpperCase())] + (m[2] === '#' || m[2] === '\u266F' ? 1 : m[2] ? -1 : 0);
+    return 12 * (Number(m[3]) + 1) + pc;
+  }
+  function installBank(name, samples, errors) {
+    const opt = E.selInst.querySelector('option[value="samples"]');
+    if (samples.length) {
+      AudioEngine.setSampleBank({ name: name, samples: samples });
+      opt.disabled = false; opt.textContent = 'Loaded samples (' + samples.length + ' files, sampled audio)';
+      E.selInst.value = 'samples';
+    }
+    let msg = samples.length ? 'Loaded ' + samples.length + ' sample(s) from ' + name + '. They are selectable as “Loaded samples”. ' : 'No samples were loaded. ';
+    if (errors.length) msg += 'Problems: ' + errors.join(' | ');
+    setSoundStatus(msg, !samples.length || errors.length > 0);
+  }
+  async function decodeInto(samples, errors, label, arrayBuffer, midi) {
+    try { samples.push({ midi: midi, buf: await AudioEngine.ensure().decodeAudioData(arrayBuffer) }); }
+    catch (e) { errors.push(label + ': could not be decoded as audio.'); }
+  }
+  async function loadLocalFiles(fileList) {
+    const files = Array.from(fileList).slice(0, 128), samples = [], errors = [];
+    setSoundStatus('Loading ' + files.length + ' file(s)\u2026');
+    try { AudioEngine.ensure(); } catch (e) { setSoundStatus(e.message, true); return; }
+    for (const f of files) {
+      const head = new Uint8Array(await f.slice(0, 12).arrayBuffer());
+      const tag = String.fromCharCode.apply(null, head.slice(0, 4)), type = String.fromCharCode.apply(null, head.slice(8, 12));
+      if (/\.sf[23]$/i.test(f.name) || (tag === 'RIFF' && type === 'sfbk')) {
+        errors.push(f.name + ': SoundFont (.sf2/.sf3) files are not supported by this app. Export the samples as audio files named by note, e.g. C4.wav.');
+        continue;
+      }
+      if (f.size > 30 * 1024 * 1024) { errors.push(f.name + ': file is larger than 30 MB.'); continue; }
+      const midi = noteFromName(f.name);
+      if (midi === null) { errors.push(f.name + ': no note name such as C4, F#3 or Bb2 found in the file name.'); continue; }
+      await decodeInto(samples, errors, f.name, await f.arrayBuffer(), midi);
+    }
+    installBank('your files', samples, errors);
+  }
+  async function loadServerPack() {
+    const samples = [], errors = [];
+    setSoundStatus('Requesting /soundfonts/manifest.json \u2026');
+    try {
+      AudioEngine.ensure();
+      const res = await fetch('/soundfonts/manifest.json', { cache: 'no-store' });
+      if (!res.ok) throw new Error('manifest not found (HTTP ' + res.status + ')');
+      const man = await res.json();
+      if (!man || !Array.isArray(man.samples) || !man.samples.length) throw new Error('manifest has no "samples" list');
+      for (const s of man.samples.slice(0, 128)) {
+        const file = String(s.file || ''), midi = noteFromName(String(s.note || ''));
+        if (!/^[\w\-. ()]+$/.test(file) || file.indexOf('..') >= 0) { errors.push(file + ': invalid file name in manifest.'); continue; }
+        if (midi === null) { errors.push(file + ': invalid note "' + s.note + '".'); continue; }
+        const r = await fetch('/soundfonts/' + encodeURIComponent(file));
+        if (!r.ok) { errors.push(file + ': HTTP ' + r.status); continue; }
+        await decodeInto(samples, errors, file, await r.arrayBuffer(), midi);
+      }
+      installBank(String(man.name || 'server pack'), samples, errors);
+    } catch (e) {
+      setSoundStatus('Could not load the server pack: ' + (e.message || e) + '. This needs http(s) hosting with /soundfonts/manifest.json; the built-in synthesised instruments are unaffected.', true);
+    }
+  }
+
+  /* ---------- event wiring (each listener is attached exactly once) ---------- */
+  function bind() {
+    E.btnGenerate.addEventListener('click', function () { generate(null); });
+    E.btnAnother.addEventListener('click', function () { generate(state.abstract ? state.abstract.templateId : null); });
+    E.btnReset.addEventListener('click', reset);
+    E.selKey.addEventListener('change', onKeyChange);
+    E.chkRoman.addEventListener('change', updateRomanVisibility);
+    E.btnPlay.addEventListener('click', play);
+    E.btnStop.addEventListener('click', function () { stopPlayback(); });
+    E.selMeter.addEventListener('change', function () {
+      stopPlayback('Playback stopped because the time signature changed.');
+      updateMeterHint(); buildBeatDots(); if (state.realized) renderProgression();
+    });
+    E.selCountIn.addEventListener('change', function () { stopPlayback('Playback stopped because the count-in changed.'); });
+    E.rngBpm.addEventListener('input', updateBpm);                     // tempo is read live by the scheduler
+    E.btnBpmMinus.addEventListener('click', function () { setBpm(Number(E.rngBpm.value) - 1); });
+    E.btnBpmPlus.addEventListener('click', function () { setBpm(Number(E.rngBpm.value) + 1); });
+    E.rngVol.addEventListener('input', updateVolume);
+    E.fileSamples.addEventListener('change', function () { if (E.fileSamples.files.length) loadLocalFiles(E.fileSamples.files); });
+    E.btnServer.addEventListener('click', loadServerPack);
+    window.addEventListener('pagehide', function () { Transport.stop(); });
+  }
+
+  /* ---------- start-up ---------- */
+  fillSelects();
+  bind();
+  applyDefaults();
+  generate(null);                                                      // show a progression immediately (no audio is started)
+  setStatus('');
+})();
+</script>
+</body>
+</html>
