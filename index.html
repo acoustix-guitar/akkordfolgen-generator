@@ -14,6 +14,11 @@
                    instruments, optional user-supplied sample pack, metronome clicks)
     5. JS part C – TRANSPORT (look-ahead scheduler on the audio clock, count-in, visuals)
     6. JS part D – UI / STATE (controls, rendering, events)
+    7. ADDED LATER (marked "ADDED" / "EXTRAS" in the code, existing code otherwise untouched):
+         * Part A2  – drum pattern database (5 pop + 5 jazz rhythms) and Standard MIDI File builder
+         * Part B   – dedicated loud count-in voice, synthetic drum kit (kick, snare, hi-hat, ride)
+         * Part C   – drum steps scheduled on the same audio clock as the metronome
+         * Part D   – count-in display, drum controls, 16th-note matrix editor, MIDI export button
 
   HONEST LIMITS (also shown in the UI)
     * All five built-in instruments are SYNTHESISED with Web Audio oscillators, filters and
@@ -89,6 +94,11 @@ button.primary:not(:disabled):hover { background: #163d7c; }
 .prog-meta { color: var(--muted); margin: 0 0 .8rem; }
 .bars { list-style: none; margin: 0; padding: 0; display: grid; gap: .7rem; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); }
 .bar { border: 2px solid var(--line); border-radius: var(--radius); padding: .6rem .7rem; background: #fff; min-width: 0; }
+/* ADDED: bars are editable (click / Enter) */
+.chords.editable { cursor: pointer; border-radius: 6px; outline-offset: 2px; }
+.chords.editable:hover { background: var(--accent-soft); }
+.chord-edit { width: 100%; font: inherit; font-size: 1.15rem; font-weight: 700; padding: .35rem .4rem; border: 2px solid var(--accent); border-radius: 6px; }
+.chord-edit[aria-invalid="true"] { border-color: var(--danger); }
 .bar.active { border-color: var(--accent); background: var(--accent-soft); }
 .barno { display: block; font-size: .85rem; color: var(--muted); font-weight: 600; margin-bottom: .3rem; }
 .chords { display: grid; gap: .4rem; grid-template-columns: repeat(var(--n, 1), minmax(0, 1fr)); }
@@ -108,12 +118,52 @@ button.primary:not(:disabled):hover { background: #163d7c; }
 .dot.on { background: var(--accent); border-color: var(--accent); }
 .pos { font-weight: 600; min-width: 12rem; }
 .slider-row { display: grid; grid-template-columns: 1fr auto; gap: .6rem; align-items: center; }
+/* ADDED: fixed footer play bar. Page gets bottom padding (--pb-h, kept in sync by JS) and
+   scroll-padding so focused elements are never hidden behind the bar (WCAG 2.4.11). */
+:root { --pb-h: 9rem; }
+html { scroll-padding-bottom: calc(var(--pb-h) + 1rem); }
+body { padding-bottom: var(--pb-h); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.playbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--bg);
+  border-top: 3px solid var(--accent); box-shadow: 0 -4px 14px rgba(0,0,0,.12); }
+.pb-inner { max-width: 62rem; margin: 0 auto; padding: .4rem 1rem .5rem; display: flex; flex-direction: column; gap: .1rem; }
+.pb-main { display: flex; flex-wrap: wrap; align-items: center; gap: .2rem .8rem; }
+.pb-tempo { display: flex; align-items: center; gap: .4rem; flex: 1 1 15rem; min-width: 0; }
+.pb-tempo label { font-weight: 600; }
+.pb-tempo input[type="range"] { flex: 1; min-width: 4rem; width: auto; height: 2rem; }
+.pb-tempo button { min-width: 2.4rem; padding: .2rem .5rem; }
+.pb-bpm { font-weight: 700; min-width: 5.2ch; text-align: right; font-variant-numeric: tabular-nums; }
+/* Mixer: vertical faders. The range input is rotated by -90 degrees inside a fixed box; keyboard, touch and screen readers work as for a normal slider. */
+.pb-mixer { display: flex; justify-content: center; gap: .2rem .05rem; padding-top: .2rem; }
+.pb-mixer.collapsed { display: none; }
+.pb-ch { display: flex; flex-direction: column; align-items: center; min-width: 2.8rem; flex: 0 1 3.7rem; }
+.pb-lab { font-weight: 600; height: 2.8rem; display: flex; align-items: flex-end; font-size: .9rem; }   /* switch row and label row share one height so all faders line up */
+.pb-ch .check { height: 2.8rem; min-height: 0; flex-direction: column; gap: 0; justify-content: flex-end; }
+.pb-ch .check label { font-size: .82rem; font-weight: 600; }
+.fader { position: relative; width: 2.75rem; height: 5.2rem; flex: none; }
+.fader input[type="range"] { position: absolute; left: 50%; top: 50%; width: 5.2rem; height: 2.75rem; margin: 0; transform: translate(-50%, -50%) rotate(-90deg); }
+.pb-ch output { font-weight: 600; font-size: .9rem; font-variant-numeric: tabular-nums; }
+.playbar .check { min-height: 2.2rem; }
+.playbar .pos { min-width: 0; width: auto; }
+.mixer-toggle { margin-left: auto; }
+@media (max-width: 40rem) {
+  .pb-inner { padding: .3rem .7rem .4rem; }
+  .pb-main { gap: .1rem .5rem; }
+  .pb-tempo { flex: 1 1 100%; order: 5; }               /* tempo gets its own row */
+  .pb-bpm { white-space: nowrap; }
+  .playbar .pos { order: 6; flex: 1 1 0; font-size: .9rem; }
+  .mixer-toggle { order: 7; }
+  .pb-mixer { gap: .2rem .1rem; }
+  .pb-ch { min-width: 0; flex: 0 1 3.6rem; }
+  .pb-ch .check label { font-size: .78rem; }
+}
 .slider-line { display: flex; align-items: center; gap: .6rem; }
 .slider-line input[type="range"] { flex: 1; min-width: 0; }
 output.big { font-size: 1.6rem; font-weight: 700; min-width: 5.2ch; text-align: right; font-variant-numeric: tabular-nums; }
 input[type="range"] { width: 100%; height: 2.4rem; accent-color: var(--accent); background: transparent; }
 input[type="range"]::-webkit-slider-runnable-track { height: .55rem; background: #b6bcc6; border-radius: 6px; }
-input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 1.7rem; height: 1.7rem; margin-top: -.58rem; border-radius: 50%; background: var(--accent); border: 3px solid #fff; box-shadow: 0 0 0 2px var(--accent); }
+/* margin-top: pixel-measured in Chromium so the thumb sits exactly on the middle of the track (the earlier -.58rem put it about 7 px too high) */
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 1.7rem; height: 1.7rem; margin-top: -3px; border-radius: 50%; background: var(--accent); border: 3px solid #fff; box-shadow: 0 0 0 2px var(--accent); }
 input[type="range"]::-moz-range-track { height: .55rem; background: #b6bcc6; border-radius: 6px; }
 input[type="range"]::-moz-range-thumb { width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--accent); border: 3px solid #fff; box-shadow: 0 0 0 2px var(--accent); }
 .status { min-height: 1.5rem; margin: .8rem 0 0; font-weight: 600; }
@@ -134,6 +184,37 @@ a { color: var(--accent); }
   .cn { font-size: 1.35rem; }
   .pos { min-width: 0; width: 100%; }
 }
+
+/* ================================================================================
+   ADDED: count-in display, drum panel, rhythm matrix editor, MIDI export
+   ================================================================================ */
+.countbox { display: flex; align-items: center; gap: .9rem; margin-top: .8rem; padding: .6rem .9rem;
+  border: 2px solid var(--line); border-radius: var(--radius); background: #fff; }
+.countbox .num { font-size: 3rem; font-weight: 800; line-height: 1; min-width: 2.2ch; text-align: center; font-variant-numeric: tabular-nums; }
+.countbox .lbl { font-weight: 700; color: var(--muted); }
+.countbox.play { border-color: var(--accent); }
+.countbox.ci { background: var(--accent); border-color: var(--accent); color: #fff; }
+.countbox.ci .lbl { color: #fff; }
+.beatrow.ci .dot.on { background: #b3541e; border-color: #b3541e; }
+h3 { font-size: 1.05rem; margin: 1.1rem 0 .5rem; }
+.matrix-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); padding: .4rem; max-width: 100%; }
+table.matrix { border-collapse: separate; border-spacing: 3px; }
+.matrix th { font-size: .8rem; font-weight: 600; color: var(--muted); text-align: center; padding: 0 .1rem; white-space: nowrap; }
+.matrix th.beat { color: var(--text); }
+.matrix th.rowh { text-align: left; position: sticky; left: 0; background: #fff; color: var(--text); padding-right: .5rem; z-index: 1; font-size: .95rem; }
+.matrix td { padding: 0; }
+.matrix td.bs { padding-left: 6px; }
+.cell { min-width: 2.1rem; width: 2.1rem; min-height: 2.4rem; padding: 0; border-radius: 6px; border: 2px solid var(--control-line);
+  background: #fff; font-size: 1.1rem; line-height: 1; }
+.cell.s1 { background: var(--accent); border-color: var(--accent); color: #fff; }
+.cell.s2 { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.cell.s1:hover { background: #163d7c; }
+.cell.now { box-shadow: 0 0 0 3px #b3541e; }
+.src-list { margin: .3rem 0 0; padding-left: 1.2rem; font-size: .9rem; }
+@media (max-width: 30rem) { .countbox .num { font-size: 2.4rem; } }
+/* ADDED: manual chord entry */
+textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; padding: .6rem; border: 2px solid var(--control-line);
+  border-radius: 8px; background: #fff; resize: vertical; }
 </style>
 </head>
 <body>
@@ -143,8 +224,6 @@ a { color: var(--accent); }
 <!-- ============================== HEADER ============================== -->
 <header>
   <h1>Wolfram Fiedler ACOUSTIX GUITAR – Chord Progression Generator</h1>
-  <p class="lead">Generate common pop and jazz chord progressions, transpose them to any key and practise along with them.
-  All sounds are synthesised in your browser – no internet connection is needed.</p>
 </header>
 
 <main id="main">
@@ -169,7 +248,6 @@ a { color: var(--accent); }
     <button type="button" id="btnAnother">Generate Another</button>
     <button type="button" id="btnReset">Reset</button>
   </div>
-  <p class="hint">Changing the key transposes the current progression. Generating a new progression, or resetting, stops playback.</p>
 </section>
 
 <!-- ============================== PROGRESSION ============================== -->
@@ -178,6 +256,24 @@ a { color: var(--accent); }
   <p class="prog-meta" id="progMeta">No progression yet.</p>
   <div class="check"><input type="checkbox" id="chkRoman" checked><label for="chkRoman">Show Roman numerals</label></div>
   <div id="barsHost"><p class="empty">Press “Generate Progression” to create a chord progression.</p></div>
+  <div class="row spaced">
+    <button type="button" id="btnBarAdd">Add bar</button>
+    <button type="button" id="btnBarRemove">Remove last bar</button>
+  </div>
+  <p class="hint" id="editStatus" role="status" aria-live="polite">Click a bar to edit its chords, e.g. Am7 or C/E G.</p>
+  <!-- ADDED: MIDI export -->
+  <h3>Export</h3>
+  <div class="grid">
+    <div class="field"><label for="selMidiPasses">Repeats</label>
+      <select id="selMidiPasses"><option value="1" selected>1 time</option><option value="2">2 times</option><option value="4">4 times</option></select></div>
+    <div class="check"><input type="checkbox" id="chkMidiDrums"><label for="chkMidiDrums">Include drums</label></div>
+    <div class="check"><input type="checkbox" id="chkMidiCount"><label for="chkMidiCount">Include count-in</label></div>
+    <div class="check"><input type="checkbox" id="chkMidiPat"><label for="chkMidiPat">Block chords in chord rhythm</label></div>
+    <div class="check"><input type="checkbox" id="chkMidiBlock" checked><label for="chkMidiBlock">Include block chords</label></div>
+    <div class="check"><input type="checkbox" id="chkMidiArp"><label for="chkMidiArp">Include arpeggio</label></div>
+  </div>
+  <div class="row spaced"><button type="button" id="btnMidi" disabled>Export MIDI file</button><button type="button" id="btnWav" disabled>Export WAV file</button></div>
+  <p class="hint" id="midiStatus" role="status" aria-live="polite">Standard MIDI file of the current progression.</p>
   <details>
     <summary>Harmonic background and references</summary>
     <div id="refsHost"></div>
@@ -187,77 +283,199 @@ a { color: var(--accent); }
 <!-- ============================== PLAYER ============================== -->
 <section class="panel" aria-labelledby="h-play">
   <h2 id="h-play">Player</h2>
-  <div class="row">
-    <button type="button" id="btnPlay" class="primary" disabled>Play</button>
-    <button type="button" id="btnStop" disabled>Stop</button>
-    <div class="check"><input type="checkbox" id="chkLoop" checked><label for="chkLoop">Repeat (loop)</label></div>
-  </div>
 
   <div class="row spaced">
     <div class="beatrow" id="beatDots" aria-hidden="true"></div>
-    <div class="pos" id="posText">Stopped</div>
   </div>
+  <!-- ADDED: large count-in / beat display (visual counterpart of the audible count-in) -->
+  <div class="countbox" id="countBox" aria-hidden="true"><span class="num" id="countNum">–</span><span class="lbl" id="countLbl">Ready</span></div>
 
   <div class="grid spaced" style="margin-top:1rem">
     <div class="field"><label for="selMeter">Time signature</label>
       <select id="selMeter"><option>2/4</option><option>3/4</option><option selected>4/4</option><option>6/8</option></select></div>
-    <div class="field"><label for="selInst">Instrument</label>
-      <select id="selInst">
-        <option value="piano">Piano (synthesised)</option>
-        <option value="guitar">Guitar (synthesised)</option>
-        <option value="organ">Organ (synthesised)</option>
-        <option value="pad">Synth Pad (synthesised)</option>
-        <option value="strings">Strings (synthesised)</option>
-        <option value="samples" disabled>Loaded samples (none loaded)</option>
-      </select></div>
     <div class="field"><label for="selCountIn">Count-in</label>
-      <select id="selCountIn"><option value="0">Off</option><option value="1" selected>1 bar</option><option value="2">2 bars</option></select></div>
+      <select id="selCountIn"><option value="1" selected>1 bar</option><option value="2">2 bars</option></select></div>
     <div class="field"><label for="selAccent">First-beat accent</label>
       <select id="selAccent"><option value="off">Off</option><option value="soft" selected>Soft</option><option value="strong">Strong</option></select></div>
+    <div class="field"><label for="rngCountVol">Count-in volume</label>
+      <div class="slider-line">
+        <input type="range" id="rngCountVol" min="0" max="100" step="1" value="100">
+        <output id="outCountVol" for="rngCountVol">100 %</output>
+      </div></div>
   </div>
   <p class="hint" id="meterHint"></p>
-  <div class="check"><input type="checkbox" id="chkMetro" checked><label for="chkMetro">Metronome</label></div>
-
-  <div style="margin-top:.8rem">
-    <label for="rngBpm">Tempo</label>
-    <div class="slider-line">
-      <button type="button" id="btnBpmMinus" aria-label="Decrease tempo by 1 BPM">−</button>
-      <input type="range" id="rngBpm" min="40" max="220" step="1" value="100">
-      <button type="button" id="btnBpmPlus" aria-label="Increase tempo by 1 BPM">+</button>
-      <output class="big" id="outBpm" for="rngBpm">100 BPM</output>
-    </div>
-  </div>
-
-  <div style="margin-top:.8rem">
-    <label for="rngVol">Volume</label>
-    <div class="slider-line">
-      <input type="range" id="rngVol" min="0" max="100" step="1" value="70">
-      <output class="big" id="outVol" for="rngVol">70 %</output>
-    </div>
-  </div>
-
   <p class="status" id="status" role="status" aria-live="polite"></p>
 
   <details>
-    <summary>Sound options and limits</summary>
-    <p>The five built-in instruments are <strong>synthesised</strong> with oscillators, filters and envelopes. They are not recordings of real instruments and work fully offline.</p>
-    <p>Optionally you can add a <strong>sample pack</strong>. It is played by pitch-shifting your audio files, so each file name must contain a note name, for example <code>piano_C4.wav</code>, <code>F#3.mp3</code> or <code>Bb2.ogg</code>. Samples must be WAV, MP3, OGG or another format your browser can decode.</p>
-    <p><strong>.sf2 SoundFonts cannot be played</strong> – this single-file app contains no SoundFont parser. Please export samples from your SoundFont as individual audio files named by note.</p>
+    <summary>Own samples (optional)</summary>
     <div class="field" style="max-width:26rem">
-      <label for="fileSamples">Choose sample files from your device</label>
+      <label for="fileSamples">Audio files named by note, e.g. piano_C4.wav</label>
       <input type="file" id="fileSamples" multiple accept="audio/*,.wav,.mp3,.ogg,.flac,.m4a,.sf2,.sf3">
     </div>
     <div class="row spaced">
       <button type="button" id="btnServer">Load pack from /soundfonts/manifest.json</button>
     </div>
-    <p class="hint">The server option only works when this page is served over http(s) and a manifest exists at <code>/soundfonts/manifest.json</code> in the form
-      <code>{"name":"My pack","samples":[{"note":"C4","file":"C4.wav"}, …]}</code>. Files are fetched from <code>/soundfonts/</code> only when you press the button; nothing is loaded silently and no directory listing is attempted.</p>
     <p class="status" id="soundStatus" role="status" aria-live="polite"></p>
   </details>
 </section>
 
+<!-- ============================== ARPEGGIATOR (ADDED) ============================== -->
+<section class="panel" aria-labelledby="h-arp">
+  <h2 id="h-arp">Arpeggiator</h2>
+  <p class="hint">Switch the arpeggiator on with “Arp” in the mixer at the bottom. It can sound together with the block chords.</p>
+  <div class="grid">
+    <div class="field"><label for="selArpInst">Sound</label>
+      <select id="selArpInst">
+        <option value="piano" selected>Piano</option>
+        <option value="steel">Steel Guitar</option>
+        <option value="nylon">Nylon Guitar</option>
+        <option value="marimba">Marimba</option>
+        <option value="vibes">Vibraphone</option>
+      </select></div>
+    <div class="field"><label for="selArpPat">Pattern</label><select id="selArpPat"></select></div>
+    <div class="field"><label for="selArpGate">Note length</label>
+      <select id="selArpGate"><option value="step" selected>One step</option><option value="held">Rings until next hit</option></select></div>
+  </div>
+  <p class="hint">Click a cell: on → soft → off. Several rows in one column play together. Extra rows (7th–13th) appear when a chord has them.</p>
+  <div class="matrix-wrap" id="arpWrap" role="region" aria-label="Arpeggio editor" tabindex="0"></div>
+  <div class="row spaced"><button type="button" id="btnArpClear">Clear pattern</button></div>
+</section>
+
+<!-- ============================== CHORD RHYTHM PATTERN (ADDED) ============================== -->
+<section class="panel" aria-labelledby="h-cpat">
+  <h2 id="h-cpat">Block chords</h2>
+  <div class="check"><input type="checkbox" id="chkChordPat"><label for="chkChordPat">Play block chords in this rhythm</label></div>
+  <div class="grid">
+    <div class="field"><label for="selInst">Sound</label>
+      <select id="selInst">
+        <option value="piano">Piano</option>
+        <option value="organ">Organ</option>
+        <option value="pad">Synth Pad</option>
+        <option value="strings">Strings</option>
+        <option value="samples" disabled>Loaded samples (none loaded)</option>
+      </select></div>
+    <div class="field"><label for="selChordPat">Pattern</label><select id="selChordPat"></select></div>
+    <div class="field"><label for="selChordGate">Chord length</label>
+      <select id="selChordGate"><option value="held" selected>Held until next hit</option><option value="short">Short</option></select></div>
+  </div>
+  <p class="hint">Click a cell: on → soft → off.</p>
+  <div class="matrix-wrap" id="cpatWrap" role="region" aria-label="Chord rhythm editor" tabindex="0"></div>
+  <div class="row spaced"><button type="button" id="btnCpatClear">Clear pattern</button></div>
+</section>
+
+<!-- ============================== DRUMS (ADDED) ============================== -->
+<section class="panel" aria-labelledby="h-drum">
+  <h2 id="h-drum">Drums and rhythm editor</h2>
+  <div class="grid">
+    <div class="field"><label for="selDrumKit">Sound set</label>
+      <select id="selDrumKit"><option value="drums" selected>Drum kit</option><option value="cajon">Cajon</option></select></div>
+    <div class="field"><label for="selDrumGenre">Drum genre</label>
+      <select id="selDrumGenre"><option value="pop">Pop</option><option value="jazz">Jazz</option></select></div>
+    <div class="field"><label for="selDrumPattern">Rhythm</label>
+      <select id="selDrumPattern"></select></div>
+    <div class="field"><label for="selDrumMeter">Time signature</label>
+      <select id="selDrumMeter"><option>2/4</option><option>3/4</option><option selected>4/4</option><option>6/8</option></select></div>
+  </div>
+  <details>
+    <summary>About this rhythm</summary>
+    <p class="hint" id="drumInfo"></p>
+    <div id="drumSources"></div>
+  </details>
+
+  <div style="margin-top:.8rem">
+    <label for="rngSwing">Swing</label>
+    <div class="slider-line">
+      <input type="range" id="rngSwing" min="0" max="100" step="5" value="0">
+      <output class="big" id="outSwing" for="rngSwing">0 %</output>
+    </div>
+    <p class="hint" id="swingNote"></p>
+  </div>
+  <h3>Pattern editor</h3>
+  <p class="hint">Click a cell: on → soft → off.</p>
+  <div class="matrix-wrap" id="matrixWrap" role="region" aria-label="Drum pattern editor" tabindex="0"></div>
+  <div class="row spaced">
+    <button type="button" id="btnDrumClear">Clear pattern</button>
+    <button type="button" id="btnDrumReload">Reload preset</button>
+  </div>
+
+  <h3>Drum sounds</h3>
+  <details>
+    <summary>Own WAV samples (optional)</summary>
+    <div class="field" style="max-width:26rem">
+      <label for="fileDrums" id="lblFileDrums">WAV files named kick, snare, hi-hat, open-hat, ride</label>
+      <input type="file" id="fileDrums" multiple accept="audio/*,.wav">
+    </div>
+    <div class="row spaced">
+      <button type="button" id="btnDrumFolder">Load from /drums</button>
+      <button type="button" id="btnDrumSampClear">Use built-in sounds</button>
+    </div>
+    <p class="status" id="drumSampStatus" role="status" aria-live="polite"></p>
+  </details>
+
+  <h3>Export drum groove</h3>
+  <div class="row">
+    <div class="field"><label for="selDrumBars">Length</label>
+      <select id="selDrumBars"><option value="1">1 bar</option><option value="2" selected>2 bars</option><option value="4">4 bars</option><option value="8">8 bars</option></select></div>
+    <button type="button" id="btnDrumMidi">Export MIDI</button>
+    <button type="button" id="btnDrumWav">Export WAV</button>
+  </div>
+  <p class="hint" id="drumExportStatus" role="status" aria-live="polite"></p>
+</section>
+
 </main>
 </div>
+
+<!-- ============================== FOOTER PLAY BAR (ADDED) ==============================
+     Fixed to the bottom of the viewport so Play/Stop and the mixer are always visible.
+     Metronome and drums are independent switches (either, both or neither) and each has its OWN
+     volume slider that drives its OWN gain node. The elements keep their former ids. -->
+<footer class="playbar" id="playbar" role="region" aria-label="Playback bar">
+  <div class="pb-inner">
+    <div class="pb-main">
+      <button type="button" id="btnPlay" class="primary" disabled>Play</button>
+      <button type="button" id="btnStop" disabled>Stop</button>
+      <div class="check"><input type="checkbox" id="chkLoop" checked><label for="chkLoop">Repeat</label></div>
+      <div class="check"><input type="checkbox" id="chkCount" checked><label for="chkCount">Count-in</label></div>
+      <div class="pb-tempo">
+        <label for="rngBpm">Tempo</label>
+        <button type="button" id="btnBpmMinus" aria-label="Decrease tempo by 1 BPM">−</button>
+        <input type="range" id="rngBpm" min="40" max="220" step="1" value="100">
+        <button type="button" id="btnBpmPlus" aria-label="Increase tempo by 1 BPM">+</button>
+        <output class="pb-bpm" id="outBpm" for="rngBpm">100 BPM</output>
+      </div>
+      <div class="pos" id="posText">Stopped</div>
+      <button type="button" id="btnMixer" class="mixer-toggle" aria-expanded="true" aria-controls="pbMixer">Mixer</button>
+    </div>
+    <!-- Mixer: vertical faders side by side. Each fader drives ONLY its own gain node; the switch above it turns that part on or off. -->
+    <div class="pb-mixer" id="pbMixer" role="group" aria-label="Mixer">
+      <div class="pb-ch">
+        <span class="pb-lab" id="labMaster">Master</span>
+        <div class="fader"><input type="range" id="rngVol" min="0" max="100" step="1" value="70" aria-labelledby="labMaster" aria-orientation="vertical"></div>
+        <output id="outVol" for="rngVol">70 %</output>
+      </div>
+      <div class="pb-ch">
+        <div class="check"><input type="checkbox" id="chkArp"><label for="chkArp">Arp</label></div>
+        <div class="fader"><label class="sr-only" for="rngArpVol">Arpeggiator volume</label><input type="range" id="rngArpVol" min="0" max="100" step="1" value="80" aria-orientation="vertical"></div>
+        <output id="outArpVol" for="rngArpVol">80 %</output>
+      </div>
+      <div class="pb-ch">
+        <div class="check"><input type="checkbox" id="chkChords" checked><label for="chkChords">Chords</label></div>
+        <div class="fader"><label class="sr-only" for="rngChordVol">Chord volume</label><input type="range" id="rngChordVol" min="0" max="100" step="1" value="80" aria-orientation="vertical"></div>
+        <output id="outChordVol" for="rngChordVol">80 %</output>
+      </div>
+      <div class="pb-ch">
+        <div class="check"><input type="checkbox" id="chkMetro" checked aria-label="Metronome"><label for="chkMetro">Metro</label></div>
+        <div class="fader"><label class="sr-only" for="rngMetroVol">Metronome volume</label><input type="range" id="rngMetroVol" min="0" max="100" step="1" value="80" aria-orientation="vertical"></div>
+        <output id="outMetroVol" for="rngMetroVol">80 %</output>
+      </div>
+      <div class="pb-ch">
+        <div class="check"><input type="checkbox" id="chkDrums"><label for="chkDrums">Drums</label></div>
+        <div class="fader"><label class="sr-only" for="rngDrumVol">Drum volume</label><input type="range" id="rngDrumVol" min="0" max="100" step="1" value="80" aria-orientation="vertical"></div>
+        <output id="outDrumVol" for="rngDrumVol">80 %</output>
+      </div>
+    </div>
+  </div>
+</footer>
 
 <script>
 'use strict';
@@ -674,9 +892,627 @@ function realize(prog, key) {
       };
     }) };
   });
-  return { templateId: prog.templateId, bars: bars };
+  return { templateId: prog.templateId, bars: arpAssignRoots(bars) };
+}
+
+/* ---------- ADDED (arpeggiator): chord functions and register, used by realize() / realizeManual() ---------- */
+/* Chord function of an interval (semitones above the root) as listed in the QUAL table. */
+function arpToneFn(iv) {
+  if (iv === 0) return '1';
+  if (iv <= 5) return '3';            // minor/major 3rd, sus2, sus4 all play the "3rd" row
+  if (iv <= 8) return '5';            // diminished, perfect, augmented 5th
+  if (iv <= 11) return '7';           // 6th, minor 7th, major 7th, diminished 7th
+  if (iv <= 15) return '9';
+  if (iv <= 19) return '11';
+  return '13';
+}
+/* Root of the close-position stack: the octave of the root that puts the middle of the root/3rd/5th group closest to
+   `prevMean` (the middle of the previous chord's group) - the smallest possible movement, i.e. voice leading. */
+function arpRegister(ch, Q, prevMean) {
+  const seen = {}, tri = [];
+  Q.iv.forEach(function (i) { const f = arpToneFn(i); if ((f === '1' || f === '3' || f === '5') && !seen[f]) { seen[f] = 1; tri.push(i); } });
+  const avg = tri.reduce(function (a, b) { return a + b; }, 0) / tri.length;
+  let r = ch.rootPc + 12 * Math.round((prevMean - avg - ch.rootPc) / 12);
+  while (r + avg > 69) r -= 12;                                      // stay in a comfortable register (window of 14 semitones)
+  while (r + avg < 55) r += 12;
+  while (r < ch.bass + 5) r += 12;                                   // always above the bass note
+  return r;
+}
+/* Walks the progression in playing order and stores ch.arpRoot for every chord. */
+function arpAssignRoots(bars) {
+  let mean = 62;
+  bars.forEach(function (b) { b.chords.forEach(function (ch) {
+    const Q = QUAL[ch.qual], r = arpRegister(ch, Q, mean), seen = {}, tri = [];
+    Q.iv.forEach(function (i) { const f = arpToneFn(i); if ((f === '1' || f === '3' || f === '5') && !seen[f]) { seen[f] = 1; tri.push(i); } });
+    ch.arpRoot = r; mean = r + tri.reduce(function (a, c) { return a + c; }, 0) / tri.length;
+  }); });
+  return bars;
 }
 // <THEORY-END>
+
+/* =====================================================================================
+   PART A2 (ADDED) – DRUM PATTERNS AND MIDI EXPORT
+   Pure data and functions (no DOM, no Audio) so they can be unit-tested in Node.
+
+   DRUM GRID MODEL
+   * A bar is divided into 16th-note STEPS: 2/4 = 8, 3/4 = 12, 4/4 = 16 and 6/8 = 12 steps
+     (6/8: six written eighths, each split into two 16ths).
+   * A cell holds 0 = off, 1 = normal hit, 2 = soft hit (ghost note / feathered kick).
+   * Pattern strings: '.' off, 'x' normal, 'o' soft; spaces are ignored (one group per beat).
+   * Rows: hat, ride, snare, kick.  SWING delays the "and" of each beat (steps 2, 6, 10, 14)
+     towards the triplet position (100 % = triplet); it is not applied in 6/8.
+
+   SOURCES AND HONESTY
+   Each preset states what its sources actually say (`basis`). Where a detail (e.g. exact
+   snare position) is a common convention rather than something the cited page states, the
+   text says so. The 2/4, 3/4 and 6/8 versions are ADAPTATIONS of the 4/4 grooves written
+   for this app (2/4 = first half of the 4/4 bar); they are not transcriptions.
+   ===================================================================================== */
+// <EXTRA-BEGIN>
+/* CHANGED: open hi-hat added. Editor order top-to-bottom. Presets keep their original 4-row string
+   order (DRUM_PRESET_ORDER); an optional 5th string holds the open hi-hat row. */
+const DRUM_ROWS = ['hat', 'ohat', 'ride', 'snare', 'kick'];
+const DRUM_PRESET_ORDER = ['hat', 'ride', 'snare', 'kick', 'ohat'];
+const DRUM_LABEL = { hat: 'Hi-Hat (closed)', ohat: 'Open Hi-Hat', ride: 'Ride', snare: 'Snare', kick: 'Kick' };
+const CAJON_LABEL = { hat: 'Shaker', ohat: 'Tambourine', ride: 'Claves', snare: 'Snare (slap)', kick: 'Kick (bass)' };   // same rows, Cajon sound set
+const E16 = '.... .... .... ....', E12 = '.... .... ....';
+function stepsPerBar(meterKey) { const m = METERS[meterKey]; return m.pulses * (m.ppb === 3 ? 2 : 4); }
+function emptyGrid(meterKey) {
+  const n = stepsPerBar(meterKey), g = {};
+  DRUM_ROWS.forEach(function (r) { g[r] = new Array(n).fill(0); });
+  return g;
+}
+function cloneGrid(g) { const c = {}; DRUM_ROWS.forEach(function (r) { c[r] = g[r].slice(); }); return c; }
+
+const DRUM_SOURCES = {
+  ninja:    { label: 'The Drum Ninja – 15 Basic Drum Beats for Beginners', url: 'https://thedrumninja.com/basic-drum-beats-for-beginners/' },
+  masterclass: { label: 'MasterClass – Four on the Floor explained', url: 'https://www.masterclass.com/articles/four-on-the-floor-rhythm-explained' },
+  instrumentalist: { label: 'The Instrumentalist – Swing Drumset Basics', url: 'https://theinstrumentalist.com/august-2013/swing-drumset-basics' },
+  bonedo:   { label: 'Bonedo – Schlagzeug-Workshop: Jazz Drumming für Einsteiger', url: 'https://www.bonedo.de/artikel/schlagzeug-workshop-jazz-drumming-fuer-einsteiger/2/' },
+  waltz:    { label: 'Soundbrenner – Jazz Waltz', url: 'https://www.soundbrenner.com/blogs/articles/jazz-waltz' },
+  nmea:     { label: 'NMEA Nebraska – Drum Kit Styles (bossa nova, jazz shuffle, funk-rock)', url: 'https://www.nmeanebraska.org/assets/docs/All-State/Jazz-Band/Jazz-Scales/Set-C/Drum%20Kit%20Styles%20Set%20C.pdf' }
+};
+
+/* Row order inside `p`: [hat, ride, snare, kick, ohat(optional)]. */
+const DRUM_PRESETS = [
+  /* ---------------- POP ---------------- */
+  { id: 'pop-rock', genre: 'pop', name: 'Basic rock/pop beat (8th-note hi-hat)', swing: 0, src: ['ninja'],
+    basis: 'Hi-hat on every eighth, snare on 2 and 4, kick on 1 and 3. The Drum Ninja calls the hi-hat rock beat the most popular beat; the exact kick/snare placement shown is the common textbook version. The last eighth of the bar is an open hi-hat (common convention, not stated by the cited page).',
+    p: { '4/4': ['x.x. x.x. x.x. x...', E16, '.... x... .... x...', 'x... .... x... ....', '.... .... .... ..x.'],
+         '3/4': ['x.x. x.x. x...', E12, '.... x... x...', 'x... .... ....', '.... .... ..x.'],
+         '6/8': ['x.x. x.x. x...', E12, '.... ..x. ....', 'x... .... ....', '.... .... ..x.'] } },
+  { id: 'pop-beat', genre: 'pop', name: 'Pop beat (extra kick before the 2nd snare)', swing: 0, src: ['ninja'],
+    basis: 'The Drum Ninja describes the popular pop beat as the rock beat with one extra kick just before the second snare (here: kick on the “and” of 3).',
+    p: { '4/4': ['x.x. x.x. x.x. x.x.', E16, '.... x... .... x...', 'x... .... x.x. ....'],
+         '3/4': ['x.x. x.x. x.x.', E12, '.... x... x...', 'x... .... ..x.'],
+         '6/8': ['x.x. x.x. x.x.', E12, '.... ..x. ....', 'x... .... x...'] } },
+  { id: 'pop-four', genre: 'pop', name: 'Four on the floor (dance pop)', swing: 0, src: ['ninja', 'masterclass'],
+    basis: 'Kick on every beat (stated by The Drum Ninja and MasterClass). Open hi-hat on the off-beats (the classic disco/house “and” of every beat) and snare/clap on 2 and 4 are common conventions, not stated by those pages.',
+    p: { '4/4': [E16, E16, '.... x... .... x...', 'x... x... x... x...', '..x. ..x. ..x. ..x.'],
+         '3/4': [E12, E12, '.... x... x...', 'x... x... x...', '..x. ..x. ..x.'],
+         '6/8': ['..x. x... x...', E12, E12, 'x... ..x. ....', '.... .... ..x.'] } },
+  { id: 'pop-16th', genre: 'pop', name: '16th-note hi-hat groove', swing: 0, src: ['ninja'],
+    basis: 'The Drum Ninja: hi-hat in 16th notes (1 e & a 2 e & a …), played evenly; here the in-between 16ths are softer for a natural feel. Kick/snare placement is a common choice.',
+    p: { '4/4': ['xoxo xoxo xoxo xoxo', E16, '.... x... .... x...', 'x... ..x. x... ....'],
+         '3/4': ['xoxo xoxo xoxo', E12, '.... x... x...', 'x... ..x. ....'],
+         '6/8': ['xoxo xoxo xoxo', E12, '.... ..x. ....', 'x... .... x...'] } },
+  { id: 'pop-half', genre: 'pop', name: 'Half-time ballad (snare on beat 3)', swing: 0, src: [],
+    basis: 'Half-time feel: the snare falls only on beat 3 of the bar so the groove feels half as fast. This is a common convention (as is the open hi-hat at the end of the bar); it is not taken from a specific cited page.',
+    p: { '4/4': ['x.x. x.x. x.x. x...', E16, '.... .... x... ....', 'x... .... ..x. ....', '.... .... .... ..x.'],
+         '3/4': ['x.x. x.x. x...', E12, '.... .... x...', 'x... ..x. ....', '.... .... ..x.'],
+         '6/8': ['x.x. x.x. x...', E12, '.... ..x. ....', 'x... .... ..x.', '.... .... ..x.'] } },
+
+  /* ---------------- JAZZ ---------------- */
+  { id: 'jz-swing', genre: 'jazz', name: 'Swing (ride “spang-a-lang”)', swing: 80, src: ['bonedo', 'instrumentalist'],
+    basis: 'Ride cymbal plays the quarter-note pulse plus a light skip note on the “and” of 2 and 4; hi-hat closed with the foot on 2 and 4; bass drum feathered very softly (Bonedo, The Instrumentalist). Swing is felt between a triplet and a tighter 16th feel, so 80 % is the default.',
+    p: { '4/4': ['.... x... .... x...', 'x... x.x. x... x.x.', E16, 'o... o... o... o...'],
+         '3/4': ['.... o... o...', 'x... x.x. x.x.', E12, 'o... .... ....'],
+         '6/8': ['.... ..o. ....', 'x.o. o.x. o.o.', E12, 'o... .... ....'] } },
+  { id: 'jz-comp', genre: 'jazz', name: 'Swing with snare comping', swing: 80, src: ['instrumentalist', 'bonedo'],
+    basis: 'The swing ride pattern plus sparse snare/kick accents; The Instrumentalist describes snare and bass drum accents played against the ride groove. The Charleston-style placement (kick on 1, soft snare on the “and” of 2) is a common convention, not stated by the source.',
+    p: { '4/4': ['.... x... .... x...', 'x... x.x. x... x.x.', '.... ..o. .... ....', 'x... .... o... ....'],
+         '3/4': ['.... o... o...', 'x... x.x. x.x.', '.... ..o. ....', 'x... .... ....'],
+         '6/8': ['.... ..o. ....', 'x.o. o.x. o.o.', '.... .... ..o.', 'o... ..o. ....'] } },
+  { id: 'jz-slow', genre: 'jazz', name: 'Slow swing (ride on every beat and skip)', swing: 100, src: ['ninja', 'bonedo'],
+    basis: 'The Drum Ninja lists a slow swing played on ride and hi-hat with a swung feel; this version plays the skip note after every beat with a fully swung (triplet) feel.',
+    p: { '4/4': ['.... x... .... x...', 'x.x. x.x. x.x. x.x.', E16, 'o... .... o... ....'],
+         '3/4': ['.... o... ....', 'x... x... x.x.', E12, 'o... .... ....'],
+         '6/8': ['x.o. o.x. o.o.', E12, '.... ..x. ....', 'x... .... ....'] } },
+  { id: 'jz-bossa', genre: 'jazz', name: 'Bossa nova (simplified)', swing: 0, src: ['nmea'],
+    basis: 'Simplified one-bar bossa nova: straight eighths on the hi-hat, kick on 1, the “and” of 2, 3 and the “and” of 4, cross-stick (shown as soft snare) on 2 and 4. The NMEA sheet describes the bossa clave played with brushes; real bossa grooves span two bars, so this is an approximation.',
+    p: { '4/4': ['x.x. x.x. x.x. x.x.', E16, '.... o... .... o...', 'x... ..x. x... ..x.'],
+         '3/4': ['x.x. x.x. x.x.', E12, '.... .... o...', 'x... ..x. ....'],
+         '6/8': ['x.x. x.x. x.x.', E12, '.... o... ..o.', 'x... ..x. ....'] } },
+  { id: 'jz-shuffle', genre: 'jazz', name: 'Jazz shuffle (swung 8ths, backbeat)', swing: 100, src: ['nmea', 'ninja'],
+    basis: 'Swung eighth notes on the hi-hat with snare accents on 2 and 4 (NMEA “Jazz Shuffle” sheet; The Drum Ninja lists the shuffle backbeat on 2 and 4). Kick on 1 and 3 is a common choice.',
+    p: { '4/4': ['x.x. x.x. x.x. x.x.', E16, '.... x... .... x...', 'x... .... x... ....'],
+         '3/4': ['x.x. x.x. x.x.', E12, '.... x... x...', 'x... .... ....'],
+         '6/8': ['x.x. x.x. x.x.', E12, '.... ..x. ....', 'x... o... ....'] } }
+];
+
+/* Build a grid object for one preset and time signature. 2/4 = first 8 steps of the 4/4 version. */
+function drumGridFor(preset, meterKey) {
+  const n = stepsPerBar(meterKey);
+  const rows = preset.p[meterKey] || preset.p['4/4'];
+  const g = {};
+  DRUM_PRESET_ORDER.forEach(function (r, ri) {
+    const s = (rows[ri] || '').replace(/\s+/g, '');
+    g[r] = [];
+    for (let k = 0; k < n; k++) g[r].push(s[k] === 'x' ? 1 : s[k] === 'o' ? 2 : 0);
+  });
+  return g;
+}
+
+/* ---------- MIDI export (Standard MIDI File, format 1) ----------
+   Track 0: name, time signature, tempo, key signature, chord markers
+   Track 1: chords on channel 1 (General MIDI program matching the chosen instrument)
+   Track 2: drums on channel 10 (only if requested): GM kick 36, snare 38, closed hi-hat 42,
+            open hi-hat 46, ride 51; count-in clicks use Hi/Low Wood Block (76/77).
+   Resolution 480 ticks per quarter note. A 16th step always lasts 120 ticks (in 6/8 a
+   pulse is an eighth = 240 ticks = two steps). MIDI tempo is per QUARTER note, so in 6/8,
+   where BPM counts dotted quarters, quarter-notes-per-minute = BPM x 1.5. */
+const MIDI_PPQ = 480;
+const GM_PROGRAM = { piano: 0, guitar: 25, steel: 25, nylon: 24, marimba: 12, vibes: 11, organ: 16, pad: 89, strings: 48, samples: 0 };   // General MIDI programs (0-based)
+const GM_DRUM = { kick: 36, snare: 38, hat: 42, ohat: 46, ride: 51 };   // 46 = GM Open Hi-Hat
+/* ADDED: Cajon sound set. The editor rows keep their internal names; for the Cajon they stand for
+   hat = shaker (GM 82), ohat = tambourine (GM 54), ride = claves (GM 75); kick and snare keep 36 / 38. */
+const GM_CAJON = { kick: 36, snare: 38, hat: 82, ohat: 54, ride: 75 };
+const DRUM_VEL = { hat: [0, 78, 42], ohat: [0, 82, 48], ride: [0, 82, 48], snare: [0, 96, 52], kick: [0, 105, 60] };
+const KEYSIG_MAJOR = { 0: 0, 7: 1, 2: 2, 9: 3, 4: 4, 11: 5, 6: 6, 1: -5, 8: -4, 3: -3, 10: -2, 5: -1 };   // pitch class -> sharps(+)/flats(-)
+const KEYSIG_MINOR = { 9: 0, 4: 1, 11: 2, 6: 3, 1: 4, 8: 5, 2: -1, 7: -2, 0: -3, 5: -4, 10: -5, 3: -6 };
+const TIMESIG = { '2/4': [2, 2, 24], '3/4': [3, 2, 24], '4/4': [4, 2, 24], '6/8': [6, 3, 36] };       // numerator, log2(denominator), clocks per click
+
+function midiAscii(s) {
+  return String(s).replace(/♯/g, '#').replace(/♭/g, 'b').replace(/°/g, 'dim').replace(/ø/g, 'm7b5').replace(/[^\x20-\x7E]/g, '');
+}
+function vlq(n) {                                              // variable-length quantity
+  const b = [n & 0x7f];
+  n = n >>> 7;
+  while (n > 0) { b.unshift((n & 0x7f) | 0x80); n = n >>> 7; }
+  return b;
+}
+function metaText(type, s) { const b = Array.from(new TextEncoder().encode(s)); return [0xFF, type].concat(vlq(b.length), b); }
+function u32(n) { return [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255]; }
+function u16(n) { return [(n >>> 8) & 255, n & 255]; }
+function makeTrack() {
+  const ev = [];
+  return {
+    add: function (tick, order, bytes) { ev.push({ t: tick, o: order, b: bytes, i: ev.length }); },
+    bytes: function (endTick) {                                // sort (note-offs before note-ons at equal ticks), write delta times, add End-of-Track
+      ev.sort(function (a, b) { return a.t - b.t || a.o - b.o || a.i - b.i; });
+      const out = []; let last = 0;
+      ev.forEach(function (e) { out.push.apply(out, vlq(e.t - last)); out.push.apply(out, e.b); last = e.t; });
+      out.push.apply(out, vlq(Math.max(endTick, last) - last)); out.push(0xFF, 0x2F, 0x00);
+      return out;
+    }
+  };
+}
+/* real = result of realize(); o = { meter, bpm, key, instrument, title, countBars, passes, drums(grid|null), swing } */
+function buildMidi(real, o) {
+  const m = METERS[o.meter], ts = TIMESIG[o.meter];
+  const pulseT = m.ppb === 3 ? MIDI_PPQ / 2 : MIDI_PPQ, barT = m.pulses * pulseT, halfT = m.half * pulseT;
+  const qpm = m.ppb === 3 ? o.bpm * 1.5 : o.bpm;
+  const usq = Math.round(60000000 / qpm);
+  const countBars = o.countBars || 0, passes = o.passes || 1, nBars = real.bars.length;
+  const startT = countBars * barT, endT = startT + passes * nBars * barT;
+  const sf = (o.key.mode === 'major' ? KEYSIG_MAJOR : KEYSIG_MINOR)[o.key.pc];
+
+  const t0 = makeTrack();                                      // conductor track
+  t0.add(0, 0, metaText(0x03, midiAscii(o.title || 'Chord progression')));
+  t0.add(0, 0, [0xFF, 0x58, 0x04, ts[0], ts[1], ts[2], 8]);
+  t0.add(0, 0, [0xFF, 0x51, 0x03, (usq >> 16) & 255, (usq >> 8) & 255, usq & 255]);
+  t0.add(0, 0, [0xFF, 0x59, 0x02, sf & 255, o.key.mode === 'major' ? 0 : 1]);
+
+  const t3 = o.arp ? makeTrack() : null;                       // arpeggio track: own channel and own sound
+  if (t3) { t3.add(0, 0, metaText(0x03, 'Arpeggio')); t3.add(0, 2, [0xC1, GM_PROGRAM[o.arpInstrument || o.instrument] || 0]); }
+  const t1 = makeTrack();                                      // chord track
+  t1.add(0, 0, metaText(0x03, 'Chords'));
+  t1.add(0, 2, [0xC0, GM_PROGRAM[o.instrument] || 0]);
+  for (let p = 0; p < passes; p++) {
+    for (let b = 0; b < nBars; b++) {
+      const base = startT + (p * nBars + b) * barT, chords = real.bars[b].chords;
+      chords.forEach(function (ch, ci) {
+        const on = base + (ci === 0 ? 0 : halfT);
+        const off = (chords.length === 2 && ci === 0) ? base + halfT : base + barT;
+        t0.add(on, 0, metaText(0x06, 'Bar ' + (p * nBars + b + 1) + ': ' + midiAscii(ch.name)));
+        if (o.arp) {                                           // ADDED: arpeggio (same onsets as the live arpeggiator); may sound together with block chords
+          arpMidi(ch, base, on - base, off - base, o.arp).forEach(function (e) {
+            t3.add(e.tick, 3, [0x91, e.note, e.vel]);
+            t3.add(e.tick + e.len, 1, [0x81, e.note, 0]);
+          });
+        }
+        if (o.block === false) { /* block chords switched off for this export */ }
+        else if (o.cpat) {                                   // ADDED: block chords in the chord rhythm pattern (same steps as live)
+          patMidi(ch, base, on - base, off - base, o.cpat).forEach(function (e) {
+            t1.add(e.tick, 3, [0x90, e.note, e.vel]);
+            t1.add(e.tick + e.len, 1, [0x80, e.note, 0]);
+          });
+        } else [ch.bass].concat(ch.upper).forEach(function (n, k) {
+          t1.add(on, 3, [0x90, n, k === 0 ? 90 : 72]);
+          t1.add(off, 1, [0x80, n, 0]);
+        });
+      });
+    }
+  }
+
+  const grid = o.drums;
+  const wantDrums = !!grid && DRUM_ROWS.some(function (r) { return grid[r].some(Boolean); });
+  const t2 = (wantDrums || countBars > 0) ? makeTrack() : null;     // drum track
+  if (t2) {
+    t2.add(0, 0, metaText(0x03, 'Drums'));
+    for (let p = 0; p < countBars * m.pulses; p++) {           // count-in clicks: Hi Wood Block on beat 1, Low Wood Block otherwise
+      const first = p % m.pulses === 0, note = first ? 76 : 77;
+      t2.add(p * pulseT, 3, [0x99, note, first ? 115 : 95]);
+      t2.add(p * pulseT + 60, 1, [0x89, note, 0]);
+    }
+    if (wantDrums) {
+      const swingTicks = (m.ppb === 1 && o.swing > 0) ? Math.round(o.swing * 80) : 0;   // "and" moves from 240 to 320 ticks at 100 %
+      for (let bar = 0; bar < passes * nBars; bar++) {
+        for (let step = 0; step < grid.hat.length; step++) {
+          const tick = startT + bar * barT + step * 120 + (step % 4 === 2 ? swingTicks : 0);
+          DRUM_ROWS.forEach(function (r) {
+            const v = grid[r][step];
+            if (!v) return;
+            const gm = (o.kit === 'cajon' ? GM_CAJON : GM_DRUM)[r];
+            t2.add(tick, 3, [0x99, gm, DRUM_VEL[r][v]]);
+            t2.add(tick + (r === 'ohat' ? 200 : 90), 1, [0x89, gm, 0]);   // open hi-hat rings longer
+          });
+        }
+      }
+    }
+  }
+  const tracks = [t0, t1].concat(t3 ? [t3] : []).concat(t2 ? [t2] : []).map(function (t) { return t.bytes(endT); });
+  let out = [0x4D, 0x54, 0x68, 0x64].concat(u32(6), u16(1), u16(tracks.length), u16(MIDI_PPQ));
+  tracks.forEach(function (tb) { out = out.concat([0x4D, 0x54, 0x72, 0x6B], u32(tb.length), tb); });
+  return new Uint8Array(out);
+}
+
+/* ---------- ADDED: block-chord rhythm pattern (pure functions) ----------
+   A pattern is one row of 16th-note steps (8 / 12 / 16 / 12 steps for 2/4, 3/4, 4/4, 6/8).
+   Cell 1 = play the current chord as a block chord on that step, 2 = softer hit, 0 = nothing.
+   A chord rings until the next hit ("held") or only for about one step ("short"). The chord
+   that sounds on a step is the chord that is active at that time of the bar. The same step
+   grid is used by the live scheduler and by the MIDI export. */
+const CPAT_PRESETS = [
+  { id: 'quarters',  name: 'Quarter-note chords',        p: { '4/4': 'x...x...x...x...', '3/4': 'x...x...x...', '6/8': 'x.....x.....' } },
+  { id: 'eighths',   name: 'Eighth-note chords',         p: { '4/4': 'x.o.x.o.x.o.x.o.', '3/4': 'x.o.x.o.x.o.', '6/8': 'x.o.x.o.x.o.' } },
+  { id: 'offbeat',   name: 'Off-beat stabs',             p: { '4/4': '..x...x...x...x.', '3/4': '..x...x...x.', '6/8': '..x.x...x.x.' } },
+  { id: 'syncopated', name: 'Syncopated pop',            p: { '4/4': 'x.....x.x.....x.', '3/4': 'x.....x.x...', '6/8': 'x.....x.x...' } },
+  { id: 'charleston', name: 'Charleston (1 and “and” of 2)', p: { '4/4': 'x.....x.........', '3/4': 'x.....x.....', '6/8': 'x.....x.....' } }
+];
+function cpatGridFor(preset, meterKey) {
+  const n = stepsPerBar(meterKey), str = preset.p[meterKey] || preset.p['4/4'], g = [];
+  for (let i = 0; i < n; i++) g.push(str[i] === 'x' ? 1 : str[i] === 'o' ? 2 : 0);
+  return g;
+}
+/* One chord sounding from bar-relative tick fromT to toT. Returns [{tick, len, note, vel}]. */
+function patMidi(ch, base, fromT, toT, cp) {
+  const notes = [ch.bass].concat(ch.upper), hits = [], out = [];
+  for (let s = Math.ceil(fromT / 120); s * 120 < toT; s++) if (cp.grid[s]) hits.push(s);
+  hits.forEach(function (s, hi) {
+    const tick = base + s * 120, end = hi + 1 < hits.length ? base + hits[hi + 1] * 120 : base + toT;
+    const len = cp.short ? Math.max(1, Math.min(Math.round(120 * 0.9), end - tick)) : end - tick;
+    const soft = cp.grid[s] === 2 ? 0.65 : 1;
+    notes.forEach(function (n, k) { out.push({ tick: tick, len: len, note: n, vel: Math.round((k === 0 ? 90 : 72) * soft), k: k, count: notes.length, soft: soft < 1 }); });
+  });
+  return out;
+}
+
+/* ---------- ADDED: stand-alone drum groove as MIDI (no chords) ----------
+   o = { meter, bpm, grid, swing(0..1), bars, title }. Same note numbers, velocities and swing as buildMidi. */
+function buildDrumMidi(o) {
+  const m = METERS[o.meter], ts = TIMESIG[o.meter];
+  const pulseT = m.ppb === 3 ? MIDI_PPQ / 2 : MIDI_PPQ, barT = m.pulses * pulseT;
+  const qpm = m.ppb === 3 ? o.bpm * 1.5 : o.bpm, usq = Math.round(60000000 / qpm), endT = o.bars * barT;
+  const t0 = makeTrack();
+  t0.add(0, 0, metaText(0x03, midiAscii(o.title || 'Drum groove')));   // o.kit: 'drums' | 'cajon' selects the GM note map
+  t0.add(0, 0, [0xFF, 0x58, 0x04, ts[0], ts[1], ts[2], 8]);
+  t0.add(0, 0, [0xFF, 0x51, 0x03, (usq >> 16) & 255, (usq >> 8) & 255, usq & 255]);
+  const t1 = makeTrack();
+  t1.add(0, 0, metaText(0x03, 'Drums'));
+  const swingTicks = (m.ppb === 1 && o.swing > 0) ? Math.round(o.swing * 80) : 0;
+  for (let bar = 0; bar < o.bars; bar++) {
+    for (let step = 0; step < o.grid.hat.length; step++) {
+      const tick = bar * barT + step * 120 + (step % 4 === 2 ? swingTicks : 0);
+      DRUM_ROWS.forEach(function (r) {
+        const v = o.grid[r][step];
+        if (!v) return;
+        const gm = (o.kit === 'cajon' ? GM_CAJON : GM_DRUM)[r];
+        t1.add(tick, 3, [0x99, gm, DRUM_VEL[r][v]]);
+        t1.add(tick + (r === 'ohat' ? 200 : 90), 1, [0x89, gm, 0]);
+      });
+    }
+  }
+  const tracks = [t0, t1].map(function (t) { return t.bytes(endT); });
+  let out = [0x4D, 0x54, 0x68, 0x64].concat(u32(6), u16(1), u16(tracks.length), u16(MIDI_PPQ));
+  tracks.forEach(function (tb) { out = out.concat([0x4D, 0x54, 0x72, 0x6B], u32(tb.length), tb); });
+  return new Uint8Array(out);
+}
+
+/* ---------- ADDED: WAV encoder (16-bit PCM) and drum file-name mapping ---------- */
+function encodeWav(channels, rate) {
+  const nCh = channels.length, n = channels[0].length, dataLen = n * nCh * 2;
+  const buf = new ArrayBuffer(44 + dataLen), v = new DataView(buf);
+  const str = function (off, s) { for (let i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i)); };
+  str(0, 'RIFF'); v.setUint32(4, 36 + dataLen, true); str(8, 'WAVE'); str(12, 'fmt ');
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, nCh, true); v.setUint32(24, rate, true);
+  v.setUint32(28, rate * nCh * 2, true); v.setUint16(32, nCh * 2, true); v.setUint16(34, 16, true);
+  str(36, 'data'); v.setUint32(40, dataLen, true);
+  let off = 44;
+  for (let i = 0; i < n; i++) for (let c = 0; c < nCh; c++) {
+    const x = Math.max(-1, Math.min(1, channels[c][i]));
+    v.setInt16(off, x < 0 ? Math.round(x * 32768) : Math.round(x * 32767), true); off += 2;
+  }
+  return new Uint8Array(buf);
+}
+/* "Hi-Hat.WAV" -> 'hat', "open_hat.wav" -> 'ohat', "kick.wav" -> 'kick' ...; null when the name is not recognised. */
+function drumNameFromFile(fileName) {
+  const k = String(fileName).toLowerCase().replace(/\.[a-z0-9]+$/, '').replace(/[^a-z]/g, '');
+  const T = {
+    kick: ['kick', 'bd', 'bassdrum', 'kickdrum'], snare: ['snare', 'sd', 'snaredrum'],
+    ohat: ['openhat', 'openhihat', 'hihatopen', 'hatopen', 'ohat', 'ohh', 'oh', 'openhh'],
+    hat: ['hihat', 'hat', 'hh', 'closedhat', 'closedhihat', 'hihatclosed', 'chh', 'hihatclose'],
+    ride: ['ride', 'rd', 'ridecymbal']
+  };
+  const order = ['kick', 'snare', 'ohat', 'hat', 'ride'];
+  for (let i = 0; i < order.length; i++) if (T[order[i]].indexOf(k) >= 0) return order[i];
+  return null;
+}
+
+/* ADDED: Cajon sample file names. "Tambourine.WAV" -> 'ohat' (the tambourine row) etc. Row names are internal:
+   hat = shaker, ohat = tambourine, ride = claves. */
+function cajonNameFromFile(fileName) {
+  const k = String(fileName).toLowerCase().replace(/\.[a-z0-9]+$/, '').replace(/[^a-z]/g, '');
+  const T = { kick: ['kick', 'bd', 'bass', 'bassdrum', 'cajonkick', 'cajonbass'], snare: ['snare', 'sd', 'slap', 'cajonsnare', 'cajonslap'],
+              hat: ['shaker', 'shake', 'cajonshaker'], ohat: ['tambourine', 'tamb', 'tambourin', 'cajontambourine'], ride: ['claves', 'clave', 'cajonclaves'] };
+  const order = ['kick', 'snare', 'hat', 'ohat', 'ride'];
+  for (let i = 0; i < order.length; i++) if (T[order[i]].indexOf(k) >= 0) return order[i];
+  return null;
+}
+
+/* ---------- ADDED: arrangement plan for the WAV export of a progression ----------
+   Everything the export needs, in seconds, derived with the SAME rules as buildMidi (block chords, arpeggio, chord
+   rhythm; count-in; drum steps with swing). o = { meter, bpm, passes, countBars, arp, block (false = no block chords), cpat, drums(grid|null), swing }.
+   Chord levels are the ones used by live playback (startChord / scheduleArp). Returns
+   { chord:[{t, dur, midi, level, strum, k}], drums:[{t, row, vel}], count:[{t, first, strong}], endSec }. */
+function exportPlan(real, o) {
+  const m = METERS[o.meter];
+  const pulseT = m.ppb === 3 ? MIDI_PPQ / 2 : MIDI_PPQ, barT = m.pulses * pulseT, halfT = m.half * pulseT;
+  const qpm = m.ppb === 3 ? o.bpm * 1.5 : o.bpm, sec = 60 / (qpm * MIDI_PPQ);
+  const countBars = o.countBars || 0, passes = o.passes || 1, nBars = real.bars.length;
+  const startT = countBars * barT, endT = startT + passes * nBars * barT;
+  const plan = { chord: [], drums: [], count: [], endSec: endT * sec };
+  for (let p = 0; p < countBars * m.pulses; p++) plan.count.push({ t: p * pulseT * sec, first: p % m.pulses === 0, strong: m.strong.indexOf(p % m.pulses) >= 0 });
+  for (let p = 0; p < passes; p++) for (let b = 0; b < nBars; b++) {
+    const base = startT + (p * nBars + b) * barT, chords = real.bars[b].chords;
+    chords.forEach(function (ch, ci) {
+      const on = base + (ci === 0 ? 0 : halfT), off = (chords.length === 2 && ci === 0) ? base + halfT : base + barT;
+      const notes = [ch.bass].concat(ch.upper), norm = 0.5 / Math.sqrt(notes.length);
+      if (o.arp) {
+        arpMidi(ch, base, on - base, off - base, o.arp).forEach(function (e) {
+          plan.chord.push({ t: e.tick * sec, dur: e.len * sec, midi: e.note, level: arpLevel(e), strum: false, k: 0, arp: true });
+        });
+      }
+      if (o.block === false) { /* block chords switched off for this export */ }
+      else if (o.cpat) {
+        patMidi(ch, base, on - base, off - base, o.cpat).forEach(function (e) {
+          plan.chord.push({ t: e.tick * sec, dur: e.len * sec, midi: e.note, level: norm * (e.k === 0 ? 1 : 0.85) * (e.soft ? 0.6 : 1), strum: true, k: e.k });
+        });
+      } else notes.forEach(function (n, k) {
+        plan.chord.push({ t: on * sec, dur: (off - on) * sec, midi: n, level: norm * (k === 0 ? 1 : 0.85), strum: true, k: k });
+      });
+    });
+  }
+  const grid = o.drums;
+  if (grid) {
+    const swingTicks = (m.ppb === 1 && o.swing > 0) ? Math.round(o.swing * 80) : 0;
+    for (let bar = 0; bar < passes * nBars; bar++) for (let step = 0; step < grid.hat.length; step++) {
+      const tick = startT + bar * barT + step * 120 + (step % 4 === 2 ? swingTicks : 0);
+      DRUM_ROWS.forEach(function (r) { const v = grid[r][step]; if (v) plan.drums.push({ t: tick * sec, row: r, vel: v === 2 ? 0.45 : 1 }); });
+    }
+  }
+  return plan;
+}
+// <EXTRA-END>
+
+/* =====================================================================================
+   PART A3 (ADDED) – MANUAL CHORD ENTRY AND ARPEGGIATOR LOGIC
+   Pure functions (no DOM / Audio) so they can be unit-tested in Node.
+
+   MANUAL ENTRY
+   * Text grammar: bars are separated by "|" (or a new line); inside a bar chords are separated
+     by spaces or commas; at most TWO chords per bar (the engine splits a bar into two halves).
+   * A chord symbol = root (A-G, optional # / b / ♯ / ♭) + quality + optional "/bass".
+     Only the qualities the app can voice and play (the QUAL table) are accepted; anything else
+     is reported as an error with the bar number instead of being guessed.
+   * Names are kept exactly as spelled by the user (C♯ stays C♯, D♭ stays D♭).
+   * Roman numerals are computed relative to the key selected in the generator.
+
+   ARPEGGIATOR (matrix)
+   * One row per chord function (bass, root, 3rd, 5th, 7th/6th, 9th, 11th, 13th, and root/3rd/5th one octave up),
+     one column per 16th step. Ticked cells in one column sound together (polyphony).
+   * A row holds a chord FUNCTION, not a pitch: the pitch is the tone stacked in close position, in the register of the
+     voice-led voicing of the chord active at that step. A two-chord bar uses the first half of the columns for chord 1 and the
+     second half for chord 2.
+   ===================================================================================== */
+// <EXTRA2-BEGIN>
+/* The arpeggio is a MATRIX: one row ("lane") per chord function, one column per 16th step of the bar.
+   A lane does not hold a fixed pitch but a chord FUNCTION; arpLaneNote() turns it into a pitch: close-position tones
+   (always ascending) in the register of the chord's voice-led voicing (realize() moved every tone as little as possible
+   from the previous chord), so the arpeggio follows the voice leading. Lanes are listed low -> high by pitch.
+   fn = function, oct = octave offset.
+   ext = extension lane (shown only when a chord of the progression has that tone). */
+const ARP_LANES = [
+  { id: 'b',   label: 'Bass',      fn: 'b', oct: 0 },
+  { id: '1',   label: 'Root',      fn: '1', oct: 0 },
+  { id: '3',   label: '3rd',       fn: '3', oct: 0 },
+  { id: '5',   label: '5th',       fn: '5', oct: 0 },
+  { id: '7',   label: '7th / 6th', fn: '7', oct: 0, ext: true },
+  { id: 'o1',  label: 'Root ↑', fn: '1', oct: 1 },
+  { id: '9',   label: '9th',       fn: '9', oct: 0, ext: true },
+  { id: 'o3',  label: '3rd ↑',  fn: '3', oct: 1 },
+  { id: '11',  label: '11th',      fn: '11', oct: 0, ext: true },
+  { id: 'o5',  label: '5th ↑',  fn: '5', oct: 1 },
+  { id: '13',  label: '13th',      fn: '13', oct: 0, ext: true }
+];
+/* MIDI note of a lane for a chord, or null when the chord has no such tone (e.g. 7th row on a triad).
+   The tones are stacked in CLOSE POSITION above ch.arpRoot (set by arpAssignRoots: the register that moves least from the
+   previous chord), so the rows of the matrix ascend in pitch for every chord. */
+function arpLaneNote(ch, lane) {
+  if (lane.fn === 'b') return ch.bass;
+  const Q = QUAL[ch.qual];
+  if (!Q) return null;
+  let iv = null;
+  Q.iv.forEach(function (i) { if (iv === null && arpToneFn(i) === lane.fn) iv = i; });
+  if (iv === null) return null;
+  const r = ch.arpRoot !== undefined ? ch.arpRoot : arpRegister(ch, Q, 62);
+  return r + iv + 12 * lane.oct;
+}
+/* Every note of one chord that sounds from bar-relative step fromStep (inclusive) to toStep (exclusive).
+   arp = { grid: { laneId: [0|1|2 per step] }, held }. Cell 1 = normal, 2 = soft. len is in steps: one step
+   (95 %) or - when held - until the next hit of the same row / the end of the chord. count = notes starting
+   at the same step (used for the level). Live playback, MIDI and WAV export all use this one function. */
+function arpHits(ch, fromStep, toStep, arp) {
+  const hits = [], per = {};
+  ARP_LANES.forEach(function (lane) {
+    const row = arp.grid[lane.id], note = row ? arpLaneNote(ch, lane) : null;
+    if (note === null) return;
+    const steps = [];
+    for (let st = fromStep; st < toStep; st++) if (row[st]) steps.push(st);
+    steps.forEach(function (st, i) {
+      const end = arp.held ? (i + 1 < steps.length ? steps[i + 1] : toStep) : st + 0.95;
+      hits.push({ step: st, len: end - st, note: note, lane: lane.id, soft: row[st] === 2 });
+      per[st] = (per[st] || 0) + 1;
+    });
+  });
+  hits.forEach(function (h) { h.count = per[h.step]; });
+  hits.sort(function (a, b) { return a.step - b.step || a.note - b.note; });
+  return hits;
+}
+function arpLevel(h) { return Math.min(0.34, 0.5 / Math.sqrt(h.count)) * (h.soft ? 0.65 : 1); }   // live / WAV level
+/* MIDI version: [{tick, len, note, vel, count, soft}] for one chord sounding from tick base+fromT to base+toT.
+   16th step = 120 ticks in every time signature, so the onsets coincide with the live scheduler. */
+function arpMidi(ch, base, fromT, toT, arp) {
+  return arpHits(ch, Math.round(fromT / 120), Math.round(toT / 120), arp).map(function (h) {
+    return { tick: base + h.step * 120, len: Math.max(1, Math.round(h.len * 120)), note: h.note,
+             vel: Math.round((h.count === 1 ? 92 : 80) * (h.soft ? 0.65 : 1)), count: h.count, soft: h.soft, lane: h.lane };
+  });
+}
+function arpEmptyGrid(n) { const g = {}; ARP_LANES.forEach(function (l) { g[l.id] = new Array(n).fill(0); }); return g; }
+/* Presets. seq = lanes played one after another every `every` steps (2 = eighth notes); p = explicit rows per meter. */
+const ARP_PRESETS = [
+  { id: 'up',      name: 'Up (eighths)',          seq: ['1', '3', '5', 'o1'], every: 2 },
+  { id: 'down',    name: 'Down (eighths)',        seq: ['o1', '5', '3', '1'], every: 2 },
+  { id: 'updown',  name: 'Up and down (eighths)', seq: ['1', '3', '5', 'o1', '5', '3'], every: 2 },
+  { id: 'alberti', name: 'Alberti bass',          seq: ['1', '5', '3', '5'], every: 2 },
+  { id: 'folk',    name: 'Bass and fingerpicking', p: {
+      '4/4': { b: 'x.......x.......', '3': '..x...x...x...x.', '5': '....x.......x...' },
+      '3/4': { b: 'x...........', '3': '..x...x.....', '5': '....x...x...' },
+      '6/8': { b: 'x.....x.....', '3': '..x.....x...', '5': '....x.....x.' } } },
+  { id: 'stabs',   name: 'Bass and chord stabs',  p: {
+      '4/4': { b: 'x.......x.......', '3': '....x.......x...', '5': '....x.......x...', 'o1': '....x.......x...' },
+      '3/4': { b: 'x...........', '3': '....x...x...', '5': '....x...x...', 'o1': '....x...x...' },
+      '6/8': { b: 'x.....x.....', '3': '..x.x...x.x.', '5': '..x.x...x.x.', 'o1': '..x.x...x.x.' } } }
+];
+function arpGridFor(preset, meterKey) {
+  const n = stepsPerBar(meterKey), g = arpEmptyGrid(n);
+  if (preset.seq) { for (let st = 0, i = 0; st < n; st += preset.every, i++) g[preset.seq[i % preset.seq.length]][st] = 1; return g; }
+  const rows = preset.p[meterKey] || preset.p['4/4'];
+  Object.keys(rows).forEach(function (id) { for (let st = 0; st < n; st++) g[id][st] = rows[id][st] === 'x' ? 1 : rows[id][st] === 'o' ? 2 : 0; });
+  return g;
+}
+
+/* ---------- chord symbol parser ---------- */
+const QUAL_ALIAS = {
+  '': 'maj', 'M': 'maj', 'maj': 'maj', 'major': 'maj',
+  'm': 'm', 'min': 'm', 'minor': 'm', '-': 'm',
+  'maj7': 'maj7', 'Maj7': 'maj7', 'M7': 'maj7', 'Δ': 'maj7', 'Δ7': 'maj7',
+  'maj9': 'maj9', 'Maj9': 'maj9', 'M9': 'maj9',
+  '6': '6', 'add9': 'add9', 'sus2': 'sus2', 'sus4': 'sus4', 'sus': 'sus4',
+  'm7': 'm7', 'min7': 'm7', '-7': 'm7', 'm9': 'm9', 'min9': 'm9', '-9': 'm9',
+  'm6': 'm6', 'min6': 'm6', '-6': 'm6', 'madd9': 'madd9', 'm(add9)': 'madd9', 'minadd9': 'madd9',
+  '7': '7', '9': '9', '13': '13', '7b9': '7b9', '7♭9': '7b9', '7alt': '7alt', '9#11': '9#11', '9♯11': '9#11',
+  'm7b5': 'm7b5', 'm7♭5': 'm7b5', 'min7b5': 'm7b5', '-7b5': 'm7b5', 'ø': 'm7b5', 'ø7': 'm7b5',
+  'dim': 'dim', '°': 'dim', 'o': 'dim', 'dim7': 'dim7', '°7': 'dim7', 'o7': 'dim7'
+};
+function parseNoteToken(s) {                                   // "F#", "Bb", "e♭" -> {letter, acc, pc, name} or null
+  const m = /^([A-Ga-g])([#♯b♭]?)$/.exec(s);
+  if (!m) return null;
+  const L = m[1].toUpperCase(), acc = (m[2] === '#' || m[2] === '♯') ? 1 : m[2] ? -1 : 0;
+  return { letter: L, acc: acc, pc: mod(LETTER_PC[LETTERS.indexOf(L)] + acc, 12), name: L + (acc > 0 ? SHARP : acc < 0 ? FLAT : '') };
+}
+function parseChordSymbol(tok) {
+  const parts = tok.split('/');
+  if (parts.length > 2) return { error: 'too many “/”' };
+  const m = /^([A-Ga-g][#♯b♭]?)(.*)$/.exec(parts[0]);
+  if (!m) return { error: 'does not start with a note name A–G' };
+  const root = parseNoteToken(m[1]);
+  if (!Object.prototype.hasOwnProperty.call(QUAL_ALIAS, m[2])) return { error: 'unknown chord type “' + m[2] + '”' };
+  const qual = QUAL_ALIAS[m[2]];
+  let bass = null;
+  if (parts.length === 2) { bass = parseNoteToken(parts[1]); if (!bass) return { error: 'unknown bass note “' + parts[1] + '”' }; }
+  return { rootName: root.name, rootPc: root.pc, qual: qual, bassPc: bass ? bass.pc : null, bassName: bass ? bass.name : null,
+           name: root.name + QUAL[qual].sym + (bass ? '/' + bass.name : '') };
+}
+/* Whole text -> { bars: [[spec, spec?], ...] } or { error }. */
+function parseChordText(text) {
+  const bars = String(text).split(/[|\n\r]+/).map(function (b) { return b.trim(); }).filter(Boolean);
+  if (!bars.length) return { error: 'Please enter at least one chord.' };
+  if (bars.length > 16) return { error: 'Please use at most 16 bars (you entered ' + bars.length + ').' };
+  const out = [];
+  for (let i = 0; i < bars.length; i++) {
+    const toks = bars[i].split(/[\s,]+/).filter(Boolean);
+    if (toks.length > 2) return { error: 'Bar ' + (i + 1) + ' has ' + toks.length + ' chords; at most two chords per bar are possible. Use “|” to start a new bar.' };
+    const specs = [];
+    for (let k = 0; k < toks.length; k++) {
+      const sp = parseChordSymbol(toks[k]);
+      if (sp.error) return { error: 'Bar ' + (i + 1) + ': “' + toks[k] + '” – ' + sp.error + '.' };
+      specs.push(sp);
+    }
+    out.push(specs);
+  }
+  return { bars: out };
+}
+
+/* ---------- Roman numerals relative to the selected key ---------- */
+const MANUAL_ROMAN = {
+  major: ['I', '♭II', 'II', '♭III', 'III', 'IV', '♯IV', 'V', '♭VI', 'VI', '♭VII', 'VII'],
+  minor: ['I', '♭II', 'II', 'III', '♯III', 'IV', '♯IV', 'V', 'VI', '♯VI', 'VII', '♯VII']
+};
+function manualRoman(rootPc, qual, key) {
+  const m = /^([♭♯]?)(.*)$/.exec(MANUAL_ROMAN[key.mode][mod(rootPc - key.pc, 12)]), Q = QUAL[qual];
+  return m[1] + (Q.minor ? m[2].toLowerCase() : m[2]) + Q.rn;
+}
+
+/* ---------- realise manually entered chords ----------
+   Same voicing rules as realize() (bass in MIDI 40..51, upper voices close to a centre that follows
+   the previous chord, kept inside 55..78); duplicated here on purpose so the generator path stays untouched. */
+function realizeManual(specs, key) {
+  let center = 64;
+  const bars = specs.map(function (chords) {
+    return { chords: chords.map(function (sp) {
+      const Q = QUAL[sp.qual], pcs = [];
+      Q.iv.forEach(function (i) { const pc = mod(sp.rootPc + i, 12); if (pcs.indexOf(pc) < 0) pcs.push(pc); });
+      const bassPc = sp.bassPc !== null ? sp.bassPc : sp.rootPc, bass = 40 + mod(bassPc - 4, 12), upper = [];
+      pcs.forEach(function (pc) {
+        let n = pc + 12 * Math.round((center - pc) / 12);
+        if (n < 55) n += 12;
+        if (n > 78) n -= 12;
+        if (upper.indexOf(n) < 0) upper.push(n);
+      });
+      upper.sort(function (a, b) { return a - b; });
+      center = Math.max(60, Math.min(68, upper.reduce(function (a, b) { return a + b; }, 0) / upper.length));
+      const spell = function (nm) { return nm.replace(SHARP, ' sharp').replace(FLAT, ' flat'); };
+      return {
+        name: sp.name, rootName: sp.rootName, sym: Q.sym, rn: manualRoman(sp.rootPc, sp.qual, key), qual: sp.qual,
+        speak: spell(sp.rootName) + ' ' + Q.say + (sp.bassName ? ' over ' + spell(sp.bassName) : ''),
+        rootPc: sp.rootPc, pcs: pcs, bass: bass, upper: upper
+      };
+    }) };
+  });
+  return { templateId: 'manual', bars: arpAssignRoots(bars) };
+}
+// <EXTRA2-END>
 
 /* =====================================================================================
    PART B – AUDIO ENGINE
@@ -688,11 +1524,17 @@ function realize(prog, key) {
    Volume therefore acts on every instrument AND the metronome. Volume changes use
    setTargetAtTime for a click-free fade; 0 % is ramped to exactly 0.
    ===================================================================================== */
-const AudioEngine = (function () {
-  let ctx = null, master = null, comp = null, instBus = null, clickBus = null;
+/* CHANGED: the engine is now a factory. The page uses ONE live instance (AudioEngine, below); the WAV export of a
+   chord progression creates a second, independent instance on an OfflineAudioContext (makeCtx) so it sounds exactly
+   like live playback without touching the live graph. */
+function createAudioEngine(makeCtx, opts) {
+  opts = opts || {};
+  let ctx = null, master = null, comp = null, instBus = null, arpBus = null, clickBus = null, safety = null;
+  let metroVol01 = 0.8;                                     // ADDED: metronome volume (own slider, own gain node)
   let volume01 = 0.7;
+  let chordVol01 = 0.8, countVol01 = 1.0, arpVol01 = 0.8;   // ADDED: arpeggiator volume (own gain node, arpBus)                   // ADDED: chord volume and count-in volume (each with its own gain node)
   const voices = new Set();                 // every live note/click, so Stop can silence all of them
-  const MAX_VOICES = 56;                    // polyphony cap (oldest voice is released first)
+  const MAX_VOICES = opts.maxVoices || 256;       // raised from 56 (ADDED drums: short voices are scheduled ahead and must never evict chord notes)                    // polyphony cap (oldest voice is released first)
   let sampleBank = null;                    // { name, samples: [{ midi, buf }] } or null
 
   function midiToFreq(m) { return 440 * Math.pow(2, (m - 69) / 12); }
@@ -707,6 +1549,15 @@ const AudioEngine = (function () {
     guitar:  { osc: [['sawtooth',1,.55,0], ['triangle',1,.50,4], ['sine',2,.20,0]],
                lp: [function (f) { return Math.min(5200, f * 14); }, function (f) { return Math.max(400, f * 2.2); }, 0.16],
                env: { type: 'perc', atk: 0.003, level: 0.25, tc1: 0.25, t2: 0.6, tc2: 1.5 }, rel: 0.10, gain: 0.85, strum: 0.016 },
+    nylon:   { osc: [['triangle',1,1,0], ['sine',2,.35,0], ['sine',3,.08,2]],
+               lp: [function (f) { return Math.min(3200, f * 7); }, function (f) { return Math.max(350, f * 1.6); }, 0.2],
+               env: { type: 'perc', atk: 0.004, level: 0.22, tc1: 0.30, t2: 0.7, tc2: 1.6 }, rel: 0.12, gain: 0.95, strum: 0.02 },
+    marimba: { osc: [['sine',1,1,0], ['sine',4,.38,0], ['triangle',1,.15,0]],
+               lp: [function (f) { return Math.min(9000, f * 9); }, function (f) { return Math.max(500, f * 1.5); }, 0.07],
+               env: { type: 'perc', atk: 0.002, level: 0.18, tc1: 0.09, t2: 0.25, tc2: 0.5 }, rel: 0.08, gain: 1.1 },
+    vibes:   { osc: [['sine',1,1,0], ['sine',4,.22,0], ['sine',1,.5,5]],
+               lp: [function () { return 10000; }, null, 0],
+               env: { type: 'perc', atk: 0.003, level: 0.55, tc1: 0.8, t2: 1.2, tc2: 2.2 }, rel: 0.35, gain: 0.95 },
     organ:   { osc: [['sine',1,1,0], ['sine',2,.70,0], ['sine',3,.35,0], ['sine',4,.25,0], ['sine',1,.25,6]],
                lp: [function () { return 7000; }, null, 0],
                env: { type: 'sus', atk: 0.02 }, rel: 0.07, gain: 0.9 },
@@ -718,23 +1569,64 @@ const AudioEngine = (function () {
                env: { type: 'sus', atk: 0.22 }, rel: 0.35, gain: 0.75 }
   };
 
+  INST.steel = INST.guitar;                 // Steel Guitar = the bright plucked recipe ("guitar" is kept as an alias)
+
   /* Create the context. Must be called from a user gesture (button click). */
   function ensure() {
     if (ctx) return ctx;
     const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) throw new Error('Web Audio API is not supported by this browser.');
-    ctx = new AC({ latencyHint: 'interactive' });
+    if (!AC && !makeCtx) throw new Error('Web Audio API is not supported by this browser.');
+    ctx = makeCtx ? makeCtx() : new AC({ latencyHint: 'interactive' });
     master = ctx.createGain();
     master.gain.value = volume01 * volume01;
     comp = ctx.createDynamicsCompressor();             // peak limiting: protects against over-driven chords
     comp.threshold.value = -12; comp.knee.value = 10; comp.ratio.value = 10; comp.attack.value = 0.003; comp.release.value = 0.2;
-    instBus = ctx.createGain(); instBus.gain.value = 1;
-    clickBus = ctx.createGain(); clickBus.gain.value = 0.55;
-    instBus.connect(master); clickBus.connect(master);
-    master.connect(comp); comp.connect(ctx.destination);
+    instBus = ctx.createGain(); instBus.gain.value = chordGain(chordVol01);   // chord volume slider acts on THIS node only
+    arpBus = ctx.createGain(); arpBus.gain.value = chordGain(arpVol01);       // arpeggiator volume slider acts on THIS node only
+    clickBus = ctx.createGain(); clickBus.gain.value = 0.55;   // overwritten below by clickGain()
+    /* CHANGED (footer mixer): the compressor now sits ONLY in the instrument path, so loud drums can
+       never "duck" the metronome (or the other way round) through shared gain reduction. Metronome
+       and drums each have their own bus gain (clickBus / drumBus) that no other control touches.
+       A last-resort safety limiter (threshold -2 dB) stays in the master path; it only acts when the
+       sum approaches full scale. */
+    instBus.connect(comp); arpBus.connect(comp); comp.connect(master);   // both instrument buses share the compressor
+    clickBus.connect(master);
+    safety = ctx.createDynamicsCompressor();
+    safety.threshold.value = -2; safety.knee.value = 0; safety.ratio.value = 20; safety.attack.value = 0.002; safety.release.value = 0.1;
+    master.connect(safety); safety.connect(ctx.destination);
+    clickBus.gain.value = clickGain(metroVol01);
     return ctx;
   }
   function resume() { return ctx && ctx.state !== 'running' ? ctx.resume() : Promise.resolve(); }
+
+  /* Chord volume 0..100 %. Squared curve; 80 % = unity gain (the former fixed level). Acts ONLY on instBus. */
+  function chordGain(v01) { return (v01 * v01) / 0.64; }
+  function setArpVolume(pct) {
+    arpVol01 = Math.max(0, Math.min(1, pct / 100));
+    if (!arpBus) return;
+    const t = ctx.currentTime;
+    arpBus.gain.cancelScheduledValues(t);
+    arpBus.gain.setValueAtTime(arpBus.gain.value, t);
+    arpBus.gain.setTargetAtTime(chordGain(arpVol01), t, 0.02);
+  }
+  function setChordVolume(pct) {
+    chordVol01 = Math.max(0, Math.min(1, pct / 100));
+    if (!instBus) return;
+    const t = ctx.currentTime;
+    instBus.gain.cancelScheduledValues(t);
+    instBus.gain.setValueAtTime(instBus.gain.value, t);
+    instBus.gain.setTargetAtTime(chordGain(chordVol01), t, 0.02);
+  }
+  /* Count-in volume 0..100 %. 100 % = gain 1.5 (louder than before: the count-in must stand out from drums and chords). Acts ONLY on countBus. */
+  function countGain(v01) { return 1.5 * v01 * v01; }
+  function setCountVolume(pct) {
+    countVol01 = Math.max(0, Math.min(1, pct / 100));
+    if (!countBus) return;
+    const t = ctx.currentTime;
+    countBus.gain.cancelScheduledValues(t);
+    countBus.gain.setValueAtTime(countBus.gain.value, t);
+    countBus.gain.setTargetAtTime(countGain(countVol01), t, 0.02);
+  }
 
   /* Volume 0..100 (%). Perceptual (squared) curve. Applied immediately to the master node. */
   function setVolume(pct) {
@@ -785,9 +1677,11 @@ const AudioEngine = (function () {
   }
 
   /* Start one note. `level` is the final peak amplitude of this voice (already normalised by chord size). */
-  function startVoice(inst, midi, t, level) {
+  /* dest: 'arp' routes the note to the arpeggiator bus, anything else to the chord bus. */
+  function startVoice(inst, midi, t, level, dest) {
     if (voices.size >= MAX_VOICES) { const oldest = voices.values().next().value; if (oldest) oldest.kill(); }
-    if (inst === 'samples' && sampleBank) return startSample(midi, t, level);
+    const bus = dest === 'arp' ? arpBus : instBus;
+    if (inst === 'samples' && sampleBank) return startSample(midi, t, level, bus);
     const spec = INST[inst] || INST.piano;
     const f = midiToFreq(midi);
     const env = ctx.createGain();
@@ -806,7 +1700,7 @@ const AudioEngine = (function () {
     lp.type = 'lowpass'; lp.Q.value = 0.7;
     lp.frequency.setValueAtTime(Math.max(200, spec.lp[0](f)), t);
     if (spec.lp[1]) lp.frequency.setTargetAtTime(Math.max(200, spec.lp[1](f)), t, spec.lp[2]);
-    lp.connect(env); env.connect(instBus);
+    lp.connect(env); env.connect(bus);
     const sources = [], gains = [];
     spec.osc.forEach(function (o) {
       const osc = ctx.createOscillator(), g = ctx.createGain();
@@ -822,7 +1716,7 @@ const AudioEngine = (function () {
   }
 
   /* Sample voice: nearest loaded sample, pitch-shifted with playbackRate. */
-  function startSample(midi, t, level) {
+  function startSample(midi, t, level, bus) {
     let best = sampleBank.samples[0];
     sampleBank.samples.forEach(function (s) { if (Math.abs(s.midi - midi) < Math.abs(best.midi - midi)) best = s; });
     const src = ctx.createBufferSource();
@@ -831,7 +1725,7 @@ const AudioEngine = (function () {
     const env = ctx.createGain();
     env.gain.setValueAtTime(0, t);
     env.gain.linearRampToValueAtTime(level * 0.9, t + 0.005);
-    src.connect(env); env.connect(instBus);
+    src.connect(env); env.connect(bus);
     src.start(t);
     const v = makeVoice(env, [src], 0, null);
     v.relTc = 0.25;
@@ -850,16 +1744,171 @@ const AudioEngine = (function () {
     makeVoice(env, [osc], 0, null);
   }
 
+  /* =====================================================================================
+     ADDED: count-in voice and synthetic drum kit
+     * The count-in uses its OWN loud, bright "wood block" sound (square + sine, low-passed)
+       on a separate bus, so it is clearly audible regardless of the metronome switch,
+       the accent setting or the instrument. It still obeys the master volume.
+     * Drums are synthesised: kick = sine with fast pitch drop, snare = noise + tone,
+       hi-hat = high-passed noise, ride = noise shimmer + inharmonic sine "ping".
+       They are NOT recordings. All drum voices go through makeVoice(), so Stop silences
+       them like every other voice.
+     ===================================================================================== */
+  let drumBus = null, countBus = null, noiseBuf = null, drumVol01 = 0.8;
+  function ensureBuses() {
+    if (drumBus) return;
+    drumBus = ctx.createGain(); drumBus.gain.value = drumVol01 * drumVol01; drumBus.connect(master);
+    countBus = ctx.createGain(); countBus.gain.value = countGain(countVol01); countBus.connect(master);
+    const len = Math.floor(ctx.sampleRate * 1.5);                     // 1.5 s of white noise, shared by all drum voices
+    noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  }
+  /* Metronome volume 0..100 %. Squared curve like the others; 80 % reproduces the former fixed 0.55 level.
+     Acts ONLY on clickBus. The count-in has its own bus (countBus) and is not affected. */
+  function clickGain(v01) { return 0.55 * (v01 * v01) / 0.64; }
+  function setMetronomeVolume(pct) {
+    metroVol01 = Math.max(0, Math.min(1, pct / 100));
+    if (!clickBus) return;
+    const t = ctx.currentTime;
+    clickBus.gain.cancelScheduledValues(t);
+    clickBus.gain.setValueAtTime(clickBus.gain.value, t);
+    clickBus.gain.setTargetAtTime(clickGain(metroVol01), t, 0.02);
+  }
+  function setDrumVolume(pct) {
+    drumVol01 = Math.max(0, Math.min(1, pct / 100));
+    if (!drumBus) return;
+    const t = ctx.currentTime;
+    drumBus.gain.cancelScheduledValues(t);
+    drumBus.gain.setValueAtTime(drumBus.gain.value, t);
+    drumBus.gain.setTargetAtTime(drumVol01 * drumVol01, t, 0.02);
+  }
+  /* Count-in click at audio time t. first = beat 1 of the bar, strong = main beat (6/8: 1 and 4). */
+  function countClick(t, first, strong) {
+    ensureBuses();
+    const f = first ? 1760 : strong ? 1320 : 990;
+    const peak = first ? 1.0 : strong ? 0.9 : 0.75;      // CHANGED: weak beats raised from 0.55 / 0.85 (count-in was too quiet next to drums)
+    const env = ctx.createGain(), lp = ctx.createBiquadFilter(), gb = ctx.createGain();
+    lp.type = 'lowpass'; lp.frequency.value = 5000; lp.Q.value = 0.5;
+    env.gain.setValueAtTime(0.0001, t);
+    env.gain.linearRampToValueAtTime(peak, t + 0.002);
+    env.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+    lp.connect(env); env.connect(countBus);
+    const a = ctx.createOscillator(), b = ctx.createOscillator();
+    a.type = 'square'; a.frequency.value = f;
+    b.type = 'sine'; b.frequency.value = f / 2; gb.gain.value = 0.7;
+    a.connect(lp); b.connect(gb); gb.connect(lp);
+    a.start(t); b.start(t); a.stop(t + 0.15); b.stop(t + 0.15);
+    makeVoice(env, [a, b], 0, [lp, gb]);
+  }
+  /* One drum hit at audio time t. name: 'kick' | 'snare' | 'hat' | 'ohat' | 'ride'; vel: 1 normal, ~0.45 soft. */
+  let openHat = null;                                              // last open hi-hat voice (for the choke)
+  const drumBank = {};                                             // ADDED: user WAV samples per instrument (kick, snare, hat, ohat, ride)
+  const cajonBank = {};                                            // ADDED: Cajon samples (kick, snare, hat = shaker, ohat = tambourine, ride = claves)
+  let drumKit = 'drums';                                           // 'drums' | 'cajon' (sound set used by the live drum machine)
+  function bankOf(kit) { return kit === 'cajon' ? cajonBank : drumBank; }
+  /* Builds ONE drum hit on audio context c into node dest. Used by live playback (ctx) and by the offline
+     WAV export (OfflineAudioContext). If the user loaded a sample for this instrument it plays that
+     sample (vel scales the level), otherwise the synthetic sound. Returns {out, srcs, nodes}. */
+  function synthDrum(c, dest, nb, name, t, vel, kit) {
+    const out = c.createGain(); out.gain.value = 1; out.connect(dest);
+    const srcs = [], nodes = [out];
+    function env(peak, dur) {
+      const e = c.createGain();
+      e.gain.setValueAtTime(0.0001, t);
+      e.gain.linearRampToValueAtTime(Math.max(0.0002, peak * vel), t + 0.001);
+      e.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      e.connect(out); nodes.push(e); return e;
+    }
+    function tone(type, f0, f1, fd, peak, dur, end) {             // oscillator with optional exponential pitch drop f0 -> f1 over fd seconds
+      const o = c.createOscillator(); o.type = type; o.frequency.setValueAtTime(f0, t);
+      if (f1) o.frequency.exponentialRampToValueAtTime(f1, t + fd);
+      o.connect(env(peak, dur)); o.start(t); o.stop(t + end); srcs.push(o);
+    }
+    function noise(ftype, hz, q, peak, dur, end) {                // filtered noise burst
+      const s = c.createBufferSource(); s.buffer = nb;
+      const f = c.createBiquadFilter(); f.type = ftype; f.frequency.value = hz; f.Q.value = q;
+      s.connect(f); f.connect(env(peak, dur)); s.start(t, Math.random() * 0.4); s.stop(t + end); srcs.push(s); nodes.push(f);
+    }
+    if (bankOf(kit)[name]) {                                       // ADDED: user sample
+      const s = c.createBufferSource(), e = c.createGain();
+      s.buffer = bankOf(kit)[name]; e.gain.setValueAtTime(0.9 * vel, t);
+      s.connect(e); e.connect(out); s.start(t); srcs.push(s); nodes.push(e);
+    }
+    else if (kit === 'cajon') {                                    // ADDED: synthesised Cajon approximation (used when no sample is loaded)
+      if (name === 'kick')       { tone('sine', 110, 55, 0.12, 1.0, 0.35, 0.4); noise('lowpass', 400, 0.7, 0.25, 0.06, 0.4); }
+      else if (name === 'snare') { noise('bandpass', 3500, 0.8, 0.7, 0.12, 0.2); tone('triangle', 330, 250, 0.03, 0.4, 0.08, 0.2); }
+      else if (name === 'hat')   { noise('bandpass', 6500, 1.0, 0.35, 0.07, 0.12); }                       // shaker
+      else if (name === 'ohat')  { noise('highpass', 6000, 0.8, 0.3, 0.22, 0.3); tone('sine', 5200, 0, 0, 0.05, 0.25, 0.3); tone('sine', 7300, 0, 0, 0.04, 0.2, 0.3); }   // tambourine
+      else                       { tone('sine', 2500, 0, 0, 0.9, 0.06, 0.1); tone('sine', 3700, 0, 0, 0.4, 0.04, 0.1); }   // claves
+    }
+    else if (name === 'kick')  { tone('sine', 150, 45, 0.09, 1.0, 0.45, 0.5); noise('highpass', 2500, 0.7, 0.16, 0.02, 0.5); }
+    else if (name === 'snare') { noise('highpass', 1500, 0.7, 0.75, 0.2, 0.3); tone('triangle', 200, 160, 0.05, 0.55, 0.1, 0.3); }
+    else if (name === 'hat')   { noise('highpass', 7500, 0.7, 0.5, 0.055, 0.12); }
+    else if (name === 'ohat')  { noise('highpass', 7000, 0.7, 0.42, 0.38, 0.52); noise('bandpass', 9500, 1.4, 0.18, 0.3, 0.52); }
+    else                       { noise('highpass', 6000, 0.5, 0.13, 0.9, 1.1); noise('bandpass', 8000, 1.2, 0.25, 0.03, 1.1);
+                                 tone('sine', 3300, 0, 0, 0.07, 0.7, 1.1); tone('sine', 5100, 0, 0, 0.05, 0.5, 1.1); }
+    return { out: out, srcs: srcs, nodes: nodes };
+  }
+  function drum(name, t, vel) {
+    ensureBuses();
+    const d = synthDrum(ctx, drumBus, noiseBuf, name, t, vel, drumKit);
+    const dv = makeVoice(d.out, d.srcs, 0, d.nodes);
+    /* Hi-hat choke: a closed hat (or pedal) cuts a ringing open hat, like on a real kit. */
+    if (drumKit === 'cajon') return;                               // a tambourine is not choked by a shaker
+    if (name === 'ohat') openHat = dv;
+    else if (name === 'hat' && openHat && !openHat.ended) { openHat.release(t, 0.007); openHat = null; }
+  }
+  function setDrumSample(name, buf, kit) { bankOf(kit)[name] = buf; }
+  function clearDrumSamples(kit) { const b = bankOf(kit); Object.keys(b).forEach(function (k) { delete b[k]; }); }
+  function drumSampleNames(kit) { return Object.keys(bankOf(kit)); }
+  function setDrumKit(k) { drumKit = k === 'cajon' ? 'cajon' : 'drums'; }
+  function getBanks() { return { sample: sampleBank, drums: Object.assign({}, drumBank), cajon: Object.assign({}, cajonBank) }; }
+
+  /* ADDED: offline render of a drum groove (for WAV export). o = { meter, bpm, grid, swing(0..1), bars }.
+     Same step times and swing as scheduleDrums(); the sound is the same synthDrum() used live. Returns a Promise
+     of an AudioBuffer (stereo, 44.1 kHz) which includes a short ring-out tail after the last bar. */
+  function renderDrums(o) {
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC) return Promise.reject(new Error('Offline rendering is not supported by this browser.'));
+    const m = METERS[o.meter], spp = m.ppb === 3 ? 2 : 4;
+    const stepLen = 60 / o.bpm / m.ppb / spp, barLen = m.pulses * spp * stepLen, tail = 1.0, rate = 44100;
+    const oc = new OAC(2, Math.ceil((o.bars * barLen + tail) * rate), rate);
+    const bus = oc.createGain(); bus.gain.value = 0.8; bus.connect(oc.destination);
+    const len = Math.floor(rate * 1.5), nb = oc.createBuffer(1, len, rate), nd = nb.getChannelData(0);
+    for (let i = 0; i < len; i++) nd[i] = Math.random() * 2 - 1;
+    let open = null;
+    for (let bar = 0; bar < o.bars; bar++) {
+      for (let step = 0; step < o.grid.hat.length; step++) {
+        let st = bar * barLen + step * stepLen;
+        if (m.ppb === 1 && o.swing > 0 && step % 4 === 2) st += o.swing * (2 / 3) * stepLen;
+        DRUM_ROWS.forEach(function (r) {
+          const v = o.grid[r][step];
+          if (!v) return;
+          const d = synthDrum(oc, bus, nb, r, st, v === 2 ? 0.45 : 1, o.kit);
+          if (o.kit === 'cajon') return;
+          if (r === 'ohat') open = d.out;
+          else if (r === 'hat' && open) { open.gain.setTargetAtTime(0, st, 0.007); open = null; }   // same choke as live
+        });
+      }
+    }
+    return oc.startRendering();
+  }
+
   function killAll() { Array.from(voices).forEach(function (v) { v.kill(); }); }
   function setSampleBank(b) { sampleBank = b; }
 
   return {
     ensure: ensure, resume: resume, setVolume: setVolume, startVoice: startVoice, click: click, killAll: killAll,
+    countClick: countClick, drum: drum, setDrumVolume: setDrumVolume, setMetronomeVolume: setMetronomeVolume,
+    setDrumSample: setDrumSample, clearDrumSamples: clearDrumSamples, drumSampleNames: drumSampleNames, renderDrums: renderDrums,
+    setChordVolume: setChordVolume, setArpVolume: setArpVolume, setCountVolume: setCountVolume, setDrumKit: setDrumKit, getBanks: getBanks,
     setSampleBank: setSampleBank, hasSamples: function () { return !!sampleBank; },
     get ctx() { return ctx; }, strumOf: function (inst) { return (INST[inst] && INST[inst].strum) || 0; },
     releaseTc: function (inst) { return (INST[inst] && INST[inst].rel) || 0.25; }
   };
-})();
+}
+const AudioEngine = createAudioEngine(null, {});
 
 /* =====================================================================================
    PART C – TRANSPORT (scheduler)
@@ -879,7 +1928,7 @@ const AudioEngine = (function () {
 const Transport = (function () {
   const TICK_MS = 25;
   const T = { running: false, runId: 0, timer: null, raf: 0, nextTime: 0, pulse: 0, endTime: 0, ending: false,
-              meter: null, prog: null, ciPulses: 0, loop: true, visual: [], current: [], hooks: null };
+              meter: null, prog: null, ciPulses: 0, loop: true, visual: [], steps: [], current: [], arpCur: [], hooks: null };
 
   function lookahead() { return document.hidden ? 1.6 : 0.2; }          // background tabs throttle timers -> schedule further ahead
   function pulseSeconds(bpm, meter) { return 60 / bpm / meter.ppb; }
@@ -890,13 +1939,13 @@ const Transport = (function () {
     const live = h.live();
     if (gp < T.ciPulses) {                                            // ---- count-in: always audible
       const pip = gp % barLen;
-      clickAt(t, pip, m, live.accent);
+      AudioEngine.countClick(t, pip === 0, m.strong.indexOf(pip) >= 0);   // ADDED: dedicated loud count-in sound
       T.visual.push({ t: t, kind: 'count', bar: Math.floor(gp / barLen) + 1, pip: pip });
       return true;
     }
     const q = gp - T.ciPulses, total = T.prog.bars.length * barLen;
     if (!T.loop && q >= total) {                                      // ---- exact end of a non-looping run
-      T.ending = true; T.endTime = t; releaseCurrent(t);
+      T.ending = true; T.endTime = t; releaseCurrent(t); releaseArp(t);
       return false;
     }
     const qq = q % total, barIdx = Math.floor(qq / barLen), pip = qq % barLen;
@@ -904,10 +1953,77 @@ const Transport = (function () {
     let chordIdx = 0;
     if (bar.chords.length === 2 && pip >= m.half) chordIdx = 1;
     const startsHere = pip === 0 || (bar.chords.length === 2 && pip === m.half);
-    if (startsHere) startChord(bar.chords[chordIdx], t, live);
+    const arpOn = !!(live.arp && live.arp.on);                        // ADDED: arpeggiator (own switch, own volume)
+    const chordsOn = live.chords !== false;                           // ADDED: block chords can be switched off; independent of the arpeggiator
+    const patOn = !!(live.cpat && live.cpat.on);                      // ADDED: block chords in the chord rhythm pattern
+    if (startsHere) releaseArp(t);                                    // rung-out arpeggio notes end with their chord
+    if (!chordsOn) { if (T.current.length) releaseCurrent(t); }
+    else if (patOn) {
+      if (startsHere) releaseCurrent(t);                              // a new chord / bar ends the old one; hits start the new one
+      scheduleChordPat(t, pip, bar.chords[chordIdx], live);
+    }
+    else if (startsHere) startChord(bar.chords[chordIdx], t, live);
+    if (arpOn) scheduleArp(t, pip, bar, chordIdx, live);              // arpeggio and block chords can sound together
     if (live.metronome) clickAt(t, pip, m, live.accent);
+    if (live.drums && live.drums.on) scheduleDrums(t, pip, live);   // ADDED: drums share the pulse time base
     T.visual.push({ t: t, kind: 'play', bar: barIdx, chord: chordIdx, pip: pip });
     return true;
+  }
+
+  /* ADDED: arpeggiator (matrix). For the 16th steps inside this pulse every ticked cell of the matrix starts the
+     tone of its row (root / 3rd / 5th / extension / bass) taken from the CURRENT chord's voicing; several cells
+     in one column sound together. arpHits() is the same function the MIDI / WAV export uses. */
+  function scheduleArp(t, pip, bar, chordIdx, live) {
+    const m = T.meter, a = live.arp, ch = bar.chords[chordIdx], two = bar.chords.length === 2, spp = m.ppb === 3 ? 2 : 4;
+    const stepLen = pulseSeconds(live.bpm, m) / spp;
+    const stepsDone = !!(live.drums && live.drums.on) || (!!(live.cpat && live.cpat.on) && live.chords !== false);   // someone else already reports the steps
+    const from = (two && chordIdx === 1) ? m.half * spp : 0, to = (two && chordIdx === 0) ? m.half * spp : m.pulses * spp;
+    const hits = arpHits(ch, from, to, a);
+    for (let k = 0; k < spp; k++) {
+      const step = pip * spp + k, st = t + k * stepLen;
+      hits.forEach(function (h) {
+        if (h.step !== step) return;
+        const v = AudioEngine.startVoice(live.arpInstrument || live.instrument, h.note, st, arpLevel(h), 'arp');   // own bus = own volume slider
+        v.release(st + h.len * stepLen, v.relTc || 0.15);
+        if (a.held) T.arpCur.push(v);                                 // a chord change / Stop also ends rung-out notes
+      });
+      if (!stepsDone) T.steps.push({ t: st, step: step });
+    }
+  }
+
+  /* ADDED: schedule the 16th-note steps that fall inside the pulse starting at time t.
+     A pulse holds 4 steps (quarter-note pulse) or 2 steps (6/8: eighth-note pulse). Step times
+     derive from the pulse start and the CURRENT tempo, so tempo changes stay in sync.
+     Swing delays the "and" steps (step % 4 == 2) towards the triplet position (not in 6/8). */
+  function scheduleDrums(t, pip, live) {
+    const m = T.meter, d = live.drums, spp = m.ppb === 3 ? 2 : 4;
+    const stepLen = pulseSeconds(live.bpm, m) / spp;
+    for (let k = 0; k < spp; k++) {
+      const step = pip * spp + k;
+      let st = t + k * stepLen;
+      if (m.ppb === 1 && d.swing > 0 && step % 4 === 2) st += d.swing * (2 / 3) * stepLen;
+      DRUM_ROWS.forEach(function (r) {
+        const v = d.rows[r] && d.rows[r][step];
+        if (v) AudioEngine.drum(r, st, v === 2 ? 0.45 : 1);
+      });
+      T.steps.push({ t: st, step: step });
+    }
+  }
+
+  /* ADDED: chord rhythm pattern. Same step grid and step times as the drums (a pulse holds 4 steps, 6/8: 2).
+     Every hit starts the current chord as a block chord (startChord releases the previous hit at that
+     moment, so the chord is "held" until the next hit). "Short" releases it after about one step. */
+  function scheduleChordPat(t, pip, ch, live) {
+    const m = T.meter, cp = live.cpat, spp = m.ppb === 3 ? 2 : 4;
+    const stepLen = pulseSeconds(live.bpm, m) / spp, drumsOn = !!(live.drums && live.drums.on);
+    for (let k = 0; k < spp; k++) {
+      const step = pip * spp + k, v = cp.grid[step], st = t + k * stepLen;
+      if (v) {
+        startChord(ch, st, live, v === 2 ? 0.6 : 1);
+        if (cp.short) T.current.forEach(function (voice) { voice.release(st + stepLen * 0.9, voice.relTc || 0.15); });
+      }
+      if (!drumsOn) T.steps.push({ t: st, step: step });             // drums already report the steps when they are on
+    }
   }
 
   function clickAt(t, pip, m, accent) {
@@ -919,14 +2035,18 @@ const Transport = (function () {
     AudioEngine.click(t, f, g);
   }
 
-  function startChord(ch, t, live) {
+  function startChord(ch, t, live, vscale) {
     releaseCurrent(t);
     const notes = [ch.bass].concat(ch.upper), n = notes.length;
-    const norm = 0.5 / Math.sqrt(n);
+    const norm = 0.5 / Math.sqrt(n) * (vscale || 1);
     const strum = AudioEngine.strumOf(live.instrument);
     T.current = notes.map(function (midi, i) {
       return AudioEngine.startVoice(live.instrument, midi, t + i * strum, (i === 0 ? 1 : 0.85) * norm);
     });
+  }
+  function releaseArp(t) {                                            // ADDED: notes of the arpeggio that ring until the chord ends
+    T.arpCur.forEach(function (v) { v.release(t, v.relTc || 0.15); });
+    T.arpCur = [];
   }
   function releaseCurrent(t) {
     T.current.forEach(function (v) { v.release(t, v.relTc || 0.15); });
@@ -945,6 +2065,7 @@ const Transport = (function () {
         T.pulse++;
       }
       if (T.visual.length > 4000) T.visual.splice(0, T.visual.length - 4000);
+      if (T.steps.length > 4000) T.steps.splice(0, T.steps.length - 4000);
     }
     T.timer = setTimeout(function () { tick(id); }, TICK_MS);
   }
@@ -956,6 +2077,9 @@ const Transport = (function () {
     let last = null;
     while (T.visual.length && T.visual[0].t <= now) last = T.visual.shift();
     if (last) T.hooks.show(last);
+    let ls = null;                                                    // ADDED: drum step highlight in the editor
+    while (T.steps.length && T.steps[0].t <= now) ls = T.steps.shift();
+    if (ls && T.hooks.step) T.hooks.step(ls.step);
     T.raf = requestAnimationFrame(function () { visualLoop(id); });
   }
 
@@ -972,7 +2096,7 @@ const Transport = (function () {
       if (ctx.state !== 'running') throw new Error('The browser blocked audio. Click Play again.');
       T.meter = METERS[meterKey]; T.prog = prog; T.loop = loop;
       T.ciPulses = countInBars * T.meter.pulses;
-      T.pulse = 0; T.ending = false; T.visual = []; T.current = [];
+      T.pulse = 0; T.ending = false; T.visual = []; T.steps = []; T.current = []; T.arpCur = [];
       T.nextTime = ctx.currentTime + 0.12;                            // small lead-in so the first pulse is never late
       hooks.started();
       tick(id);
@@ -988,7 +2112,7 @@ const Transport = (function () {
     T.running = false; T.runId++;
     clearTimeout(T.timer); T.timer = null;
     cancelAnimationFrame(T.raf); T.raf = 0;
-    T.visual = []; T.current = [];
+    T.visual = []; T.steps = []; T.current = []; T.arpCur = [];
     if (AudioEngine.ctx) AudioEngine.killAll();
   }
   return { start: start, stop: stop, isRunning: function () { return T.running; } };
@@ -1005,7 +2129,7 @@ const Transport = (function () {
   const E = {};
   ['selStyle','selLength','selMood','selKey','selComplexity','btnGenerate','btnAnother','btnReset','progMeta','chkRoman','barsHost',
    'refsHost','btnPlay','btnStop','chkLoop','beatDots','posText','selMeter','selInst','selCountIn','selAccent','meterHint','chkMetro',
-   'rngBpm','outBpm','btnBpmMinus','btnBpmPlus','rngVol','outVol','status','fileSamples','btnServer','soundStatus']
+   'rngBpm','outBpm','btnBpmMinus','btnBpmPlus','rngVol','outVol','rngMetroVol','outMetroVol','playbar','chkChords','chkCount','rngCountVol','outCountVol','rngChordVol','outChordVol','rngArpVol','outArpVol','btnMixer','pbMixer','status','fileSamples','btnServer','soundStatus']
     .forEach(function (id) { E[id] = $(id); });
 
   const DEFAULTS = { style: 'pop', length: '4', mood: 'Happy', key: 'major-C', complexity: 'simple', bpm: 100, volume: 70,
@@ -1033,8 +2157,27 @@ const Transport = (function () {
     E.rngBpm.value = DEFAULTS.bpm; E.rngVol.value = DEFAULTS.volume;
     E.selInst.value = DEFAULTS.instrument; E.selMeter.value = DEFAULTS.meter; E.selCountIn.value = DEFAULTS.countIn;
     E.chkMetro.checked = DEFAULTS.metronome; E.selAccent.value = DEFAULTS.accent;
+    E.chkCount.checked = true; E.rngCountVol.value = 100; updateCountVolume(); E.rngChordVol.value = 80; updateChordVolume(); E.rngArpVol.value = 80; updateArpVolume();
     E.chkLoop.checked = DEFAULTS.loop; E.chkRoman.checked = DEFAULTS.roman;
     updateBpm(); updateVolume(); updateRomanVisibility(); buildBeatDots(); updateMeterHint();
+  }
+
+  /* ADDED: count-in switch (footer) + length (Player). 0 bars = no count-in. */
+  function countBars() { return E.chkCount.checked ? Math.max(1, Number(E.selCountIn.value) || 1) : 0; }
+  function updateChordVolume() {
+    const v = Number(E.rngChordVol.value);
+    E.outChordVol.textContent = v + ' %'; E.rngChordVol.setAttribute('aria-valuetext', v + ' percent');
+    AudioEngine.setChordVolume(v);                                     // acts on the chord bus only
+  }
+  function updateArpVolume() {
+    const v = Number(E.rngArpVol.value);
+    E.outArpVol.textContent = v + ' %'; E.rngArpVol.setAttribute('aria-valuetext', v + ' percent');
+    AudioEngine.setArpVolume(v);                                       // acts on the arpeggiator bus only
+  }
+  function updateCountVolume() {
+    const v = Number(E.rngCountVol.value);
+    E.outCountVol.textContent = v + ' %'; E.rngCountVol.setAttribute('aria-valuetext', v + ' percent');
+    AudioEngine.setCountVolume(v);                                     // acts on the count-in bus only
   }
 
   /* ---------- tempo / volume ---------- */
@@ -1044,6 +2187,18 @@ const Transport = (function () {
     E.rngBpm.setAttribute('aria-valuetext', v + ' beats per minute');
   }
   function setBpm(v) { E.rngBpm.value = Math.max(40, Math.min(220, v)); updateBpm(); }
+  /* ADDED: metronome volume slider -> AudioEngine.setMetronomeVolume (own gain node, see Part B). */
+  function updateMetroVolume() {
+    const v = Number(E.rngMetroVol.value);
+    E.outMetroVol.textContent = v + ' %';
+    E.rngMetroVol.setAttribute('aria-valuetext', v + ' percent');
+    AudioEngine.setMetronomeVolume(v);
+  }
+  /* ADDED: the footer is position:fixed, so the page needs bottom padding equal to its real height. */
+  function syncPlaybarHeight() {
+    const h = E.playbar.offsetHeight;
+    if (h > 0) document.documentElement.style.setProperty('--pb-h', h + 'px');
+  }
   function updateVolume() {
     const v = Number(E.rngVol.value);
     E.outVol.textContent = v + ' %';
@@ -1054,10 +2209,8 @@ const Transport = (function () {
   /* ---------- meter UI ---------- */
   function updateMeterHint() {
     const hints = {
-      '2/4': '2/4: two quarter-note beats per bar. Count: 1 2. BPM counts quarter notes.',
-      '3/4': '3/4: three quarter-note beats per bar. Count: 1 2 3. BPM counts quarter notes.',
-      '4/4': '4/4: four quarter-note beats per bar. Count: 1 2 3 4. BPM counts quarter notes.',
-      '6/8': '6/8: six written eighth notes, felt as two dotted-quarter beats. Count: 1 2 3 | 4 5 6, with main beats on 1 and 4. BPM counts dotted quarters; the metronome clicks every eighth note with the main beats stressed.'
+      '2/4': 'Count: 1 2', '3/4': 'Count: 1 2 3', '4/4': 'Count: 1 2 3 4',
+      '6/8': 'Count: 1 2 3 4 5 6 (tempo = dotted quarter)'
     };
     E.meterHint.textContent = hints[E.selMeter.value];
   }
@@ -1074,6 +2227,7 @@ const Transport = (function () {
 
   /* ---------- rendering the progression ---------- */
   function renderProgression() {
+    if (typeof arpBuild === 'function' && arp.cols.length) arpBuild(false);   // ADDED: extension rows follow the chords
     E.barsHost.textContent = '';
     state.barEls = []; state.chordEls = []; state.activeBar = -1; state.activeChord = null;
     if (!state.realized) {
@@ -1099,12 +2253,19 @@ const Transport = (function () {
         c.appendChild(el('span', 'beats', 'Beats ' + beatRange(m, bar.chords.length, ci)));
         wrap.appendChild(c); chordEls.push(c);
       });
+      makeBarEditable(wrap, bi);                                       // ADDED: click / Enter edits the chords of this bar
       li.appendChild(wrap); ol.appendChild(li);
       state.barEls.push(li); state.chordEls.push(chordEls);
     });
     E.barsHost.appendChild(ol);
     const a = state.abstract, tpl = TEMPLATES.filter(function (t) { return t.id === a.templateId; })[0];
     const cap = function (s) { return s.charAt(0).toUpperCase() + s.slice(1); };
+    if (a.templateId === 'manual') {                                   // ADDED: progression typed in by the user (no template)
+      E.progMeta.textContent = 'Edited progression · ' + a.length + ' bars · Roman numerals relative to ' + currentKey().label;
+      renderManualRefs();
+      E.btnPlay.disabled = Transport.isRunning();
+      return;
+    }
     E.progMeta.textContent = tpl.name + ' \u00B7 ' + cap(a.style) + ' \u00B7 ' + a.length + ' bars \u00B7 ' + a.mood + ' \u00B7 ' +
       cap(a.complexity) + ' \u00B7 ' + currentKey().label;
     renderRefs(tpl);
@@ -1169,24 +2330,31 @@ const Transport = (function () {
   function setPlayingUI(on) {
     E.btnPlay.disabled = on || !state.realized;
     E.btnStop.disabled = !on;
+    updateMidiButton();                                                // ADDED: MIDI export needs a progression
   }
   function stopPlayback(message) {
     const was = Transport.isRunning();
     Transport.stop();
     clearHighlight();
+    clearExtra();                                                      // ADDED: reset count-in display and drum step highlight
     E.posText.textContent = 'Stopped';
     setPlayingUI(false);
     if (message && was) setStatus(message);
   }
   function play() {
     if (!state.realized || Transport.isRunning()) return;
+    if (!E.chkChords.checked && !E.chkMetro.checked && !X.chkDrums.checked && !M.chkArp.checked) {   // nothing selected -> explain instead of silence
+      setStatus('Nothing to play: switch on Arp, Chords, Metronome or Drums in the bar at the bottom.', true); return;
+    }
     setStatus('');
     setPlayingUI(true);
-    Transport.start(state.realized, E.selMeter.value, Number(E.selCountIn.value), E.chkLoop.checked, {
+    Transport.start(state.realized, E.selMeter.value, countBars(), E.chkLoop.checked, {
       live: function () {
-        return { bpm: Number(E.rngBpm.value), metronome: E.chkMetro.checked, accent: E.selAccent.value, instrument: E.selInst.value };
+        return { bpm: Number(E.rngBpm.value), chords: E.chkChords.checked, metronome: E.chkMetro.checked, accent: E.selAccent.value, instrument: E.selInst.value, arpInstrument: M.selArpInst.value,
+                 drums: drumLive(), arp: arpLive(), cpat: cpatLive() };
       },
-      show: showEvent,
+      show: function (ev) { showEvent(ev); showExtra(ev); },
+      step: highlightStep,
       started: function () { /* UI already switched */ },
       finished: function () { stopPlayback('Finished.'); },
       error: function (msg) { stopPlayback(); setStatus(msg, true); }
@@ -1207,6 +2375,7 @@ const Transport = (function () {
   }
   function onKeyChange() {
     if (!state.abstract) return;
+    if (state.abstract.templateId === 'manual') return;                // ADDED: typed chords are absolute; initManualArp() refreshes the Roman numerals
     const k = currentKey();
     if (state.abstract.mode === k.mode) {                              // same mode: transpose the current progression
       stopPlayback('Playback stopped because the key changed.');
@@ -1217,6 +2386,7 @@ const Transport = (function () {
   function reset() {
     stopPlayback();
     applyDefaults();
+    resetExtras();                                                     // ADDED: drums, editor, export options back to defaults
     state.abstract = null; state.realized = null;
     renderProgression(); setStatus('Settings reset.');
     setPlayingUI(false);
@@ -1304,14 +2474,732 @@ const Transport = (function () {
     E.btnBpmMinus.addEventListener('click', function () { setBpm(Number(E.rngBpm.value) - 1); });
     E.btnBpmPlus.addEventListener('click', function () { setBpm(Number(E.rngBpm.value) + 1); });
     E.rngVol.addEventListener('input', updateVolume);
+    E.rngMetroVol.addEventListener('input', updateMetroVolume);        // ADDED: drives ONLY clickBus
+    E.rngChordVol.addEventListener('input', updateChordVolume);        // ADDED: drives ONLY the chord bus
+    E.rngArpVol.addEventListener('input', updateArpVolume);            // ADDED: drives ONLY the arpeggiator bus
+    E.rngCountVol.addEventListener('input', updateCountVolume);        // ADDED: drives ONLY the count-in bus
+    E.btnMixer.addEventListener('click', function () {                 // ADDED: on phones the mixer part of the footer can be folded away
+      const hide = !E.pbMixer.classList.contains('collapsed');
+      E.pbMixer.classList.toggle('collapsed', hide); E.btnMixer.setAttribute('aria-expanded', hide ? 'false' : 'true'); syncPlaybarHeight();
+    });
+    if (window.innerWidth < 640) { E.pbMixer.classList.add('collapsed'); E.btnMixer.setAttribute('aria-expanded', 'false'); }   // phones: faders folded away until needed
+    syncPlaybarHeight();                                               // ADDED: keep page padding = footer height
+    if (window.ResizeObserver) new ResizeObserver(syncPlaybarHeight).observe(E.playbar);
+    window.addEventListener('resize', syncPlaybarHeight);
     E.fileSamples.addEventListener('change', function () { if (E.fileSamples.files.length) loadLocalFiles(E.fileSamples.files); });
     E.btnServer.addEventListener('click', loadServerPack);
     window.addEventListener('pagehide', function () { Transport.stop(); });
   }
 
+  /* =====================================================================================
+     EXTRAS (ADDED): count-in display, drum controls, 16th-note matrix editor, MIDI export
+     State: `drum.grid` is the ACTIVE pattern (rows of 0/1/2). The scheduler reads it live on
+     every pulse, so edits are heard immediately. `drum.custom[meter]` keeps the user's own
+     pattern per time signature. The time signature is shared with the player.
+     ===================================================================================== */
+  const X = {};
+  ['countBox','countNum','countLbl','chkDrums','selDrumKit','selDrumGenre','selDrumPattern','selDrumMeter','drumInfo','drumSources','rngSwing','outSwing',
+   'swingNote','rngDrumVol','outDrumVol','matrixWrap','btnDrumClear','btnDrumReload','btnMidi','btnWav','selMidiPasses','chkMidiDrums','chkMidiCount','midiStatus']
+    .forEach(function (id) { X[id] = $(id); });
+  const drum = { presetId: 'pop-rock', base: 'pop-rock', grid: emptyGrid('4/4'), custom: {}, cells: {}, cols: [], now: -1 };
+
+  /* ----- count-in / beat display ----- */
+  function showExtra(ev) {
+    E.beatDots.classList.toggle('ci', ev.kind === 'count');
+    if (ev.kind === 'count') {
+      X.countBox.className = 'countbox ci';
+      X.countNum.textContent = String(ev.pip + 1);
+      X.countLbl.textContent = 'Count-in · bar ' + ev.bar + ' of ' + countBars();
+    } else {
+      X.countBox.className = 'countbox play';
+      X.countNum.textContent = String(ev.pip + 1);
+      X.countLbl.textContent = 'Playing · bar ' + (ev.bar + 1);
+    }
+  }
+  function clearExtra() {
+    X.countBox.className = 'countbox'; X.countNum.textContent = '–'; X.countLbl.textContent = 'Ready';
+    E.beatDots.classList.remove('ci');
+    highlightStep(-1);
+  }
+
+  /* ----- drum state helpers ----- */
+  function drumLive() {                                                // read by the scheduler on every pulse
+    const m = meterNow();
+    return { on: X.chkDrums.checked, rows: drum.grid, swing: m.ppb === 1 ? Number(X.rngSwing.value) / 100 : 0 };
+  }
+  function currentKit() { return X.selDrumKit.value === 'cajon' ? 'cajon' : 'drums'; }
+  function rowLabel(r) { return (currentKit() === 'cajon' ? CAJON_LABEL : DRUM_LABEL)[r]; }
+  function stepName(meterKey, i) {
+    if (METERS[meterKey].ppb === 3) return 'eighth ' + (Math.floor(i / 2) + 1) + (i % 2 ? ', second sixteenth' : ', first sixteenth');
+    return 'beat ' + (Math.floor(i / 4) + 1) + ['', ', e', ', and', ', a'][i % 4];
+  }
+  function paintCell(r, i) {
+    const b = drum.cells[r][i], v = drum.grid[r][i];
+    b.className = 'cell s' + v + (drum.now === i ? ' now' : '');
+    b.textContent = v === 1 ? '●' : v === 2 ? '○' : '';
+    b.setAttribute('aria-label', rowLabel(r) + ', ' + stepName(E.selMeter.value, i) + ': ' + ['off', 'on', 'soft'][v]);
+  }
+  function highlightStep(i) {
+    if (drum.now === i) return;
+    const prev = drum.now; drum.now = i;
+    if (prev >= 0 && drum.cols[prev]) drum.cols[prev].forEach(function (b) { b.classList.remove('now'); });
+    if (i >= 0 && drum.cols[i]) drum.cols[i].forEach(function (b) { b.classList.add('now'); });
+    cpatHighlight(i);                                                  // ADDED: chord rhythm row follows the same step
+    arpHighlight(i);                                                   // ADDED: arpeggio matrix too
+  }
+
+  /* ----- matrix editor (rebuilt only when the time signature changes) ----- */
+  function buildMatrix() {
+    const meterKey = E.selMeter.value, n = stepsPerBar(meterKey), m = METERS[meterKey];
+    const tbl = el('table', 'matrix');
+    tbl.appendChild(el('caption', 'vh', 'Drum pattern for ' + meterKey + ' with ' + n + ' sixteenth-note steps. Rows are instruments.'));
+    const hr = el('tr'); hr.appendChild(el('th', 'rowh vh', 'Instrument'));
+    for (let i = 0; i < n; i++) {
+      const six = m.ppb === 3, first = six ? i % 2 === 0 : i % 4 === 0;
+      const lab = six ? (first ? String(i / 2 + 1) : '·') : ['', 'e', '&', 'a'][i % 4] || String(i / 4 + 1);
+      const th = el('th', first ? 'beat' : '', lab); th.scope = 'col'; hr.appendChild(th);
+    }
+    const thead = el('thead'); thead.appendChild(hr); tbl.appendChild(thead);
+    const tbody = el('tbody');
+    drum.cells = {}; drum.cols = []; drum.now = -1;
+    for (let i = 0; i < n; i++) drum.cols.push([]);
+    DRUM_ROWS.forEach(function (r, ri) {
+      const tr = el('tr'), rh = el('th', 'rowh', rowLabel(r)); rh.scope = 'row'; tr.appendChild(rh);
+      drum.cells[r] = [];
+      for (let i = 0; i < n; i++) {
+        const td = el('td', (m.ppb === 3 ? i % 2 === 0 && i > 0 : i % 4 === 0 && i > 0) ? 'bs' : '');
+        const b = el('button', 'cell'); b.type = 'button'; b.dataset.r = r; b.dataset.i = String(i);
+        b.tabIndex = (ri === 0 && i === 0) ? 0 : -1;
+        td.appendChild(b); tr.appendChild(td);
+        drum.cells[r].push(b); drum.cols[i].push(b);
+        paintCell(r, i);
+      }
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody);
+    X.matrixWrap.textContent = ''; X.matrixWrap.appendChild(tbl);
+  }
+  function markCustom() {                                              // any manual edit turns the pattern into "custom"
+    if (drum.presetId !== 'custom') { drum.presetId = 'custom'; X.selDrumPattern.value = 'custom'; updateDrumInfo(); }
+    drum.custom[E.selMeter.value] = drum.grid;
+  }
+
+  /* ----- presets ----- */
+  function fillPatterns(genre) {
+    X.selDrumPattern.textContent = '';
+    DRUM_PRESETS.filter(function (p) { return p.genre === genre; }).forEach(function (p) {
+      const o = el('option', '', p.name); o.value = p.id; X.selDrumPattern.appendChild(o);
+    });
+    const c = el('option', '', 'Custom (your own pattern from the editor)'); c.value = 'custom'; X.selDrumPattern.appendChild(c);
+  }
+  function applyPreset(id) {
+    const meterKey = E.selMeter.value, m = METERS[meterKey];
+    drum.presetId = id;
+    if (id === 'custom') {
+      drum.grid = drum.custom[meterKey] || emptyGrid(meterKey);
+      drum.custom[meterKey] = drum.grid;
+    } else {
+      const p = DRUM_PRESETS.filter(function (q) { return q.id === id; })[0];
+      drum.base = id; drum.grid = drumGridFor(p, meterKey);
+      X.rngSwing.value = p.swing; X.outSwing.textContent = p.swing + ' %';
+      X.selDrumGenre.value = p.genre;
+    }
+    X.selDrumPattern.value = id;
+    X.rngSwing.disabled = m.ppb === 3;
+    X.swingNote.textContent = m.ppb === 3 ? 'Not used in 6/8.' : '';
+    buildMatrix(); updateDrumInfo();
+  }
+  function updateDrumInfo() {
+    const meterKey = E.selMeter.value, box = X.drumSources;
+    box.textContent = '';
+    const kitNote = currentKit() === 'cajon' ? 'Cajon sound set: the rows play shaker (instead of hi-hat), tambourine (open hi-hat row) and claves (ride row); the rhythm presets were written for a drum kit. ' : '';
+    if (drum.presetId === 'custom') {
+      X.drumInfo.textContent = kitNote + 'Custom pattern for ' + meterKey + '.';
+      return;
+    }
+    const p = DRUM_PRESETS.filter(function (q) { return q.id === drum.presetId; })[0];
+    X.drumInfo.textContent = kitNote + p.name + ' – ' + p.basis + (meterKey === '4/4' ? '' :
+      ' In ' + meterKey + ' this is an adaptation of the 4/4 groove written for this app' + (meterKey === '2/4' ? ' (first half of the 4/4 bar).' : '.'));
+    const ids = p.src.slice();
+    if (p.genre === 'jazz' && meterKey === '3/4') ids.push('waltz');
+    if (!ids.length) return;
+    box.appendChild(el('p', 'label', 'Sources consulted:'));
+    const ul = el('ul', 'src-list');
+    ids.forEach(function (k) {
+      const li = el('li'), a = el('a', '', DRUM_SOURCES[k].label); a.href = DRUM_SOURCES[k].url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      li.appendChild(a); ul.appendChild(li);
+    });
+    box.appendChild(ul);
+  }
+  function onMeterChangeExtras() {
+    X.selDrumMeter.value = E.selMeter.value;
+    applyPreset(drum.presetId);
+  }
+  function resetExtras() {
+    X.chkDrums.checked = false; E.chkChords.checked = true; X.selDrumGenre.value = 'pop';
+    X.rngDrumVol.value = 80; X.outDrumVol.textContent = '80 %'; AudioEngine.setDrumVolume(80);
+    E.rngMetroVol.value = 80; updateMetroVolume();
+    X.selDrumKit.value = 'drums'; AudioEngine.setDrumKit('drums');
+    X.selMidiPasses.value = '1'; X.chkMidiDrums.checked = false; X.chkMidiCount.checked = false;
+    X.midiStatus.textContent = 'Standard MIDI file of the current progression.';
+    drum.custom = {};
+    X.selDrumMeter.value = E.selMeter.value;
+    fillPatterns('pop'); applyPreset('pop-rock');
+    clearExtra();
+  }
+
+  /* ----- MIDI export ----- */
+  function updateMidiButton() { if (X.btnMidi) X.btnMidi.disabled = !state.realized; if (X.btnWav) X.btnWav.disabled = !state.realized; }
+  function exportMidi() {
+    if (!state.realized) return;
+    try {
+      const k = currentKey(), meterKey = E.selMeter.value;
+      const tpl = TEMPLATES.filter(function (t) { return t.id === state.abstract.templateId; })[0];
+      const o = {
+        meter: meterKey, bpm: Number(E.rngBpm.value), key: k, instrument: E.selInst.value,
+        arpInstrument: M.selArpInst.value, title: tpl ? tpl.name + ' in ' + k.label : 'Manual chord entry', countBars: X.chkMidiCount.checked ? Math.max(1, Number(E.selCountIn.value) || 1) : 0,
+        passes: Number(X.selMidiPasses.value), drums: X.chkMidiDrums.checked ? drum.grid : null,
+        swing: Number(X.rngSwing.value) / 100, kit: currentKit(),
+        arp: $('chkMidiArp').checked ? arpLive() : null,               // arpeggio ...
+        block: M.chkMidiBlock.checked,                                 // ... and/or block chords (both may be exported together)
+        cpat: M.chkMidiPat.checked ? { grid: cp.grid.slice(), short: C.selChordGate.value === 'short' } : null   // chord rhythm pattern for the block chords
+      };
+      const bytes = buildMidi(state.realized, o);
+      const name = 'acoustix-' + state.abstract.style + '-' + k.name.replace(SHARP, 's').replace(FLAT, 'b') + '-' + k.mode + '-' + o.bpm + 'bpm.mid';
+      const url = URL.createObjectURL(new Blob([bytes], { type: 'audio/midi' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+      X.midiStatus.textContent = 'MIDI file created: ' + name + ' (' + bytes.length + ' bytes, ' + o.passes + ' pass(es)' +
+        (o.countBars ? ', with count-in' : '') + (o.drums ? ', with drum track' : '') + (o.cpat ? ', chord rhythm' : '') + ').';
+    } catch (e) {
+      X.midiStatus.textContent = 'MIDI export failed: ' + (e.message || e);
+    }
+  }
+
+
+  /* ----- WAV export of the chord progression (offline rendering) -----
+     Uses exportPlan() (the same timing as the MIDI export) and a SECOND audio-engine instance on an
+     OfflineAudioContext, so the file sounds like live playback: same instrument, chord/drum/count-in
+     volumes from the sliders, same Cajon/drum samples. Master is fixed at 100 %; the result is
+     peak-normalised to 0.9 afterwards (turned up or down). */
+  async function exportWav() {
+    if (!state.realized) return;
+    X.btnWav.disabled = true; X.midiStatus.textContent = 'Rendering WAV …';
+    try {
+      const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      if (!OAC) throw new Error('Offline rendering is not supported by this browser.');
+      const k = currentKey(), rate = 44100, tail = 3;
+      const o = {
+        meter: E.selMeter.value, bpm: Number(E.rngBpm.value), countBars: X.chkMidiCount.checked ? countBars() || 1 : 0,
+        passes: Number(X.selMidiPasses.value), drums: X.chkMidiDrums.checked ? drum.grid : null,
+        swing: Number(X.rngSwing.value) / 100, kit: currentKit(),
+        arp: $('chkMidiArp').checked ? arpLive() : null, block: M.chkMidiBlock.checked,
+        cpat: M.chkMidiPat.checked ? { grid: cp.grid.slice(), short: C.selChordGate.value === 'short' } : null
+      };
+      const plan = exportPlan(state.realized, o);
+      if (plan.endSec > 600) throw new Error('Longer than 10 minutes – reduce the passes.');
+      const frames = Math.ceil((plan.endSec + tail) * rate);
+      const eng = createAudioEngine(function () { return new OAC(2, frames, rate); }, { maxVoices: 1e9 });
+      const c = eng.ensure(), banks = AudioEngine.getBanks(), inst = E.selInst.value, arpInst = M.selArpInst.value;
+      eng.setSampleBank(banks.sample);
+      Object.keys(banks.drums).forEach(function (n) { eng.setDrumSample(n, banks.drums[n], 'drums'); });
+      Object.keys(banks.cajon).forEach(function (n) { eng.setDrumSample(n, banks.cajon[n], 'cajon'); });
+      eng.setDrumKit(o.kit); eng.setVolume(100);
+      eng.setChordVolume(Number(E.rngChordVol.value)); eng.setArpVolume(Number(E.rngArpVol.value)); eng.setDrumVolume(Number(X.rngDrumVol.value)); eng.setCountVolume(Number(E.rngCountVol.value));
+      plan.chord.forEach(function (n) {
+        const sound = n.arp ? arpInst : inst;                          // each layer has its own sound
+        const t = n.t + (n.strum ? n.k * eng.strumOf(sound) : 0);
+        const v = eng.startVoice(sound, n.midi, t, n.level, n.arp ? 'arp' : undefined);
+        v.release(n.t + n.dur, v.relTc || eng.releaseTc(sound));
+      });
+      plan.drums.forEach(function (d) { eng.drum(d.row, d.t, d.vel); });
+      plan.count.forEach(function (n) { eng.countClick(n.t, n.first, n.strong); });
+      const buf = await c.startRendering();
+      const chans = []; let peak = 0;
+      for (let ch = 0; ch < buf.numberOfChannels; ch++) {
+        const d = buf.getChannelData(ch); chans.push(d);
+        for (let i = 0; i < d.length; i++) { const a = Math.abs(d[i]); if (a > peak) peak = a; }
+      }
+      if (peak < 1e-5) throw new Error('The rendering is silent (check the volume sliders).');
+      const g = 0.9 / peak; chans.forEach(function (d) { for (let i = 0; i < d.length; i++) d[i] *= g; });
+      const bytes = encodeWav(chans, buf.sampleRate);
+      const name = 'acoustix-' + state.abstract.style + '-' + k.name.replace(SHARP, 's').replace(FLAT, 'b') + '-' + k.mode + '-' + o.bpm + 'bpm.wav';
+      saveBytes(bytes, name, 'audio/wav');
+      X.midiStatus.textContent = 'WAV file created: ' + name + ' (' + Math.round(bytes.length / 1024) + ' KB, 16 bit, ' + Math.round(plan.endSec + tail) + ' s, ' + o.passes + ' pass(es)' +
+        (o.countBars ? ', with count-in' : '') + (o.drums ? ', with drum track' : '') + ').';
+    } catch (e) {
+      X.midiStatus.textContent = 'WAV export failed: ' + (e.message || e);
+    }
+    updateMidiButton();
+  }
+
+  /* ----- event wiring for the extras (each listener attached exactly once) ----- */
+  function initExtras() {
+    fillPatterns('pop'); applyPreset('pop-rock');
+    X.selDrumGenre.addEventListener('change', function () {
+      fillPatterns(X.selDrumGenre.value);
+      applyPreset(DRUM_PRESETS.filter(function (p) { return p.genre === X.selDrumGenre.value; })[0].id);
+    });
+    X.selDrumPattern.addEventListener('change', function () { applyPreset(X.selDrumPattern.value); });
+    X.selDrumMeter.addEventListener('change', function () {            // the editor shares the player's time signature
+      E.selMeter.value = X.selDrumMeter.value;
+      E.selMeter.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    E.selMeter.addEventListener('change', onMeterChangeExtras);
+    X.rngSwing.addEventListener('input', function () { X.outSwing.textContent = X.rngSwing.value + ' %'; });
+    X.rngDrumVol.addEventListener('input', function () {
+      X.outDrumVol.textContent = X.rngDrumVol.value + ' %'; AudioEngine.setDrumVolume(Number(X.rngDrumVol.value));
+    });
+    X.chkDrums.addEventListener('change', function () {
+      X.chkMidiDrums.checked = X.chkDrums.checked;
+      if (X.chkDrums.checked && E.chkMetro.checked) {                  // ADDED: drums replace the metronome (both together make no sense)
+        E.chkMetro.checked = false; setStatus('Drums on – metronome switched off (the drum machine keeps the time).');
+      }
+    });
+    E.chkMetro.addEventListener('change', function () {                // ADDED: switching the metronome on switches drums off
+      if (E.chkMetro.checked && X.chkDrums.checked) {
+        X.chkDrums.checked = false; X.chkMidiDrums.checked = false; setStatus('Metronome on – drums switched off.');
+      }
+    });
+    X.btnDrumClear.addEventListener('click', function () {
+      DRUM_ROWS.forEach(function (r) { drum.grid[r].fill(0); });
+      markCustom();
+      DRUM_ROWS.forEach(function (r) { drum.grid[r].forEach(function (v, i) { paintCell(r, i); }); });
+    });
+    X.btnDrumReload.addEventListener('click', function () { applyPreset(drum.base); });
+    X.matrixWrap.addEventListener('click', function (e) {
+      const b = e.target.closest ? e.target.closest('.cell') : null;
+      if (!b) return;
+      const r = b.dataset.r, i = Number(b.dataset.i);
+      drum.grid[r][i] = (drum.grid[r][i] + 1) % 3;
+      paintCell(r, i); markCustom();
+    });
+    X.matrixWrap.addEventListener('keydown', function (e) {            // arrow keys: roving focus inside the grid
+      const b = e.target.closest ? e.target.closest('.cell') : null;
+      if (!b || ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].indexOf(e.key) < 0) return;
+      e.preventDefault();
+      let ri = DRUM_ROWS.indexOf(b.dataset.r), i = Number(b.dataset.i);
+      const n = drum.cols.length;
+      if (e.key === 'ArrowLeft') i = Math.max(0, i - 1);
+      if (e.key === 'ArrowRight') i = Math.min(n - 1, i + 1);
+      if (e.key === 'ArrowUp') ri = Math.max(0, ri - 1);
+      if (e.key === 'ArrowDown') ri = Math.min(DRUM_ROWS.length - 1, ri + 1);
+      const nb = drum.cells[DRUM_ROWS[ri]][i];
+      b.tabIndex = -1; nb.tabIndex = 0; nb.focus();
+    });
+    X.btnMidi.addEventListener('click', exportMidi);
+    X.btnWav.addEventListener('click', exportWav);
+  }
+
+  /* =====================================================================================
+     DIRECT CHORD EDITING + ARPEGGIATOR + CHORD RHYTHM + DRUM EXPORT/SAMPLES UI (ADDED)
+
+     CHORD EDITING: every bar in the Progression is clickable (or Enter on the focused bar). The bar turns
+     into a text field that takes one or two chords ("Am7" or "C/E G"). Enter / leaving the field applies
+     it, Escape cancels, an empty field deletes the bar, and a "|" splits it into two bars. The whole
+     progression is then re-parsed with parseChordText() and installed as templateId 'manual', so playback,
+     highlighting, Roman numerals and MIDI export behave exactly as for generated progressions.
+     ===================================================================================== */
+  const M = {};
+  ['chkArp','selArpInst','selArpPat','selArpGate','arpWrap','btnArpClear','chkMidiArp','chkMidiPat','chkMidiBlock','btnBarAdd','btnBarRemove','editStatus'].forEach(function (id) { M[id] = $(id); });
+
+  /* ----- arpeggio matrix editor: rows = chord functions (see ARP_LANES), columns = 16th steps of the bar ----- */
+  const arp = { presetId: 'up', grid: arpEmptyGrid(16), custom: {}, cells: {}, cols: [], now: -1, sig: '' };
+  function arpLive() { return { on: M.chkArp.checked, grid: arp.grid, held: M.selArpGate.value === 'held' }; }   // read by the scheduler on every pulse
+  /* Rows shown: always bass, root, 3rd, 5th, root/3rd/5th one octave up; 7th/6th, 9th, 11th, 13th only when a chord of the
+     progression has that tone (the row is added automatically, its ticks are kept when it disappears). */
+  function arpVisibleLanes() {
+    const bars = state.realized ? state.realized.bars : [];
+    return ARP_LANES.filter(function (l) {
+      return !l.ext || bars.some(function (b) { return b.chords.some(function (c) { return arpLaneNote(c, l) !== null; }); });
+    });
+  }
+  function arpPaint(id, i) {
+    const b = arp.cells[id + ':' + i], v = arp.grid[id][i], lane = ARP_LANES.filter(function (l) { return l.id === id; })[0];
+    b.className = 'cell s' + v + (arp.now === i ? ' now' : '');
+    b.textContent = v === 1 ? '●' : v === 2 ? '○' : '';
+    b.setAttribute('aria-label', lane.label + ', ' + stepName(E.selMeter.value, i) + ': ' + ['off', 'on', 'soft'][v]);
+  }
+  function arpHighlight(i) {
+    if (arp.now === i) return;
+    const prev = arp.now; arp.now = i;
+    if (prev >= 0 && arp.cols[prev]) arp.cols[prev].forEach(function (b) { b.classList.remove('now'); });
+    if (i >= 0 && arp.cols[i]) arp.cols[i].forEach(function (b) { b.classList.add('now'); });
+  }
+  function arpBuild(force) {
+    const meterKey = E.selMeter.value, n = stepsPerBar(meterKey), m = METERS[meterKey], lanes = arpVisibleLanes();
+    const sig = meterKey + '|' + lanes.map(function (l) { return l.id; }).join(',');
+    if (!force && sig === arp.sig) return;                              // nothing visible changed: keep focus and cells
+    arp.sig = sig;
+    const tbl = el('table', 'matrix');
+    tbl.appendChild(el('caption', 'vh', 'Arpeggio for ' + meterKey + ': ' + lanes.length + ' rows, ' + n + ' sixteenth-note steps.'));
+    const hr = el('tr'); hr.appendChild(el('th', 'rowh vh', 'Row'));
+    for (let i = 0; i < n; i++) {
+      const six = m.ppb === 3, first = six ? i % 2 === 0 : i % 4 === 0;
+      const lab = six ? (first ? String(i / 2 + 1) : '·') : ['', 'e', '&', 'a'][i % 4] || String(i / 4 + 1);
+      const th = el('th', first ? 'beat' : '', lab); th.scope = 'col'; hr.appendChild(th);
+    }
+    const thead = el('thead'); thead.appendChild(hr); tbl.appendChild(thead);
+    const tbody = el('tbody'); arp.cells = {}; arp.cols = []; arp.now = -1;
+    for (let i = 0; i < n; i++) arp.cols.push([]);
+    lanes.slice().reverse().forEach(function (lane, r) {                // highest tone on top, like a keyboard
+      const tr = el('tr'), rh = el('th', 'rowh', lane.label); rh.scope = 'row'; tr.appendChild(rh);
+      for (let i = 0; i < n; i++) {
+        const td = el('td', (m.ppb === 3 ? i % 2 === 0 && i > 0 : i % 4 === 0 && i > 0) ? 'bs' : '');
+        const b = el('button', 'cell'); b.type = 'button'; b.dataset.i = String(i); b.dataset.lane = lane.id; b.dataset.r = String(r);
+        b.tabIndex = (r === 0 && i === 0) ? 0 : -1;
+        td.appendChild(b); tr.appendChild(td); arp.cells[lane.id + ':' + i] = b; arp.cols[i].push(b); arpPaint(lane.id, i);
+      }
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody);
+    M.arpWrap.textContent = ''; M.arpWrap.appendChild(tbl);
+  }
+  function arpFillPresets() {
+    M.selArpPat.textContent = '';
+    ARP_PRESETS.forEach(function (p) { const o = el('option', '', p.name); o.value = p.id; M.selArpPat.appendChild(o); });
+    const c = el('option', '', 'Custom'); c.value = 'custom'; M.selArpPat.appendChild(c);
+  }
+  function arpApply(id) {
+    const meterKey = E.selMeter.value;
+    arp.presetId = id;
+    if (id === 'custom') { arp.grid = arp.custom[meterKey] || arpEmptyGrid(stepsPerBar(meterKey)); arp.custom[meterKey] = arp.grid; }
+    else arp.grid = arpGridFor(ARP_PRESETS.filter(function (p) { return p.id === id; })[0], meterKey);
+    M.selArpPat.value = id; arpBuild(true);
+  }
+  function arpMarkCustom() {
+    if (arp.presetId !== 'custom') { arp.presetId = 'custom'; M.selArpPat.value = 'custom'; }
+    arp.custom[E.selMeter.value] = arp.grid;
+  }
+  function initArpMatrix() {
+    arpFillPresets(); arpApply('up');
+    M.selArpPat.addEventListener('change', function () { arpApply(M.selArpPat.value); });
+    E.selMeter.addEventListener('change', function () { arpApply(arp.presetId); });
+    M.arpWrap.addEventListener('click', function (e) {
+      const b = e.target.closest ? e.target.closest('.cell') : null;
+      if (!b) return;
+      const i = Number(b.dataset.i), id = b.dataset.lane;
+      arp.grid[id][i] = (arp.grid[id][i] + 1) % 3; arpPaint(id, i); arpMarkCustom();
+    });
+    M.arpWrap.addEventListener('keydown', function (e) {                // arrow keys move through the matrix
+      const b = e.target.closest ? e.target.closest('.cell') : null;
+      if (!b || ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].indexOf(e.key) < 0) return;
+      e.preventDefault();
+      const rows = M.arpWrap.querySelectorAll('tbody tr'), n = arp.cols.length;
+      let r = Number(b.dataset.r), i = Number(b.dataset.i);
+      if (e.key === 'ArrowLeft') i = Math.max(0, i - 1); else if (e.key === 'ArrowRight') i = Math.min(n - 1, i + 1);
+      else if (e.key === 'ArrowUp') r = Math.max(0, r - 1); else r = Math.min(rows.length - 1, r + 1);
+      const nb = rows[r].querySelectorAll('.cell')[i];
+      b.tabIndex = -1; nb.tabIndex = 0; nb.focus();
+    });
+    M.btnArpClear.addEventListener('click', function () {
+      ARP_LANES.forEach(function (l) { arp.grid[l.id].fill(0); }); arpMarkCustom();
+      Object.keys(arp.cells).forEach(function (k) { const q = k.split(':'); arpPaint(q[0], Number(q[1])); });
+    });
+  }
+  function editMsg(msg, isErr) { M.editStatus.textContent = msg; M.editStatus.className = 'hint' + (isErr ? ' err' : ''); }
+  const EDIT_HINT = 'Click a bar to edit its chords, e.g. Am7 or C/E G.';
+  function renderManualRefs() {
+    E.refsHost.textContent = '';
+    E.refsHost.appendChild(el('p', '', 'These are chords you entered yourself, so there is no template or song reference. Roman numerals are shown relative to the selected key (' + currentKey().label + ').'));
+  }
+
+  /* Current progression as parsed chord specs (what parseChordText returns), or null if a chord name cannot be parsed. */
+  function currentSpecs() {
+    if (!state.realized) return null;
+    if (state.abstract && state.abstract.templateId === 'manual') return state.abstract.bars.map(function (b) { return b.slice(); });
+    const out = [];
+    for (const bar of state.realized.bars) {
+      const specs = [];
+      for (const c of bar.chords) { const sp = parseChordSymbol(c.name); if (sp.error) return null; specs.push(sp); }
+      out.push(specs);
+    }
+    return out;
+  }
+  function applyBars(specs, focusBar) {
+    stopPlayback('Playback stopped because the chords changed.');
+    state.abstract = { templateId: 'manual', style: 'manual', mode: currentKey().mode, length: specs.length, mood: '', complexity: '', bars: specs };
+    state.realized = realizeManual(specs, currentKey());
+    renderProgression();
+    setPlayingUI(false);
+    if (focusBar != null && state.barEls[focusBar]) { const w = state.barEls[focusBar].querySelector('.chords'); if (w) w.focus(); }
+  }
+  function barText(bi) { return state.realized.bars[bi].chords.map(function (c) { return c.name; }).join(' '); }
+
+  /* Called by renderProgression() for every bar: makes the chord area clickable / keyboard-operable. */
+  function makeBarEditable(wrap, bi) {
+    wrap.classList.add('editable'); wrap.tabIndex = 0; wrap.setAttribute('role', 'button');
+    wrap.setAttribute('aria-label', 'Bar ' + (bi + 1) + ': ' + state.realized.bars[bi].chords.map(function (c) { return c.speak; }).join(', then ') + '. Press Enter to edit.');
+    wrap.addEventListener('click', function (e) { if (e.target.tagName !== 'INPUT') startEdit(wrap, bi); });
+    wrap.addEventListener('keydown', function (e) {
+      if (e.target === wrap && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); startEdit(wrap, bi); }
+    });
+  }
+  function startEdit(wrap, bi) {
+    if (wrap.querySelector('input')) return;
+    const inp = document.createElement('input');
+    inp.type = 'text'; inp.className = 'chord-edit'; inp.value = barText(bi); inp.spellcheck = false; inp.autocomplete = 'off';
+    inp.setAttribute('aria-label', 'Chords of bar ' + (bi + 1) + '. One or two chords, for example C/E G. Enter applies, Escape cancels.');
+    wrap.textContent = ''; wrap.style.setProperty('--n', 1); wrap.removeAttribute('role'); wrap.removeAttribute('tabindex'); wrap.appendChild(inp);
+    inp.focus(); inp.select();
+    let done = false;
+    function finish(commit, viaEnter) {
+      if (done) return;
+      const text = inp.value;
+      if (!commit) { done = true; renderProgression(); editMsg(EDIT_HINT, false); return; }
+      const err = commitBar(bi, text, viaEnter);
+      if (err) {
+        if (viaEnter) { inp.setAttribute('aria-invalid', 'true'); editMsg(err, true); return; }   // Enter: stay in the field
+        done = true; renderProgression(); editMsg(err, true); return;                                // leaving the field: revert, keep the message
+      }
+      done = true;
+    }
+    inp.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); finish(true, true); }
+      else if (e.key === 'Escape') { e.preventDefault(); finish(false); const w = state.barEls[bi] && state.barEls[bi].querySelector('.chords'); if (w) w.focus(); }
+    });
+    inp.addEventListener('input', function () { inp.removeAttribute('aria-invalid'); });
+    inp.addEventListener('blur', function () { finish(true, false); });
+  }
+  /* Returns an error message, or '' on success. */
+  function commitBar(bi, text, viaEnter) {
+    const specs = currentSpecs();
+    if (!specs) return 'This progression cannot be edited.';
+    if (!text.trim()) {
+      if (specs.length <= 1) return 'At least one bar is needed.';
+      specs.splice(bi, 1); applyBars(specs, Math.min(bi, specs.length - 1)); editMsg('Bar removed.', false); return '';
+    }
+    const r = parseChordText(text);
+    if (r.error) return /^Bar 1 has /.test(r.error) ? 'At most two chords per bar are possible. Use “|” to start a new bar.' : r.error.replace(/^Bar 1: /, '');
+    specs.splice.apply(specs, [bi, 1].concat(r.bars));
+    if (specs.length > 16) return 'At most 16 bars are possible.';
+    applyBars(specs, viaEnter ? bi : null); editMsg(EDIT_HINT, false);
+    return '';
+  }
+  function addBar() {
+    const specs = currentSpecs();
+    if (!specs) return;
+    if (specs.length >= 16) { editMsg('At most 16 bars are possible.', true); return; }
+    specs.push(specs[specs.length - 1].slice());
+    applyBars(specs, specs.length - 1);
+    const w = state.barEls[specs.length - 1].querySelector('.chords'); startEdit(w, specs.length - 1);
+  }
+  function removeBar() {
+    const specs = currentSpecs();
+    if (!specs) return;
+    if (specs.length <= 1) { editMsg('At least one bar is needed.', true); return; }
+    specs.pop(); applyBars(specs, specs.length - 1); editMsg('Bar removed.', false);
+  }
+
+  /* ----- chord rhythm pattern (block chords on a 16th-note grid) ----- */
+  const C = {};
+  ['chkChordPat','selChordPat','selChordGate','cpatWrap','btnCpatClear'].forEach(function (id) { C[id] = $(id); });
+  const cp = { presetId: 'quarters', grid: [], custom: {}, cells: [], now: -1 };
+  function cpatLive() { return { on: C.chkChordPat.checked, grid: cp.grid, short: C.selChordGate.value === 'short' }; }
+  function cpatPaint(i) {
+    const b = cp.cells[i], v = cp.grid[i];
+    b.className = 'cell s' + v + (cp.now === i ? ' now' : '');
+    b.textContent = v === 1 ? '●' : v === 2 ? '○' : '';
+    b.setAttribute('aria-label', 'Chord hit, ' + stepName(E.selMeter.value, i) + ': ' + ['off', 'on', 'soft'][v]);
+  }
+  function cpatHighlight(i) {
+    if (cp.now === i) return;
+    const prev = cp.now; cp.now = i;
+    if (prev >= 0 && cp.cells[prev]) cp.cells[prev].classList.remove('now');
+    if (i >= 0 && cp.cells[i]) cp.cells[i].classList.add('now');
+  }
+  function cpatBuild() {
+    const meterKey = E.selMeter.value, n = stepsPerBar(meterKey), m = METERS[meterKey];
+    const tbl = el('table', 'matrix');
+    tbl.appendChild(el('caption', 'vh', 'Chord rhythm for ' + meterKey + ' with ' + n + ' sixteenth-note steps.'));
+    const hr = el('tr'); hr.appendChild(el('th', 'rowh vh', 'Row'));
+    for (let i = 0; i < n; i++) {
+      const six = m.ppb === 3, first = six ? i % 2 === 0 : i % 4 === 0;
+      const lab = six ? (first ? String(i / 2 + 1) : '·') : ['', 'e', '&', 'a'][i % 4] || String(i / 4 + 1);
+      const th = el('th', first ? 'beat' : '', lab); th.scope = 'col'; hr.appendChild(th);
+    }
+    const thead = el('thead'); thead.appendChild(hr); tbl.appendChild(thead);
+    const tr = el('tr'), rh = el('th', 'rowh', 'Chord'); rh.scope = 'row'; tr.appendChild(rh);
+    cp.cells = []; cp.now = -1;
+    for (let i = 0; i < n; i++) {
+      const td = el('td', (m.ppb === 3 ? i % 2 === 0 && i > 0 : i % 4 === 0 && i > 0) ? 'bs' : '');
+      const b = el('button', 'cell'); b.type = 'button'; b.dataset.i = String(i); b.tabIndex = i === 0 ? 0 : -1;
+      td.appendChild(b); tr.appendChild(td); cp.cells.push(b); cpatPaint(i);
+    }
+    const tbody = el('tbody'); tbody.appendChild(tr); tbl.appendChild(tbody);
+    C.cpatWrap.textContent = ''; C.cpatWrap.appendChild(tbl);
+  }
+  function cpatFillPresets() {
+    C.selChordPat.textContent = '';
+    CPAT_PRESETS.forEach(function (p) { const o = el('option', '', p.name); o.value = p.id; C.selChordPat.appendChild(o); });
+    const c = el('option', '', 'Custom'); c.value = 'custom'; C.selChordPat.appendChild(c);
+  }
+  function cpatApply(id) {
+    const meterKey = E.selMeter.value;
+    cp.presetId = id;
+    if (id === 'custom') { cp.grid = cp.custom[meterKey] || new Array(stepsPerBar(meterKey)).fill(0); cp.custom[meterKey] = cp.grid; }
+    else cp.grid = cpatGridFor(CPAT_PRESETS.filter(function (p) { return p.id === id; })[0], meterKey);
+    C.selChordPat.value = id; cpatBuild();
+  }
+  function cpatMarkCustom() {
+    if (cp.presetId !== 'custom') { cp.presetId = 'custom'; C.selChordPat.value = 'custom'; }
+    cp.custom[E.selMeter.value] = cp.grid;
+  }
+  function initChordPattern() {
+    cpatFillPresets(); cpatApply('quarters');
+    C.selChordPat.addEventListener('change', function () { cpatApply(C.selChordPat.value); });
+    E.selMeter.addEventListener('change', function () { cpatApply(cp.presetId); });
+    C.cpatWrap.addEventListener('click', function (e) {
+      const b = e.target.closest ? e.target.closest('.cell') : null;
+      if (!b) return;
+      const i = Number(b.dataset.i);
+      cp.grid[i] = (cp.grid[i] + 1) % 3; cpatPaint(i); cpatMarkCustom();
+    });
+    C.cpatWrap.addEventListener('keydown', function (e) {
+      const b = e.target.closest ? e.target.closest('.cell') : null;
+      if (!b || ['ArrowLeft', 'ArrowRight'].indexOf(e.key) < 0) return;
+      e.preventDefault();
+      let i = Number(b.dataset.i);
+      i = e.key === 'ArrowLeft' ? Math.max(0, i - 1) : Math.min(cp.cells.length - 1, i + 1);
+      b.tabIndex = -1; cp.cells[i].tabIndex = 0; cp.cells[i].focus();
+    });
+    C.btnCpatClear.addEventListener('click', function () { cp.grid.fill(0); cpatMarkCustom(); cp.grid.forEach(function (v, i) { cpatPaint(i); }); });
+    C.chkChordPat.addEventListener('change', function () { M.chkMidiPat.checked = C.chkChordPat.checked; });   // arpeggio and block chords (with or without rhythm) may play together
+    E.chkChords.addEventListener('change', function () { M.chkMidiBlock.checked = E.chkChords.checked; });
+  }
+  function resetChordPattern() {
+    C.chkChordPat.checked = false; M.chkMidiPat.checked = false; M.chkMidiBlock.checked = true; C.selChordGate.value = 'held'; cp.custom = {};
+    cpatApply('quarters');
+  }
+
+  /* ----- drum export (MIDI / WAV) ----- */
+  const D = {};
+  ['selDrumBars','btnDrumMidi','btnDrumWav','drumExportStatus','fileDrums','btnDrumFolder','btnDrumSampClear','drumSampStatus'].forEach(function (id) { D[id] = $(id); });
+  function saveBytes(bytes, name, type) {
+    const url = URL.createObjectURL(new Blob([bytes], { type: type }));
+    const a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+  }
+  function drumFileBase() {
+    return 'acoustix-' + (currentKit() === 'cajon' ? 'cajon' : 'drums') + '-' + (drum.presetId === 'custom' ? 'custom' : drum.presetId) + '-' + E.selMeter.value.replace('/', '-') + '-' + Number(E.rngBpm.value) + 'bpm';
+  }
+  function exportDrumMidi() {
+    try {
+      const bars = Number(D.selDrumBars.value);
+      const bytes = buildDrumMidi({ meter: E.selMeter.value, bpm: Number(E.rngBpm.value), grid: drum.grid, swing: Number(X.rngSwing.value) / 100, bars: bars, kit: currentKit(), title: (currentKit() === 'cajon' ? 'Cajon groove ' : 'Drum groove ') + E.selMeter.value });
+      saveBytes(bytes, drumFileBase() + '.mid', 'audio/midi');
+      D.drumExportStatus.textContent = 'MIDI file created (' + bars + ' bar' + (bars > 1 ? 's' : '') + ', ' + bytes.length + ' bytes). General MIDI drums on channel 10.';
+    } catch (e) { D.drumExportStatus.textContent = 'MIDI export failed: ' + (e.message || e); }
+  }
+  async function exportDrumWav() {
+    D.drumExportStatus.textContent = 'Rendering …'; D.btnDrumWav.disabled = true;
+    try {
+      const bars = Number(D.selDrumBars.value);
+      const buf = await AudioEngine.renderDrums({ meter: E.selMeter.value, bpm: Number(E.rngBpm.value), grid: drum.grid, swing: Number(X.rngSwing.value) / 100, bars: bars, kit: currentKit() });
+      const chans = []; let peak = 0;
+      for (let c = 0; c < buf.numberOfChannels; c++) {
+        const d = buf.getChannelData(c); chans.push(d);
+        for (let i = 0; i < d.length; i++) { const a = Math.abs(d[i]); if (a > peak) peak = a; }
+      }
+      if (peak > 0.98) { const g = 0.98 / peak; chans.forEach(function (d) { for (let i = 0; i < d.length; i++) d[i] *= g; }); }   // only turns down, never up
+      const bytes = encodeWav(chans, buf.sampleRate);
+      saveBytes(bytes, drumFileBase() + '.wav', 'audio/wav');
+      D.drumExportStatus.textContent = 'WAV file created (' + bars + ' bar' + (bars > 1 ? 's' : '') + ' plus ring-out, ' + Math.round(bytes.length / 1024) + ' KB, 16 bit).';
+    } catch (e) { D.drumExportStatus.textContent = 'WAV export failed: ' + (e.message || e); }
+    D.btnDrumWav.disabled = false;
+  }
+
+  /* ----- own drum samples (WAV) ----- */
+  const KIT_NAMES = {                                                  // row -> name shown to the user, per sound set
+    drums: { kick: 'kick', snare: 'snare', hat: 'hi-hat', ohat: 'open hi-hat', ride: 'ride' },
+    cajon: { kick: 'kick', snare: 'snare', hat: 'shaker', ohat: 'tambourine', ride: 'claves' }
+  };
+  const KIT_FOLDER = { drums: '/drums/', cajon: '/cajon/' };
+  const KIT_FILES = {                                                  // tried in this order, first existing file wins
+    drums: { kick: ['kick.wav', 'bd.wav'], snare: ['snare.wav', 'sd.wav'], hat: ['hi-hat.wav', 'hihat.wav', 'hat.wav'],
+             ohat: ['open-hat.wav', 'openhat.wav', 'open-hihat.wav'], ride: ['ride.wav'] },
+    cajon: { kick: ['kick.wav', 'bass.wav'], snare: ['snare.wav', 'slap.wav'], hat: ['shaker.wav'],
+             ohat: ['tambourine.wav', 'tamb.wav'], ride: ['claves.wav', 'clave.wav'] }
+  };
+  function drumSampMsg(loaded, problems) {
+    const kit = currentKit(), names = Object.keys(KIT_NAMES[kit]), have = AudioEngine.drumSampleNames(kit);
+    const missing = names.filter(function (k) { return have.indexOf(k) < 0; });
+    let msg = have.length ? 'Samples: ' + names.filter(function (k) { return have.indexOf(k) >= 0; }).map(function (k) { return KIT_NAMES[kit][k]; }).join(', ') + '.' : 'No samples loaded.';
+    if (have.length && missing.length) msg += ' Built-in sound for: ' + missing.map(function (k) { return KIT_NAMES[kit][k]; }).join(', ') + '.';
+    if (problems.length) msg += ' ' + problems.join(' ');
+    D.drumSampStatus.textContent = msg; D.drumSampStatus.className = 'status' + (problems.length && !loaded ? ' err' : '');
+  }
+  async function loadDrumFiles(fileList) {
+    const problems = [], kit = currentKit(); let loaded = 0;
+    try { AudioEngine.ensure(); } catch (e) { drumSampMsg(0, [e.message]); return; }
+    for (const f of Array.from(fileList).slice(0, 32)) {
+      const nm = kit === 'cajon' ? cajonNameFromFile(f.name) : drumNameFromFile(f.name);
+      if (!nm) { problems.push(f.name + ': name not recognised (use ' + Object.keys(KIT_NAMES[kit]).map(function (k) { return KIT_NAMES[kit][k].replace(/ /g, '-'); }).join(', ') + ').'); continue; }
+      if (f.size > 20 * 1024 * 1024) { problems.push(f.name + ': larger than 20 MB.'); continue; }
+      try { AudioEngine.setDrumSample(nm, await AudioEngine.ensure().decodeAudioData(await f.arrayBuffer()), kit); loaded++; }
+      catch (e) { problems.push(f.name + ': could not be decoded.'); }
+    }
+    drumSampMsg(loaded, problems);
+  }
+  async function loadDrumFolder() {
+    const problems = [], kit = currentKit(), folder = KIT_FOLDER[kit]; let loaded = 0;
+    try { AudioEngine.ensure(); } catch (e) { drumSampMsg(0, [e.message]); return; }
+    D.drumSampStatus.textContent = 'Loading ' + folder.slice(0, -1) + ' …'; D.drumSampStatus.className = 'status';
+    for (const nm of Object.keys(KIT_FILES[kit])) {
+      for (const file of KIT_FILES[kit][nm]) {
+        try {
+          const r = await fetch(folder + file, { cache: 'no-store' });
+          if (!r.ok) continue;
+          AudioEngine.setDrumSample(nm, await AudioEngine.ensure().decodeAudioData(await r.arrayBuffer()), kit);
+          loaded++; break;
+        } catch (e) { /* not reachable or not decodable: try the next candidate */ }
+      }
+    }
+    if (!loaded) problems.push('Nothing found in ' + folder.slice(0, -1) + ' (needs http(s) hosting and files such as ' + KIT_FILES[kit].kick[0] + ', ' + KIT_FILES[kit].snare[0] + ').');
+    drumSampMsg(loaded, problems);
+  }
+  /* Sound set switch: labels of the rows, sample texts and the engine's kit follow. */
+  function applyKit() {
+    const kit = currentKit();
+    AudioEngine.setDrumKit(kit);
+    D.btnDrumFolder.textContent = 'Load from ' + KIT_FOLDER[kit].slice(0, -1);
+    $('lblFileDrums').textContent = 'WAV files named ' + Object.keys(KIT_NAMES[kit]).map(function (k) { return KIT_NAMES[kit][k].replace(/ /g, '-'); }).join(', ');
+    buildMatrix(); updateDrumInfo(); drumSampMsg(0, []);
+  }
+  function initDrumExtras() {
+    D.btnDrumMidi.addEventListener('click', exportDrumMidi);
+    D.btnDrumWav.addEventListener('click', exportDrumWav);
+    D.fileDrums.addEventListener('change', function () { if (D.fileDrums.files.length) loadDrumFiles(D.fileDrums.files); });
+    D.btnDrumFolder.addEventListener('click', loadDrumFolder);
+    D.btnDrumSampClear.addEventListener('click', function () { AudioEngine.clearDrumSamples(currentKit()); D.fileDrums.value = ''; drumSampMsg(0, []); });
+    X.selDrumKit.addEventListener('change', applyKit);
+  }
+
+  function initManualArp() {
+    M.btnBarAdd.addEventListener('click', addBar);
+    M.btnBarRemove.addEventListener('click', removeBar);
+    E.selKey.addEventListener('change', function () {                    // entered chords stay as entered; only the Roman numerals follow the key
+      if (!state.abstract || state.abstract.templateId !== 'manual') return;
+      const k = currentKey();
+      state.realized.bars.forEach(function (b) { b.chords.forEach(function (c) { c.rn = manualRoman(c.rootPc, c.qual, k); }); });
+      renderProgression();
+    });
+    M.chkArp.addEventListener('change', function () { M.chkMidiArp.checked = M.chkArp.checked; });
+    E.btnReset.addEventListener('click', function () {                   // runs after the existing Reset handler
+      editMsg(EDIT_HINT, false);
+      M.chkArp.checked = false; M.selArpInst.value = 'piano'; M.selArpGate.value = 'step'; M.chkMidiArp.checked = false; arp.custom = {}; arpApply('up');
+      resetChordPattern();
+    });
+    initChordPattern(); initArpMatrix(); initDrumExtras(); applyKit();
+  }
+
   /* ---------- start-up ---------- */
   fillSelects();
   bind();
+  initExtras();                                                        // ADDED
+  initManualArp();                                                     // ADDED
   applyDefaults();
   generate(null);                                                      // show a progression immediately (no audio is started)
   setStatus('');
