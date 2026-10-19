@@ -118,6 +118,10 @@ button.primary:not(:disabled):hover { background: #163d7c; }
 .chords.dense .rn { font-size: .8rem; }
 @media (max-width: 640px) { .chords.dense { grid-template-columns: repeat(2, minmax(0, 1fr)); } }   /* ADDED: 3-4 chords per bar: two rows on narrow screens */
 .hide-roman .rn { display: none; }
+/* ADDED: language and chord-notation switches in the page header */
+.langbar { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; margin-top: .6rem; }
+.langbar .field { min-width: 11rem; }
+.langbar select { width: auto; min-width: 11rem; }
 .empty { color: var(--muted); padding: 1rem 0; }
 
 /* player */
@@ -233,6 +237,13 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
 <!-- ============================== HEADER ============================== -->
 <header>
   <h1>Wolfram Fiedler ACOUSTIX GUITAR – Chord Progression Generator</h1>
+  <div class="langbar">
+    <div class="field"><label for="selLang">Language / Sprache</label>
+      <select id="selLang"><option value="en">English</option><option value="de">Deutsch</option></select></div>
+    <div class="field"><label for="selNotation">Chord notation</label>
+      <select id="selNotation"><option value="international">International (B, B♭)</option><option value="german">German (H, B)</option></select></div>
+  </div>
+  <p class="hint" id="langStatus" role="status" aria-live="polite"></p>
 </header>
 
 <main id="main">
@@ -341,6 +352,7 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
         <option value="nylon">Nylon Guitar</option>
         <option value="marimba">Marimba</option>
         <option value="vibes">Vibraphone</option>
+        <option value="bells">Bells</option>
       </select></div>
     <div class="field"><span class="lbl" id="lblArpOct">Octave</span>
       <div class="octsh" role="group" aria-labelledby="lblArpOct">
@@ -368,6 +380,7 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
         <option value="organ">Organ</option>
         <option value="pad">Synth Pad</option>
         <option value="strings">Strings</option>
+        <option value="marimba">Marimba</option>
         <option value="samples" disabled>Loaded samples (none loaded)</option>
       </select></div>
     <div class="field"><span class="lbl" id="lblChordOct">Octave</span>
@@ -459,7 +472,7 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
   <details>
     <summary>Percussion samples (optional)</summary>
     <div class="field" style="max-width:26rem">
-      <label for="filePerc">WAV files named bongo-high, bongo-low, conga-high, conga-low, cabasa</label>
+      <label for="filePerc">WAV files named bongo-high, bongo-low, conga-high, conga-low, cabasa, tambourine</label>
       <input type="file" id="filePerc" multiple accept="audio/*,.wav">
     </div>
     <div class="row spaced">
@@ -1049,11 +1062,11 @@ function arpAssignRoots(bars) {
    order (DRUM_PRESET_ORDER); an optional 5th string holds the open hi-hat row. */
 /* ADDED: percussion rows (bongos, congas, cabasa) below the kit rows; their samples come from /percussion and are the same
    for the drum and the cajon sound set. */
-const PERC_ROWS = ['bgh', 'bgl', 'cgh', 'cgl', 'cab'];
+const PERC_ROWS = ['bgh', 'bgl', 'cgh', 'cgl', 'cab', 'tmb'];
 const DRUM_ROWS = ['hat', 'ohat', 'ride', 'snare', 'kick'].concat(PERC_ROWS);
 const DRUM_PRESET_ORDER = ['hat', 'ride', 'snare', 'kick', 'ohat'];
-const DRUM_LABEL = { hat: 'Hi-Hat (closed)', ohat: 'Open Hi-Hat', ride: 'Ride', snare: 'Snare', kick: 'Kick', bgh: 'Bongo high', bgl: 'Bongo low', cgh: 'Conga high', cgl: 'Conga low', cab: 'Cabasa' };
-const CAJON_LABEL = { hat: 'Shaker', ohat: 'Tambourine', ride: 'Claves', snare: 'Snare (slap)', kick: 'Kick (bass)', bgh: 'Bongo high', bgl: 'Bongo low', cgh: 'Conga high', cgl: 'Conga low', cab: 'Cabasa' };   // same rows, Cajon sound set
+const DRUM_LABEL = { hat: 'Hi-Hat (closed)', ohat: 'Open Hi-Hat', ride: 'Ride', snare: 'Snare', kick: 'Kick', bgh: 'Bongo high', bgl: 'Bongo low', cgh: 'Conga high', cgl: 'Conga low', cab: 'Cabasa', tmb: 'Tambourine' };
+const CAJON_LABEL = { hat: 'Shaker', ohat: 'Tambourine', ride: 'Claves', snare: 'Snare (slap)', kick: 'Kick (bass)', bgh: 'Bongo high', bgl: 'Bongo low', cgh: 'Conga high', cgl: 'Conga low', cab: 'Cabasa', tmb: 'Tambourine' };   // same rows, Cajon sound set
 const E16 = '.... .... .... ....', E12 = '.... .... ....';
 /* ADDED: octave shifter. oct = whole octaves (-2..+2); the result stays inside the MIDI range 0..127. */
 function shiftNote(n, oct) { return Math.max(0, Math.min(127, n + 12 * (oct || 0))); }
@@ -1154,12 +1167,12 @@ function drumGridFor(preset, meterKey) {
    pulse is an eighth = 240 ticks = two steps). MIDI tempo is per QUARTER note, so in 6/8,
    where BPM counts dotted quarters, quarter-notes-per-minute = BPM x 1.5. */
 const MIDI_PPQ = 480;
-const GM_PROGRAM = { piano: 0, guitar: 25, steel: 25, nylon: 24, marimba: 12, vibes: 11, organ: 16, pad: 89, strings: 48, samples: 0, acoustic: 32, fingered: 33, picked: 34, synthbass: 38 };   // General MIDI programs (0-based)
-const GM_DRUM = { kick: 36, snare: 38, hat: 42, ohat: 46, ride: 51, bgh: 60, bgl: 61, cgh: 63, cgl: 64, cab: 69 };   // 60/61 Hi/Low Bongo, 63 Open Hi Conga, 64 Low Conga, 69 Cabasa   // 46 = GM Open Hi-Hat
+const GM_PROGRAM = { piano: 0, guitar: 25, steel: 25, nylon: 24, marimba: 12, vibes: 11, bells: 14, organ: 16, pad: 89, strings: 48, samples: 0, acoustic: 32, fingered: 33, picked: 34, synthbass: 38 };   // General MIDI programs (0-based)
+const GM_DRUM = { kick: 36, snare: 38, hat: 42, ohat: 46, ride: 51, bgh: 60, bgl: 61, cgh: 63, cgl: 64, cab: 69, tmb: 54 };   // 54 Tambourine, 60/61 Hi/Low Bongo, 63 Open Hi Conga, 64 Low Conga, 69 Cabasa   // 46 = GM Open Hi-Hat
 /* ADDED: Cajon sound set. The editor rows keep their internal names; for the Cajon they stand for
    hat = shaker (GM 82), ohat = tambourine (GM 54), ride = claves (GM 75); kick and snare keep 36 / 38. */
-const GM_CAJON = { kick: 36, snare: 38, hat: 82, ohat: 54, ride: 75, bgh: 60, bgl: 61, cgh: 63, cgl: 64, cab: 69 };
-const DRUM_VEL = { hat: [0, 78, 42], ohat: [0, 82, 48], ride: [0, 82, 48], snare: [0, 96, 52], kick: [0, 105, 60], bgh: [0, 88, 50], bgl: [0, 88, 50], cgh: [0, 90, 52], cgl: [0, 90, 52], cab: [0, 78, 44] };
+const GM_CAJON = { kick: 36, snare: 38, hat: 82, ohat: 54, ride: 75, bgh: 60, bgl: 61, cgh: 63, cgl: 64, cab: 69, tmb: 54 };
+const DRUM_VEL = { hat: [0, 78, 42], ohat: [0, 82, 48], ride: [0, 82, 48], snare: [0, 96, 52], kick: [0, 105, 60], bgh: [0, 88, 50], bgl: [0, 88, 50], cgh: [0, 90, 52], cgl: [0, 90, 52], cab: [0, 78, 44], tmb: [0, 84, 48] };
 const KEYSIG_MAJOR = { 0: 0, 7: 1, 2: 2, 9: 3, 4: 4, 11: 5, 6: 6, 1: -5, 8: -4, 3: -3, 10: -2, 5: -1 };   // pitch class -> sharps(+)/flats(-)
 const KEYSIG_MINOR = { 9: 0, 4: 1, 11: 2, 6: 3, 1: 4, 8: 5, 2: -1, 7: -2, 0: -3, 5: -4, 10: -5, 3: -6 };
 const TIMESIG = { '2/4': [2, 2, 24], '3/4': [3, 2, 24], '4/4': [4, 2, 24], '6/8': [6, 3, 36] };       // numerator, log2(denominator), clocks per click
@@ -1373,7 +1386,7 @@ function percNameFromFile(fileName) {
   const k = String(fileName).toLowerCase().replace(/\.[a-z0-9]+$/, '').replace(/[^a-z]/g, '');
   const T = { bgh: ['bongohigh', 'highbongo', 'bongohi', 'hibongo', 'bongoh'], bgl: ['bongolow', 'lowbongo', 'bongolo', 'lobongo', 'bongol'],
               cgh: ['congahigh', 'highconga', 'congahi', 'hiconga', 'congah'], cgl: ['congalow', 'lowconga', 'congalo', 'loconga', 'congal'],
-              cab: ['cabasa', 'cabasaa'] };
+              cab: ['cabasa', 'cabasaa'], tmb: ['tambourine', 'tamb', 'tambourin'] };
   for (let i = 0; i < PERC_ROWS.length; i++) if (T[PERC_ROWS[i]].indexOf(k) >= 0) return PERC_ROWS[i];
   return null;
 }
@@ -1524,20 +1537,29 @@ function arpMidi(ch, base, fromT, toT, arp) {
   });
 }
 /* ---------- ADDED: BASS SEQUENCER (pure) ----------
-   Three rows: root, 3rd, 5th. The bass plays in the low register (root between E1 = MIDI 28 and D#2). Row "Root" is the bass
-   note of the chord (the slash bass for C/E), 3rd and 5th are stacked above the chord root. DEFAULT: the bass hits are the
+   Six rows: root, 3rd, 5th, 6th, 7th (b7, 7 for maj7 chords, 6th-diminished for dim7) and the root one octave up. The bass plays in the low register (root between E1 = MIDI 28 and D#2). Row "Root" is the bass
+   note of the chord (the slash bass for C/E), 3rd, 5th, 6th, 7th and octave are stacked above the chord root. DEFAULT: the bass hits are the
    kick hits of the drum grid (bassGridFollow); in that mode (bass.anchor) a chord that has no hit on its first step gets a
    root hit there, so every chord change is marked. bass = { grid: { '1': [0|1|2 ...], '3': [...], '5': [...] }, held, anchor }. */
 const BASS_LANES = [
   { id: '1', label: 'Root' },
   { id: '3', label: '3rd' },
-  { id: '5', label: '5th' }
+  { id: '5', label: '5th' },
+  { id: '6', label: '6th' },
+  { id: '7', label: '7th' },
+  { id: 'o', label: 'Octave' }
 ];
 const BASS_LOW = 28;
 function bassLaneNote(ch, laneId) {
   if (laneId === '1') return BASS_LOW + mod(ch.bass - BASS_LOW, 12);
+  if (laneId === 'o') return BASS_LOW + mod(ch.bass - BASS_LOW, 12) + 12;           // root one octave up
   const Q = QUAL[ch.qual];
   if (!Q) return null;
+  if (laneId === '6') return BASS_LOW + mod(ch.rootPc - BASS_LOW, 12) + 9;            // major 6th
+  if (laneId === '7') {                                                               // the chord's own 7th: 7 (11) for maj7/maj9, 6th-diminished (9) for dim7, else b7 (10)
+    const iv = Q.iv.indexOf(11) >= 0 ? 11 : ch.qual === 'dim7' ? 9 : 10;
+    return BASS_LOW + mod(ch.rootPc - BASS_LOW, 12) + iv;
+  }
   let iv = null;
   Q.iv.forEach(function (i) { if (iv === null && arpToneFn(i) === laneId) iv = i; });
   return iv === null ? null : BASS_LOW + mod(ch.rootPc - BASS_LOW, 12) + iv;
@@ -1628,8 +1650,29 @@ function parseChordSymbol(tok) {
   return { rootName: root.name, rootPc: root.pc, qual: qual, bassPc: bass ? bass.pc : null, bassName: bass ? bass.name : null,
            name: root.name + QUAL[qual].sym + (bass ? '/' + bass.name : '') };
 }
+/* ADDED: chord notation. International: B = B natural, Bb / B♭ = B flat. German: H = B natural, B = B flat.
+   chordNameFor() turns an internal (international) chord name into the displayed one; chordTokenFromNotation() turns typed
+   text back into the international spelling the parser knows. Internally every chord keeps its international name. */
+function chordNameFor(name, german) {
+  if (!german) return name;
+  return String(name).replace(/(^|\/)([A-G])([♯♭#b]?)/g, function (m, pre, L, acc) {
+    if (L !== 'B') return m;
+    return (acc === '♭' || acc === 'b') ? pre + 'B' : pre + 'H' + acc;
+  });
+}
+function chordTokenFromNotation(tok, german) {
+  if (!german) return tok;
+  return String(tok).replace(/(^|\/)([BH])([♯♭#b]?)/g, function (m, pre, L, acc) {
+    if (L === 'H') return pre + 'B' + acc;                           // H = B natural
+    if (acc === '♭' || acc === 'b') return m;                        // "Bb" / "B♭" is accepted as B flat as well
+    return pre + 'B♭' + acc;                                         // German B = B flat
+  });
+}
+/* Spoken root names for German screen-reader output: same letters as in English (accidentals spoken as "Kreuz" / "b");
+   only B natural is spoken "H" and B flat "B". No -is / -es endings. */
+const SPOKEN_ROOT_DE = { 'B': 'H', 'B♭': 'B' };
 /* Whole text -> { bars: [[spec, spec?], ...] } or { error }. */
-function parseChordText(text, maxPerBar) {
+function parseChordText(text, maxPerBar, german) {
   const limit = maxPerBar || 4;                                        // chords per bar: up to four (one per quarter); the UI passes the limit of the time signature
   const bars = String(text).split(/[|\n\r]+/).map(function (b) { return b.trim(); }).filter(Boolean);
   if (!bars.length) return { error: 'Please enter at least one chord.' };
@@ -1640,7 +1683,7 @@ function parseChordText(text, maxPerBar) {
     if (toks.length > limit) return { error: 'Bar ' + (i + 1) + ' has ' + toks.length + ' chords; at most ' + limit + ' chords per bar are possible. Use “|” to start a new bar.' };
     const specs = [];
     for (let k = 0; k < toks.length; k++) {
-      const sp = parseChordSymbol(toks[k]);
+      const sp = parseChordSymbol(chordTokenFromNotation(toks[k], german));
       if (sp.error) return { error: 'Bar ' + (i + 1) + ': “' + toks[k] + '” – ' + sp.error + '.' };
       specs.push(sp);
     }
@@ -1733,6 +1776,9 @@ function createAudioEngine(makeCtx, opts) {
     vibes:   { osc: [['sine',1,1,0], ['sine',4,.22,0], ['sine',1,.5,5]],
                lp: [function () { return 10000; }, null, 0],
                env: { type: 'perc', atk: 0.003, level: 0.55, tc1: 0.8, t2: 1.2, tc2: 2.2 }, rel: 0.35, gain: 0.95 },
+    bells:   { osc: [['sine',1,1,0], ['sine',2.76,.45,0], ['sine',5.4,.25,0], ['sine',8.93,.12,0]],     // ADDED: inharmonic partials = bell
+               lp: [function () { return 12000; }, null, 0],
+               env: { type: 'perc', atk: 0.002, level: 0.5, tc1: 1.0, t2: 1.5, tc2: 2.5 }, rel: 0.5, gain: 0.8 },
     organ:   { osc: [['sine',1,1,0], ['sine',2,.70,0], ['sine',3,.35,0], ['sine',4,.25,0], ['sine',1,.25,6]],
                lp: [function () { return 7000; }, null, 0],
                env: { type: 'sus', atk: 0.02 }, rel: 0.07, gain: 0.9 },
@@ -2040,6 +2086,7 @@ function createAudioEngine(makeCtx, opts) {
     else if (name === 'bgl') { tone('sine', 330, 260, 0.05, 1.0, 0.28, 0.35); tone('sine', 660, 520, 0.04, 0.12, 0.08, 0.15); noise('bandpass', 2500, 1.2, 0.2, 0.015, 0.05); }
     else if (name === 'cgh') { tone('sine', 360, 300, 0.06, 1.0, 0.34, 0.4); tone('sine', 720, 600, 0.05, 0.12, 0.1, 0.2); noise('bandpass', 2200, 1.0, 0.25, 0.02, 0.06); }   // conga high (open tone)
     else if (name === 'cgl') { tone('sine', 240, 190, 0.07, 1.0, 0.42, 0.5); tone('sine', 480, 380, 0.05, 0.1, 0.1, 0.2); noise('bandpass', 1500, 1.0, 0.25, 0.02, 0.06); }
+    else if (name === 'tmb') { noise('highpass', 6000, 0.8, 0.3, 0.22, 0.3); noise('bandpass', 9000, 1.2, 0.15, 0.1, 0.2); tone('sine', 5200, 0, 0, 0.05, 0.25, 0.3); tone('sine', 7300, 0, 0, 0.04, 0.2, 0.3); }   // tambourine (synthetic): jingles
     else if (name === 'cab') { noise('bandpass', 7000, 0.9, 0.5, 0.09, 0.14); noise('highpass', 9000, 0.6, 0.2, 0.05, 0.1); }                     // cabasa: short bright rattle
     else if (kit === 'cajon') {                                    // ADDED: synthesised Cajon approximation (used when no sample is loaded)
       if (name === 'kick')       { tone('sine', 110, 55, 0.12, 1.0, 0.35, 0.4); noise('lowpass', 400, 0.7, 0.25, 0.06, 0.4); }
@@ -2349,6 +2396,129 @@ const Transport = (function () {
 })();
 
 /* =====================================================================================
+   PART D0 (ADDED) – LANGUAGE FILES (I18N)
+   The English texts are part of the page itself; they are the KEYS. A language file (lang/de.json) is
+   { "_meta": {...}, "strings": { "English text": "translation", "Bar {0}: {1}": "Takt {0}: {1}" } }.
+   Entries with {0}, {1} ... are patterns: they match text with a variable part; the variable parts are
+   translated again themselves. Texts without an entry stay English. English needs no file (it is built in);
+   lang/en.json lists all texts as a template for further languages.
+   While a language other than English is active, a MutationObserver translates every text and every
+   aria-label / title that the page creates later; the original English is remembered, so switching back is exact.
+   ===================================================================================== */
+const I18N = (function () {
+  const ATTRS = ['aria-label', 'title', 'placeholder', 'aria-valuetext', 'alt'];
+  const dicts = {};                               // language code -> compiled dictionary
+  const nodeSrc = new WeakMap();                  // text node -> { src: English, out: shown }
+  const attrSrc = new WeakMap();                  // element -> { attribute: { src, out } }
+  let cur = 'en', dict = null, obs = null;
+  const seen = {};                                // debugging aid: texts that had no translation (filled only while I18N.debug is true)
+  let debug = false;
+
+  function compile(strings) {
+    const exact = {}, pats = [];
+    Object.keys(strings).forEach(function (k) {
+      if (/\{#?\d+\}/.test(k)) {
+        const names = [];
+        const src = k.replace(/[.*+?^$()|[\]\\]/g, '\\$&').replace(/\{(#?)(\d+)\}/g, function (m, num, n) { names.push(n); return num ? '(\\d+)' : '(.+?)'; });   // {0} = any text, {#0} = digits only
+        pats.push({ re: new RegExp('^' + src + '$'), names: names, out: strings[k], len: k.replace(/\{#?\d+\}/g, '').length });
+      } else exact[k] = strings[k];
+    });
+    pats.sort(function (a, b) { return b.len - a.len; });          // the most specific pattern first
+    return { exact: exact, pats: pats };
+  }
+  function lookup(core, d, depth) {
+    if (Object.prototype.hasOwnProperty.call(d.exact, core)) return d.exact[core];
+    if (depth > 3) return null;
+    for (let i = 0; i < d.pats.length; i++) {
+      const p = d.pats[i], m = p.re.exec(core);
+      if (!m) continue;
+      return p.out.replace(/\{#?(\d+)\}/g, function (x, n) {
+        const g = p.names.indexOf(n);
+        if (g < 0) return x;
+        const hit = lookup(m[g + 1], d, depth + 1);
+        return hit === null ? m[g + 1] : hit;
+      });
+    }
+    return null;
+  }
+  function tr(s, d) {
+    const m = /^(\s*)([\s\S]*?)(\s*)$/.exec(s);
+    if (!m[2]) return s;
+    const hit = lookup(m[2], d, 0);
+    if (hit === null) { if (debug && /[A-Za-z]{3}/.test(m[2])) seen[m[2]] = 1; return s; }
+    return m[1] + hit + m[3];
+  }
+  function doText(n) {
+    const v = n.nodeValue, e = nodeSrc.get(n);
+    if (!e && !dict) return;
+    const src = (e && v === e.out) ? e.src : v;
+    const out = dict ? tr(src, dict) : src;
+    if (out !== v) n.nodeValue = out;
+    nodeSrc.set(n, { src: src, out: out });
+  }
+  function doAttr(elm, a) {
+    const v = elm.getAttribute(a);
+    if (v === null) return;
+    let rec = attrSrc.get(elm); if (!rec) { rec = {}; attrSrc.set(elm, rec); }
+    const e = rec[a];
+    if (!e && !dict) return;
+    const src = (e && v === e.out) ? e.src : v;
+    const out = dict ? tr(src, dict) : src;
+    if (out !== v) elm.setAttribute(a, out);
+    rec[a] = { src: src, out: out };
+  }
+  const SKIP = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1 };
+  function walk(root) {
+    if (root.nodeType === 3) { if (!SKIP[root.parentNode && root.parentNode.nodeName]) doText(root); return; }
+    if (root.nodeType !== 1 || SKIP[root.nodeName]) return;
+    const tw = document.createTreeWalker(root, 4 /* SHOW_TEXT */, null);
+    let n;
+    while ((n = tw.nextNode())) if (!SKIP[n.parentNode.nodeName]) doText(n);
+    const els = root.querySelectorAll('[aria-label],[title],[placeholder],[aria-valuetext],[alt]');
+    for (let i = 0; i < els.length; i++) ATTRS.forEach(function (a) { doAttr(els[i], a); });
+    ATTRS.forEach(function (a) { doAttr(root, a); });
+  }
+  function start() {
+    if (!obs || !dict) return;
+    obs.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+  }
+  function onMutations(list) {
+    obs.disconnect();                                                // our own changes must not trigger us again
+    list.forEach(function (m) {
+      if (m.type === 'childList') m.addedNodes.forEach(walk);
+      else if (m.type === 'characterData') doText(m.target);
+      else if (m.type === 'attributes') doAttr(m.target, m.attributeName);
+    });
+    start();
+  }
+  function applyAll() {
+    if (obs) obs.disconnect();
+    walk(document.body);
+    const t = document.querySelector('title');
+    if (t && t.firstChild) doText(t.firstChild);
+    document.documentElement.setAttribute('lang', cur);
+    if (dict && typeof MutationObserver === 'function') { if (!obs) obs = new MutationObserver(onMutations); start(); }
+  }
+  /* Switches the language. Returns a Promise of { ok, error }. A language file is loaded once (lang/<code>.json, relative to the page). */
+  function setLang(code) {
+    if (code === 'en') { cur = 'en'; dict = null; applyAll(); return Promise.resolve({ ok: true }); }
+    const done = function (d) { cur = code; dict = d; applyAll(); return { ok: true }; };
+    if (dicts[code]) return Promise.resolve(done(dicts[code]));
+    if (typeof fetch !== 'function') return Promise.resolve({ ok: false, error: 'fetch is not available' });
+    return fetch('lang/' + code + '.json', { cache: 'no-store' }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function (j) {
+      if (!j || typeof j.strings !== 'object') throw new Error('no "strings" table in the file');
+      dicts[code] = compile(j.strings); return done(dicts[code]);
+    }).catch(function (e) { return { ok: false, error: (e && e.message) || String(e) }; });
+  }
+  /* Translates one string with the active language (used for texts built in code). */
+  function t(str) { return dict ? tr(str, dict) : str; }
+  return { setLang: setLang, t: t, lang: function () { return cur; }, seen: seen, debug: function (on) { debug = !!on; }, load: function (code, strings) { dicts[code] = compile(strings); } };
+})();
+
+/* =====================================================================================
    PART D – UI AND STATE
    State holds the abstract (key-independent) progression and its realisation in the
    current key. DOM nodes for the bars are created once per progression/metre change and
@@ -2364,7 +2534,15 @@ const Transport = (function () {
 
   const DEFAULTS = { style: 'pop', length: '4', mood: 'Happy', key: 'major-C', complexity: 'simple', bpm: 100, volume: 70,
                      instrument: 'piano', meter: '4/4', countIn: '1', metronome: true, accent: 'soft', loop: true, roman: true };
-  const state = { abstract: null, realized: null, barEls: [], chordEls: [], activeBar: -1, activeChord: null };
+  const state = { abstract: null, realized: null, barEls: [], chordEls: [], activeBar: -1, activeChord: null, german: false };
+  /* ADDED: chord notation (international B / German H) – display and typed input only; the chords themselves stay international. */
+  function dispName(name) { return chordNameFor(name, state.german); }
+  function keyLabel(k) { return chordNameFor(k.label, state.german); }
+  function chordSpeak(ch) {                                          // text for screen readers
+    if (I18N.lang() === 'en') return ch.speak;
+    const root = function (nm) { return state.german && SPOKEN_ROOT_DE[nm] ? SPOKEN_ROOT_DE[nm] : nm.replace(SHARP, ' ' + I18N.t('sharp')).replace(FLAT, ' ' + I18N.t('flat')); };
+    return root(ch.rootName) + ' ' + I18N.t(QUAL[ch.qual].say) + (ch.bassName ? ' ' + I18N.t('over') + ' ' + root(ch.bassName) : '');
+  }
 
   /* ---------- helpers ---------- */
   function currentKey() { return ALL_KEYS.filter(function (k) { return k.id === E.selKey.value; })[0]; }
@@ -2377,7 +2555,7 @@ const Transport = (function () {
     MOODS.forEach(function (m) { const o = el('option', '', m); o.value = m; E.selMood.appendChild(o); });
     [['Major keys', MAJOR_KEYS], ['Minor keys', MINOR_KEYS]].forEach(function (grp) {
       const og = document.createElement('optgroup'); og.label = grp[0];
-      grp[1].forEach(function (k) { const o = el('option', '', k.label); o.value = k.id; og.appendChild(o); });
+      grp[1].forEach(function (k) { const o = el('option', '', keyLabel(k)); o.value = k.id; og.appendChild(o); });
       E.selKey.appendChild(og);
     });
   }
@@ -2482,9 +2660,9 @@ const Transport = (function () {
       const chordEls = [];
       bar.chords.forEach(function (ch, ci) {
         const c = el('div', 'chord');
-        const name = el('span', 'cn', ch.name); name.setAttribute('aria-hidden', 'true');
+        const name = el('span', 'cn', dispName(ch.name)); name.setAttribute('aria-hidden', 'true');
         c.appendChild(name);
-        c.appendChild(el('span', 'vh', 'Bar ' + (bi + 1) + ', beats ' + beatRange(m, bar.chords.length, ci) + ': ' + ch.speak));
+        c.appendChild(el('span', 'vh', 'Bar ' + (bi + 1) + ', beats ' + beatRange(m, bar.chords.length, ci) + ': ' + chordSpeak(ch)));
         c.appendChild(el('span', 'rn', ch.rn));
         c.appendChild(el('span', 'beats', 'Beats ' + beatRange(m, bar.chords.length, ci)));
         wrap.appendChild(c); chordEls.push(c);
@@ -2497,13 +2675,13 @@ const Transport = (function () {
     const a = state.abstract, tpl = TEMPLATES.filter(function (t) { return t.id === a.templateId; })[0];
     const cap = function (s) { return s.charAt(0).toUpperCase() + s.slice(1); };
     if (a.templateId === 'manual') {                                   // ADDED: progression typed in by the user (no template)
-      E.progMeta.textContent = 'Edited progression · ' + a.length + ' bars · Roman numerals relative to ' + currentKey().label;
+      E.progMeta.textContent = 'Edited progression · ' + a.length + ' bars · Roman numerals relative to ' + keyLabel(currentKey());
       renderManualRefs();
       E.btnPlay.disabled = Transport.isRunning();
       return;
     }
     E.progMeta.textContent = tpl.name + ' \u00B7 ' + cap(a.style) + ' \u00B7 ' + a.length + ' bars \u00B7 ' + a.mood + ' \u00B7 ' +
-      cap(a.complexity) + ' \u00B7 ' + currentKey().label;
+      cap(a.complexity) + ' \u00B7 ' + keyLabel(currentKey());
     renderRefs(tpl);
     E.btnPlay.disabled = Transport.isRunning();
   }
@@ -3147,7 +3325,7 @@ const Transport = (function () {
       Object.keys(arp.cells).forEach(function (k) { const q = k.split(':'); arpPaint(q[0], Number(q[1])); });
     });
   }
-  /* ----- bass sequencer: rows Root / 3rd / 5th, columns = 16th steps. Default = follows the kick of the drum grid. ----- */
+  /* ----- bass sequencer: rows Root / 3rd / 5th / 6th / 7th / Octave, columns = 16th steps. Default = follows the kick of the drum grid. ----- */
   const bass = { mode: 'follow', custom: {}, cells: {}, cols: [], now: -1, sig: '' };
   function bassGrid() {                                               // the grid in effect right now (also what the scheduler and the exports read)
     const mk = E.selMeter.value, n = stepsPerBar(mk);
@@ -3174,7 +3352,7 @@ const Transport = (function () {
   function bassBuild() {
     const meterKey = E.selMeter.value, n = stepsPerBar(meterKey), m = METERS[meterKey];
     const tbl = el('table', 'matrix');
-    tbl.appendChild(el('caption', 'vh', 'Bass pattern for ' + meterKey + ': root, 3rd and 5th, ' + n + ' sixteenth-note steps.'));
+    tbl.appendChild(el('caption', 'vh', 'Bass pattern for ' + meterKey + ': root, 3rd, 5th, 6th, 7th and octave, ' + n + ' sixteenth-note steps.'));
     const hr = el('tr'); hr.appendChild(el('th', 'rowh vh', 'Row'));
     for (let i = 0; i < n; i++) {
       const six = m.ppb === 3, first = six ? i % 2 === 0 : i % 4 === 0;
@@ -3184,7 +3362,7 @@ const Transport = (function () {
     const thead = el('thead'); thead.appendChild(hr); tbl.appendChild(thead);
     const tbody = el('tbody'); bass.cells = {}; bass.cols = []; bass.now = -1;
     for (let i = 0; i < n; i++) bass.cols.push([]);
-    BASS_LANES.slice().reverse().forEach(function (lane, r) {         // 5th on top, root at the bottom
+    BASS_LANES.slice().reverse().forEach(function (lane, r) {         // octave on top, root at the bottom
       const tr = el('tr'), rh = el('th', 'rowh', lane.label); rh.scope = 'row'; tr.appendChild(rh);
       for (let i = 0; i < n; i++) {
         const td = el('td', (m.ppb === 3 ? i % 2 === 0 && i > 0 : i % 4 === 0 && i > 0) ? 'bs' : '');
@@ -3235,7 +3413,7 @@ const Transport = (function () {
   const EDIT_HINT = 'Click a bar to edit its chords: up to four per bar, e.g. C Am F G (one per beat).';
   function renderManualRefs() {
     E.refsHost.textContent = '';
-    E.refsHost.appendChild(el('p', '', 'These are chords you entered yourself, so there is no template or song reference. Roman numerals are shown relative to the selected key (' + currentKey().label + ').'));
+    E.refsHost.appendChild(el('p', '', 'These are chords you entered yourself, so there is no template or song reference. Roman numerals are shown relative to the selected key (' + keyLabel(currentKey()) + ').'));
   }
 
   /* Current progression as parsed chord specs (what parseChordText returns), or null if a chord name cannot be parsed. */
@@ -3258,12 +3436,12 @@ const Transport = (function () {
     setPlayingUI(false);
     if (focusBar != null && state.barEls[focusBar]) { const w = state.barEls[focusBar].querySelector('.chords'); if (w) w.focus(); }
   }
-  function barText(bi) { return state.realized.bars[bi].chords.map(function (c) { return c.name; }).join(' '); }
+  function barText(bi) { return state.realized.bars[bi].chords.map(function (c) { return dispName(c.name); }).join(' '); }
 
   /* Called by renderProgression() for every bar: makes the chord area clickable / keyboard-operable. */
   function makeBarEditable(wrap, bi) {
     wrap.classList.add('editable'); wrap.tabIndex = 0; wrap.setAttribute('role', 'button');
-    wrap.setAttribute('aria-label', 'Bar ' + (bi + 1) + ': ' + state.realized.bars[bi].chords.map(function (c) { return c.speak; }).join(', then ') + '. Press Enter to edit.');
+    wrap.setAttribute('aria-label', 'Bar ' + (bi + 1) + ': ' + state.realized.bars[bi].chords.map(function (c) { return chordSpeak(c); }).join(', then ') + '. Press Enter to edit.');
     wrap.addEventListener('click', function (e) { if (e.target.tagName !== 'INPUT') startEdit(wrap, bi); });
     wrap.addEventListener('keydown', function (e) {
       if (e.target === wrap && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); startEdit(wrap, bi); }
@@ -3303,7 +3481,7 @@ const Transport = (function () {
       if (specs.length <= 1) return 'At least one bar is needed.';
       specs.splice(bi, 1); applyBars(specs, Math.min(bi, specs.length - 1)); editMsg('Bar removed.', false); return '';
     }
-    const lim = maxChordsPerBar(E.selMeter.value), r = parseChordText(text, lim);
+    const lim = maxChordsPerBar(E.selMeter.value), r = parseChordText(text, lim, state.german);
     if (r.error) return /^Bar 1 has /.test(r.error) ? 'At most ' + lim + ' chords per bar are possible in ' + E.selMeter.value + '. Use “|” to start a new bar.' : r.error.replace(/^Bar 1: /, '');
     specs.splice.apply(specs, [bi, 1].concat(r.bars));
     if (specs.length > 16) return 'At most 16 bars are possible.';
@@ -3457,9 +3635,9 @@ const Transport = (function () {
              ohat: ['tambourine.wav', 'tamb.wav'], ride: ['claves.wav', 'clave.wav'] }
   };
   /* ADDED: percussion samples (/percussion): bongo-high, bongo-low, conga-high, conga-low, cabasa. Same for both sound sets. */
-  const PERC_NAMES = { bgh: 'bongo-high', bgl: 'bongo-low', cgh: 'conga-high', cgl: 'conga-low', cab: 'cabasa' };
+  const PERC_NAMES = { bgh: 'bongo-high', bgl: 'bongo-low', cgh: 'conga-high', cgl: 'conga-low', cab: 'cabasa', tmb: 'tambourine' };
   const PERC_FILES = { bgh: ['bongo-high.wav', 'bongo-hi.wav', 'bongohigh.wav'], bgl: ['bongo-low.wav', 'bongo-lo.wav', 'bongolow.wav'],
-                       cgh: ['conga-high.wav', 'conga-hi.wav', 'congahigh.wav'], cgl: ['conga-low.wav', 'conga-lo.wav', 'congalow.wav'], cab: ['cabasa.wav'] };
+                       cgh: ['conga-high.wav', 'conga-hi.wav', 'congahigh.wav'], cgl: ['conga-low.wav', 'conga-lo.wav', 'congalow.wav'], cab: ['cabasa.wav'], tmb: ['tambourine.wav', 'tamb.wav'] };
   function percMsg(loaded, problems) {
     const have = AudioEngine.drumSampleNames('perc'), missing = PERC_ROWS.filter(function (k) { return have.indexOf(k) < 0; });
     let msg = have.length ? 'Samples: ' + PERC_ROWS.filter(function (k) { return have.indexOf(k) >= 0; }).map(function (k) { return PERC_NAMES[k]; }).join(', ') + '.' : 'No samples loaded.';
@@ -3578,6 +3756,34 @@ const Transport = (function () {
     initChordPattern(); initArpMatrix(); initDrumExtras(); initBass(); applyKit();
   }
 
+  /* ----- language and chord notation (header) ----- */
+  function store(k, v) { try { localStorage.setItem('acoustix.' + k, v); } catch (e) { /* storage may be blocked */ } }
+  function stored(k) { try { return localStorage.getItem('acoustix.' + k); } catch (e) { return null; } }
+  function refreshNotation() {
+    state.german = $('selNotation').value === 'german';
+    ALL_KEYS.forEach(function (k) { const o = E.selKey.querySelector('option[value="' + k.id + '"]'); if (o) o.textContent = keyLabel(k); });
+    if (state.realized) renderProgression();
+  }
+  function showLang(code) {
+    const st = $('langStatus');
+    return I18N.setLang(code).then(function (r) {
+      if (r.ok) { st.textContent = ''; }
+      else { $('selLang').value = 'en'; I18N.setLang('en'); st.textContent = 'Sprachdatei lang/' + code + '.json konnte nicht geladen werden (' + r.error + '; braucht http(s)-Hosting) – Englisch wird angezeigt. / Language file lang/' + code + '.json could not be loaded (' + r.error + '; needs http(s) hosting) – showing English.'; }
+      if (state.realized) renderProgression();                         // spoken chord names follow the language
+      return r;
+    });
+  }
+  function initLanguage() {
+    const savedLang = stored('lang'), savedNot = stored('notation');
+    const lang = savedLang === 'de' || savedLang === 'en' ? savedLang : (/^de/i.test(navigator.language || '') ? 'de' : 'en');
+    $('selLang').value = lang;
+    $('selNotation').value = savedNot === 'german' || savedNot === 'international' ? savedNot : (lang === 'de' ? 'german' : 'international');
+    refreshNotation();
+    $('selLang').addEventListener('change', function () { store('lang', $('selLang').value); showLang($('selLang').value); });
+    $('selNotation').addEventListener('change', function () { store('notation', $('selNotation').value); refreshNotation(); });
+    if (lang !== 'en') showLang(lang);
+  }
+
   /* ---------- start-up ---------- */
   fillSelects();
   bind();
@@ -3586,6 +3792,7 @@ const Transport = (function () {
   applyDefaults();
   generate(null);                                                      // show a progression immediately (no audio is started)
   setStatus('');
+  initLanguage();                                                      // ADDED: language file + chord notation
 })();
 </script>
 </body>
