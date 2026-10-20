@@ -96,22 +96,22 @@ button.primary:not(:disabled):hover { background: #163d7c; }
 
 /* progression */
 .prog-meta { color: var(--muted); margin: 0 0 .8rem; }
-.bars { list-style: none; margin: 0; padding: 0; display: grid; gap: .7rem; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); }
-.bar { border: 2px solid var(--line); border-radius: var(--radius); padding: .6rem .7rem; background: #fff; min-width: 0; }
+.bars { list-style: none; margin: 0; padding: 0; display: grid; gap: .4rem; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); }
+.bar { border: 2px solid var(--line); border-radius: var(--radius); padding: .25rem .5rem .3rem; background: #fff; min-width: 0; }   /* CHANGED: lower tiles */
 /* ADDED: bars are editable (click / Enter) */
 .chords.editable { cursor: pointer; border-radius: 6px; outline-offset: 2px; }
 .chords.editable:hover { background: var(--accent-soft); }
 .chord-edit { width: 100%; font: inherit; font-size: 1.15rem; font-weight: 700; padding: .35rem .4rem; border: 2px solid var(--accent); border-radius: 6px; }
 .chord-edit[aria-invalid="true"] { border-color: var(--danger); }
 .bar.active { border-color: var(--accent); background: var(--accent-soft); }
-.barno { display: block; font-size: .85rem; color: var(--muted); font-weight: 600; margin-bottom: .3rem; }
+.barno { display: block; font-size: .75rem; line-height: 1.2; color: var(--muted); font-weight: 600; margin-bottom: .05rem; }
 .chords { display: grid; gap: .4rem; grid-template-columns: repeat(var(--n, 1), minmax(0, 1fr)); }
-.chord { padding: .25rem .3rem; border-radius: 6px; min-width: 0; border: 2px solid transparent; }
+.chord { padding: .05rem .25rem; border-radius: 6px; min-width: 0; border: 2px solid transparent; }
 .chord.active { background: var(--accent); color: var(--accent-ink); }
 .chord.active .rn, .chord.active .beats { color: var(--accent-ink); }
-.cn { display: block; font-size: 1.6rem; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
-.rn { display: block; font-size: .95rem; color: var(--muted); }
-.beats { display: block; font-size: .8rem; color: var(--muted); }
+.cn { display: block; font-size: 1.45rem; font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; }
+.rn { display: inline-block; margin-right: .5rem; font-size: .85rem; line-height: 1.25; color: var(--muted); }
+.beats { display: inline-block; font-size: .75rem; line-height: 1.25; color: var(--muted); }
 .chords.dense .cn { font-size: 1.15rem; }
 .chords.dense .chord { padding: .2rem .15rem; }
 .chords.dense .beats { font-size: .7rem; }
@@ -128,6 +128,7 @@ button.primary:not(:disabled):hover { background: #163d7c; }
 .beatrow { display: flex; gap: .45rem; align-items: center; min-height: 2rem; }
 .dot { width: 1.1rem; height: 1.1rem; border-radius: 50%; border: 2px solid var(--control-line); background: #fff; }
 .dot.strong { width: 1.5rem; height: 1.5rem; }
+.playbar .beatrow { min-height: 2.2rem; gap: .35rem; }
 .dot.on { background: var(--accent); border-color: var(--accent); }
 .pos { font-weight: 600; min-width: 12rem; }
 .slider-row { display: grid; grid-template-columns: 1fr auto; gap: .6rem; align-items: center; }
@@ -158,7 +159,8 @@ body { padding-bottom: var(--pb-h); }
 .pb-ch output { font-weight: 600; font-size: .9rem; font-variant-numeric: tabular-nums; }
 .playbar .check { min-height: 2.2rem; }
 .playbar .pos { min-width: 0; width: auto; }
-.mixer-toggle { margin-left: auto; }
+.mixer-toggle { margin-left: 0; }
+.playbar .beatrow { margin-left: auto; }          /* dots + Mixer button hug the right edge, dots directly left of the Mixer button */
 @media (max-width: 40rem) {
   .pb-inner { padding: .3rem .7rem .4rem; }
   .pb-main { gap: .1rem .5rem; }
@@ -166,6 +168,7 @@ body { padding-bottom: var(--pb-h); }
   .pb-bpm { white-space: nowrap; }
   .playbar .pos { order: 6; flex: 1 1 0; font-size: .9rem; }
   .mixer-toggle { order: 7; }
+  .playbar .beatrow { order: 7; }
   .pb-mixer { gap: .2rem .1rem; }
   .pb-ch { min-width: 0; flex: 0 1 3.6rem; }
   .pb-ch .check label { font-size: .78rem; }
@@ -194,7 +197,7 @@ a { color: var(--accent); }
   h1 { font-size: 1.4rem; }
   .wrap { padding: .7rem .7rem 3rem; }
   .bars { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .cn { font-size: 1.35rem; }
+  .cn { font-size: 1.25rem; }
   .pos { min-width: 0; width: 100%; }
 }
 
@@ -216,6 +219,13 @@ table.matrix { border-collapse: separate; border-spacing: 3px; }
 .matrix th.beat { color: var(--text); }
 .matrix th.rowh { text-align: left; position: sticky; left: 0; background: #fff; color: var(--text); padding-right: .5rem; z-index: 1; font-size: .95rem; }
 .matrix td { padding: 0; }
+a { overflow-wrap: anywhere; }                     /* long source URLs must not widen the page */
+.rowh-in { display: flex; align-items: center; justify-content: space-between; gap: .45rem; }
+.knob { position: relative; display: inline-block; flex: none; width: 2.1rem; height: 2.1rem; border-radius: 50%; background: #fff; border: 2px solid var(--control-line);
+  box-shadow: inset 0 0 0 3px #eef0f4; cursor: ns-resize; touch-action: none; }
+.knob:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.knob-dot { position: absolute; inset: 0; pointer-events: none; }
+.knob-dot::after { content: ""; position: absolute; left: 50%; top: 3px; width: 3px; height: 10px; margin-left: -1.5px; border-radius: 2px; background: var(--accent); }
 .matrix td.bs { padding-left: 6px; }
 .cell { min-width: 2.1rem; width: 2.1rem; min-height: 2.4rem; padding: 0; border-radius: 6px; border: 2px solid var(--control-line);
   background: #fff; font-size: 1.1rem; line-height: 1; }
@@ -225,9 +235,48 @@ table.matrix { border-collapse: separate; border-spacing: 3px; }
 .cell.now { box-shadow: 0 0 0 3px #b3541e; }
 .src-list { margin: .3rem 0 0; padding-left: 1.2rem; font-size: .9rem; }
 @media (max-width: 30rem) { .countbox .num { font-size: 2.4rem; } }
+/* ADDED: strum direction row under the chord rhythm */
+.scell { min-width: 2.1rem; width: 2.1rem; min-height: 2.1rem; padding: 0; border-radius: 6px; border: 2px dashed transparent; background: transparent; font-size: 1.35rem; line-height: 1; font-weight: 700; color: var(--accent); }
+.scell.d { background: var(--accent-soft); border-color: var(--accent); }
+.scell.u { background: #fff; border-color: var(--accent); }
+.scell.soft { opacity: .65; }
+.scell:disabled { cursor: default; background: transparent; border-color: transparent; }
+.scell.now { box-shadow: 0 0 0 3px #b3541e; }
 /* ADDED: manual chord entry */
 textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; padding: .6rem; border: 2px solid var(--control-line);
   border-radius: 8px; background: #fff; resize: vertical; }
+
+/* ================================================================================
+   ADDED: panels fold up from the footer (like iReal Pro), on ALL screen sizes.
+   Player, Arpeggiator, Block chords, Bass sequencer, Drums and the Mixer are opened with the tab buttons in the footer; the
+   progression stays visible at the top. Only the compact footer (last block, max-width 40rem) is specific to phones.
+   ================================================================================ */
+.sheet-close { display: none; }
+  .pb-tabs { display: flex; gap: .3rem; padding: .1rem 0 .3rem; }
+  .pb-tabs button, .pb-tabs .mixer-toggle { flex: 1 1 0; min-width: 0; padding: .25rem 0; min-height: 2.6rem; font-size: .95rem; border-width: 2px; margin: 0; order: 0; overflow-wrap: normal; }
+  .pb-tabs button[aria-expanded="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .sheet { display: none; }
+  html { overflow-anchor: none; }                 /* the footer changes height when panels open; do not let scroll anchoring move the page */
+  html.sheet-open body { padding-bottom: calc(var(--pb-h) + 60vh); }      /* room to scroll the progression up above an open panel */
+  .sheet.open { display: block; position: fixed; left: 0; right: 0; bottom: var(--pb-h); z-index: 15; margin: 0 auto; max-width: 62rem; border-radius: 14px 14px 0 0;
+    border-width: 3px 0 0; border-color: var(--accent); box-shadow: 0 -6px 18px rgba(0,0,0,.18); background: var(--bg);
+    max-height: 42vh; max-height: min(42dvh, calc(100dvh - var(--pb-h) - 10rem)); overflow-y: auto; overscroll-behavior: contain; padding-top: .5rem; }
+  .sheet.open > h2 { position: sticky; top: -.5rem; z-index: 2; margin: -.5rem -1rem .5rem; padding: .5rem 3.4rem .4rem 1rem; background: var(--bg); font-size: 1.15rem; }
+  .sheet.open .sheet-close { display: flex; align-items: center; justify-content: center; position: sticky; float: right; top: 0; z-index: 3; width: 2.6rem; min-height: 2.6rem; padding: 0; margin: -.2rem 0 -2.6rem; font-size: 1.4rem; line-height: 1; }
+  .prog-pin { position: sticky; top: 0; z-index: 6; background: var(--bg); max-height: var(--pin-max, 46vh); overflow-y: auto; padding-bottom: .4rem; border-bottom: 1px solid var(--line); margin: 0 -.2rem; padding-left: .2rem; padding-right: .2rem; }
+  .prog-pin h2 { margin-bottom: .2rem; font-size: 1.1rem; }
+  .prog-pin .prog-meta { margin-bottom: .2rem; font-size: .85rem; }
+  .prog-pin .check { min-height: 2.2rem; }
+@media (max-width: 40rem) {
+  .pb-tabs { gap: .2rem; }
+  .pb-tabs button, .pb-tabs .mixer-toggle { font-size: .78rem; }
+  /* compact footer: row 1 tabs, row 2 Play / Stop / beat dots, row 3 tempo, row 4 position text (Repeat and Count-in move into the Player panel) */
+  .pb-main { gap: .2rem .5rem; }
+  .playbar .beatrow { order: 1; margin-left: auto; }
+  .pb-tempo { order: 2; flex: 1 1 100%; }
+  .playbar .pos { order: 3; flex: 1 1 100%; font-size: .85rem; min-height: 1.3rem; }
+  .sheet-extras { display: flex; flex-wrap: wrap; gap: .2rem 1.2rem; margin: 0 0 .4rem; }
+}
 </style>
 </head>
 <body>
@@ -272,15 +321,28 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
 
 <!-- ============================== PROGRESSION ============================== -->
 <section class="panel" aria-labelledby="h-prog">
+  <!-- ADDED: on phones this part stays pinned at the top of the screen while a panel is open (see .prog-pin in the CSS) -->
+  <div class="prog-pin">
   <h2 id="h-prog">Progression</h2>
   <p class="prog-meta" id="progMeta">No progression yet.</p>
   <div class="check"><input type="checkbox" id="chkRoman" checked><label for="chkRoman">Show Roman numerals</label></div>
   <div id="barsHost"><p class="empty">Press “Generate Progression” to create a chord progression.</p></div>
+  </div>
+  <!-- MOVED here from the Player panel: playback messages stay visible when the Player panel is folded away -->
+  <p class="status" id="status" role="status" aria-live="polite"></p>
   <div class="row spaced">
     <button type="button" id="btnBarAdd">Add bar</button>
     <button type="button" id="btnBarRemove">Remove last bar</button>
   </div>
   <p class="hint" id="editStatus" role="status" aria-live="polite">Click a bar to edit its chords: up to four per bar, e.g. C Am F G (one per beat).</p>
+  <!-- ADDED: save / load of the progression -->
+  <h3>Save and load</h3>
+  <div class="row spaced">
+    <button type="button" id="btnProgSave">Save progression</button>
+    <button type="button" id="btnProgLoad">Load progression</button>
+    <input type="file" id="fileProg" accept=".json,.txt,application/json,text/plain" hidden>
+  </div>
+  <p class="hint" id="progFileStatus" role="status" aria-live="polite">Saves the chords with key, time signature and tempo as a small text file (JSON). A plain .txt file with chords such as C Am F G (one bar per line) can be loaded too.</p>
   <!-- ADDED: MIDI export -->
   <h3>Export</h3>
   <div class="grid">
@@ -302,12 +364,9 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
 </section>
 
 <!-- ============================== PLAYER ============================== -->
-<section class="panel" aria-labelledby="h-play">
+<section class="panel sheet" id="sheet-player" data-sheet="player" aria-labelledby="h-play">
   <h2 id="h-play">Player</h2>
 
-  <div class="row spaced">
-    <div class="beatrow" id="beatDots" aria-hidden="true"></div>
-  </div>
   <!-- ADDED: large count-in / beat display (visual counterpart of the audible count-in) -->
   <div class="countbox" id="countBox" aria-hidden="true"><span class="num" id="countNum">–</span><span class="lbl" id="countLbl">Ready</span></div>
 
@@ -325,7 +384,6 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
       </div></div>
   </div>
   <p class="hint" id="meterHint"></p>
-  <p class="status" id="status" role="status" aria-live="polite"></p>
 
   <details>
     <summary>Own samples (optional)</summary>
@@ -341,7 +399,7 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
 </section>
 
 <!-- ============================== ARPEGGIATOR (ADDED) ============================== -->
-<section class="panel" aria-labelledby="h-arp">
+<section class="panel sheet" id="sheet-arp" data-sheet="arp" aria-labelledby="h-arp">
   <h2 id="h-arp">Arpeggiator</h2>
   <p class="hint">Switch the arpeggiator on with “Arp” in the mixer at the bottom. It can sound together with the block chords.</p>
   <div class="grid">
@@ -370,7 +428,7 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
 </section>
 
 <!-- ============================== CHORD RHYTHM PATTERN (ADDED) ============================== -->
-<section class="panel" aria-labelledby="h-cpat">
+<section class="panel sheet" id="sheet-cpat" data-sheet="cpat" aria-labelledby="h-cpat">
   <h2 id="h-cpat">Block chords</h2>
   <div class="check"><input type="checkbox" id="chkChordPat"><label for="chkChordPat">Play block chords in this rhythm</label></div>
   <div class="grid">
@@ -381,6 +439,8 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
         <option value="pad">Synth Pad</option>
         <option value="strings">Strings</option>
         <option value="marimba">Marimba</option>
+        <option value="steel">Steel Guitar</option>
+        <option value="nylon">Nylon Guitar</option>
         <option value="samples" disabled>Loaded samples (none loaded)</option>
       </select></div>
     <div class="field"><span class="lbl" id="lblChordOct">Octave</span>
@@ -395,11 +455,33 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
   </div>
   <p class="hint">Click a cell: on → soft → off.</p>
   <div class="matrix-wrap" id="cpatWrap" role="region" aria-label="Chord rhythm editor" tabindex="0"></div>
+  <p class="hint">The arrow row under the pattern shows the guitar stroke of every hit: ↓ down-stroke, ↑ up-stroke. Click an arrow to flip it.</p>
   <div class="row spaced"><button type="button" id="btnCpatClear">Clear pattern</button></div>
+
+  <!-- ADDED: guitar strumming -->
+  <h3>Guitar strumming</h3>
+  <div class="check"><input type="checkbox" id="chkStrum"><label for="chkStrum">Play the rhythm as guitar strums (standard tuning E A D G B e)</label></div>
+  <p class="hint" id="strumStatus" role="status" aria-live="polite">Each hit is strummed string by string: down-strokes from the low E string upwards, up-strokes over the top strings. Chord shapes follow the guitar tuning (open shapes like C, G, D, Am, barre shapes higher up).</p>
+  <div class="grid">
+    <div class="field"><label for="rngStrumSpeed">Strum speed (time between strings)</label>
+      <div class="slider-line"><input type="range" id="rngStrumSpeed" min="4" max="40" step="1" value="14"><output id="outStrumSpeed" for="rngStrumSpeed">14 ms</output></div></div>
+    <div class="field"><label for="rngStrumHuman">Humanize (timing and level)</label>
+      <div class="slider-line"><input type="range" id="rngStrumHuman" min="0" max="100" step="5" value="30"><output id="outStrumHuman" for="rngStrumHuman">30 %</output></div></div>
+    <div class="field"><label for="rngStrumDown">Down-stroke level</label>
+      <div class="slider-line"><input type="range" id="rngStrumDown" min="40" max="130" step="5" value="100"><output id="outStrumDown" for="rngStrumDown">100 %</output></div></div>
+    <div class="field"><label for="rngStrumUp">Up-stroke level</label>
+      <div class="slider-line"><input type="range" id="rngStrumUp" min="20" max="100" step="5" value="65"><output id="outStrumUp" for="rngStrumUp">65 %</output></div></div>
+    <div class="field"><label for="selStrumUpStr">Up-strokes play</label>
+      <select id="selStrumUpStr"><option value="3">Top 3 strings</option><option value="4" selected>Top 4 strings</option><option value="6">All strings</option></select></div>
+    <div class="field"><label for="rngStrumBright">Pick attack (soft … hard)</label>
+      <div class="slider-line"><input type="range" id="rngStrumBright" min="0" max="100" step="25" value="75"><output id="outStrumBright" for="rngStrumBright">75 %</output></div></div>
+    <div class="field"><label for="rngStrumRing">Ring-out (muted … ringing)</label>
+      <div class="slider-line"><input type="range" id="rngStrumRing" min="0" max="100" step="5" value="40"><output id="outStrumRing" for="rngStrumRing">40 %</output></div></div>
+  </div>
 </section>
 
 <!-- ============================== BASS SEQUENCER (ADDED) ============================== -->
-<section class="panel" aria-labelledby="h-bass">
+<section class="panel sheet" id="sheet-bass" data-sheet="bass" aria-labelledby="h-bass">
   <h2 id="h-bass">Bass sequencer</h2>
   <p class="hint">Switch it on with “Bass” in the mixer at the bottom. By default the bass follows the kick of the drum computer.</p>
   <div class="grid">
@@ -421,7 +503,7 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
 </section>
 
 <!-- ============================== DRUMS (ADDED) ============================== -->
-<section class="panel" aria-labelledby="h-drum">
+<section class="panel sheet" id="sheet-drum" data-sheet="drum" aria-labelledby="h-drum">
   <h2 id="h-drum">Drums and rhythm editor</h2>
   <div class="grid">
     <div class="field"><label for="selDrumKit">Sound set</label>
@@ -501,6 +583,14 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
      volume slider that drives its OWN gain node. The elements keep their former ids. -->
 <footer class="playbar" id="playbar" role="region" aria-label="Playback bar">
   <div class="pb-inner">
+    <!-- ADDED (phones only): tab row. Each button opens its panel above the footer; the Mixer button is moved in here by script. -->
+    <div class="pb-tabs" id="pbTabs" role="group" aria-label="Panels">
+      <button type="button" data-sheet-tab="player" aria-controls="sheet-player" aria-expanded="false" aria-label="Player settings">Player</button>
+      <button type="button" data-sheet-tab="arp" aria-controls="sheet-arp" aria-expanded="false" aria-label="Arpeggiator">Arp</button>
+      <button type="button" data-sheet-tab="cpat" aria-controls="sheet-cpat" aria-expanded="false" aria-label="Block chords">Chords</button>
+      <button type="button" data-sheet-tab="bass" aria-controls="sheet-bass" aria-expanded="false" aria-label="Bass sequencer">Bass</button>
+      <button type="button" data-sheet-tab="drum" aria-controls="sheet-drum" aria-expanded="false" aria-label="Drums and rhythm editor">Drums</button>
+    </div>
     <div class="pb-main">
       <button type="button" id="btnPlay" class="primary" disabled>Play</button>
       <button type="button" id="btnStop" disabled>Stop</button>
@@ -514,6 +604,8 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
         <output class="pb-bpm" id="outBpm" for="rngBpm">100 BPM</output>
       </div>
       <div class="pos" id="posText">Stopped</div>
+      <!-- MOVED: metronome / beat display (was in the Player panel) now sits directly left of the Mixer button -->
+      <div class="beatrow" id="beatDots" aria-hidden="true"></div>
       <button type="button" id="btnMixer" class="mixer-toggle" aria-expanded="true" aria-controls="pbMixer">Mixer</button>
     </div>
     <!-- Mixer: vertical faders side by side. Each fader drives ONLY its own gain node; the switch above it turns that part on or off. -->
@@ -621,6 +713,13 @@ const QUAL = {
   '7':     { sym: '7',         iv: [0,4,7,10],        rn: '7',       minor: false, say: 'dominant seven' },
   '9':     { sym: '9',         iv: [0,4,7,10,14],     rn: '9',       minor: false, say: 'dominant nine' },
   '13':    { sym: '13',        iv: [0,4,10,14,21],    rn: '13',      minor: false, say: 'dominant thirteen' },
+  /* ADDED: further chord types that can be typed (not used by the generator): power chord, 7sus4, augmented, 7#9, 7b5, 7#5 */
+  '5':     { sym: '5',         iv: [0,7],             rn: '5',       minor: false, say: 'five, power chord' },
+  '7sus4': { sym: '7sus4',     iv: [0,5,7,10],        rn: '7sus4',   minor: false, say: 'seven suspended four' },
+  'aug':   { sym: 'aug',       iv: [0,4,8],           rn: '+',       minor: false, say: 'augmented' },
+  '7#9':   { sym: '7' + SHARP + '9', iv: [0,4,7,10,15], rn: '7' + SHARP + '9', minor: false, say: 'seven sharp nine' },
+  '7b5':   { sym: '7' + FLAT + '5',  iv: [0,4,6,10],  rn: '7' + FLAT + '5', minor: false, say: 'seven flat five' },
+  '7#5':   { sym: '7' + SHARP + '5', iv: [0,4,8,10],  rn: '7' + SHARP + '5', minor: false, say: 'seven sharp five' },
   '7b9':   { sym: '7' + FLAT + '9',  iv: [0,4,7,10,13],  rn: '7' + FLAT + '9', minor: false, say: 'seven flat nine' },
   '7alt':  { sym: '7alt',      iv: [0,4,10,13,20],    rn: '7alt',    minor: false, say: 'seven altered' },
   '9#11':  { sym: '9' + SHARP + '11', iv: [0,4,10,14,18], rn: '9' + SHARP + '11', minor: false, say: 'nine sharp eleven' },
@@ -1172,6 +1271,12 @@ const GM_DRUM = { kick: 36, snare: 38, hat: 42, ohat: 46, ride: 51, bgh: 60, bgl
 /* ADDED: Cajon sound set. The editor rows keep their internal names; for the Cajon they stand for
    hat = shaker (GM 82), ohat = tambourine (GM 54), ride = claves (GM 75); kick and snare keep 36 / 38. */
 const GM_CAJON = { kick: 36, snare: 38, hat: 82, ohat: 54, ride: 75, bgh: 60, bgl: 61, cgh: 63, cgl: 64, cab: 69, tmb: 54 };
+/* ADDED: per-row drum volume (round knobs in the drum matrix). pct 0..100, 80 % = unchanged (like the other volume controls: squared curve). */
+function drumRowGain(pct) { const v = Math.max(0, Math.min(100, pct === undefined ? 80 : pct)) / 100; return Math.min(1.5, (v * v) / 0.64); }
+function drumMidiVel(row, v, rowVol) {                          // MIDI velocity of a hit, scaled by the row volume (1..127)
+  const base = DRUM_VEL[row][v], g = drumRowGain(rowVol ? rowVol[row] : undefined);
+  return g === 1 ? base : Math.max(g === 0 ? 0 : 1, Math.min(127, Math.round(base * g)));
+}
 const DRUM_VEL = { hat: [0, 78, 42], ohat: [0, 82, 48], ride: [0, 82, 48], snare: [0, 96, 52], kick: [0, 105, 60], bgh: [0, 88, 50], bgl: [0, 88, 50], cgh: [0, 90, 52], cgl: [0, 90, 52], cab: [0, 78, 44], tmb: [0, 84, 48] };
 const KEYSIG_MAJOR = { 0: 0, 7: 1, 2: 2, 9: 3, 4: 4, 11: 5, 6: 6, 1: -5, 8: -4, 3: -3, 10: -2, 5: -1 };   // pitch class -> sharps(+)/flats(-)
 const KEYSIG_MINOR = { 9: 0, 4: 1, 11: 2, 6: 3, 1: 4, 8: 5, 2: -1, 7: -2, 0: -3, 5: -4, 10: -5, 3: -6 };
@@ -1246,7 +1351,7 @@ function buildMidi(real, o) {
         }
         if (o.block === false) { /* block chords switched off for this export */ }
         else if (o.cpat) {                                   // ADDED: block chords in the chord rhythm pattern (same steps as live)
-          patMidi(ch, base, on - base, off - base, o.cpat).forEach(function (e) {
+          patMidi(ch, base, on - base, off - base, cpatFor(o.cpat, qpm * MIDI_PPQ / 60)).forEach(function (e) {
             t1.add(e.tick, 3, [0x90, shiftNote(e.note, o.chordOct), e.vel]);
             t1.add(e.tick + e.len, 1, [0x80, shiftNote(e.note, o.chordOct), 0]);
           });
@@ -1277,7 +1382,9 @@ function buildMidi(real, o) {
             const v = grid[r][step];
             if (!v) return;
             const gm = (o.kit === 'cajon' ? GM_CAJON : GM_DRUM)[r];
-            t2.add(tick, 3, [0x99, gm, DRUM_VEL[r][v]]);
+            const dv = drumMidiVel(r, v, o.rowVol);
+            if (!dv) return;                                                     // row turned down to 0: no note
+            t2.add(tick, 3, [0x99, gm, dv]);
             t2.add(tick + (r === 'ohat' ? 200 : 90), 1, [0x89, gm, 0]);   // open hi-hat rings longer
           });
         }
@@ -1301,14 +1408,105 @@ const CPAT_PRESETS = [
   { id: 'eighths',   name: 'Eighth-note chords',         p: { '4/4': 'x.o.x.o.x.o.x.o.', '3/4': 'x.o.x.o.x.o.', '6/8': 'x.o.x.o.x.o.' } },
   { id: 'offbeat',   name: 'Off-beat stabs',             p: { '4/4': '..x...x...x...x.', '3/4': '..x...x...x.', '6/8': '..x.x...x.x.' } },
   { id: 'syncopated', name: 'Syncopated pop',            p: { '4/4': 'x.....x.x.....x.', '3/4': 'x.....x.x...', '6/8': 'x.....x.x...' } },
-  { id: 'charleston', name: 'Charleston (1 and “and” of 2)', p: { '4/4': 'x.....x.........', '3/4': 'x.....x.....', '6/8': 'x.....x.....' } }
+  { id: 'charleston', name: 'Charleston (1 and “and” of 2)', p: { '4/4': 'x.....x.........', '3/4': 'x.....x.....', '6/8': 'x.....x.....' } },
+  /* ADDED: typical guitar strumming patterns (down on the numbers and "and" of the strokes shown in the arrow row) */
+  { id: 'strum-folk', name: 'Guitar: folk strum (D DU UDU)', p: { '4/4': 'x...x.x...x.x.x.' } },
+  { id: 'strum-pop',  name: 'Guitar: pop strum (D D-U-U-D-U, soft ghosts)', p: { '4/4': 'x...x.x.o.x.x.o.' } },
+  { id: 'strum-16',   name: 'Guitar: sixteenth strum (D U D U …)', p: { '4/4': 'xoxoxoxoxoxoxoxo' } }
 ];
 function cpatGridFor(preset, meterKey) {
   const n = stepsPerBar(meterKey), str = preset.p[meterKey] || preset.p['4/4'], g = [];
   for (let i = 0; i < n; i++) g.push(str[i] === 'x' ? 1 : str[i] === 'o' ? 2 : 0);
   return g;
 }
-/* One chord sounding from bar-relative tick fromT to toT. Returns [{tick, len, note, vel}]. */
+/* o.cpat -> the pattern object patMidi() needs: with guitar strumming switched on the ticks-per-second of the export are added. */
+function cpatFor(cpat, tps) {
+  if (!cpat || !cpat.strum) return cpat;
+  return { grid: cpat.grid, short: cpat.short, strum: Object.assign({}, cpat.strum, { tps: tps }) };
+}
+/* ---------- ADDED: guitar strumming (pure functions) ----------
+   Standard tuning E2 A2 D3 G3 B3 E4 (MIDI 40 45 50 55 59 64). guitarVoicing() finds a playable shape for a chord
+   (lowest bass string with the bass note in the first frets, then the lowest chord tone above the previous string within
+   a hand span, open strings allowed) - this gives the usual open shapes (C = x32010, G = 320003, D = xx0232, Am = x02210 ...)
+   and barre shapes higher up the neck. strumDirs() decides down / up strokes, strumNotes() the string-by-string timing
+   and levels of ONE stroke (down: low to high string, up: high to low over the top strings, with optional humanising). */
+const GUITAR_TUNING = [40, 45, 50, 55, 59, 64];
+const GUITAR_STRINGS = ['E', 'A', 'D', 'G', 'B', 'e'];
+function guitarVoicing(ch) {
+  const Q = QUAL[ch.qual], want = {};
+  Q.iv.forEach(function (i) { want[mod(ch.rootPc + i, 12)] = 1; });
+  const bassPc = ch.bass !== undefined ? mod(ch.bass, 12) : ch.rootPc;
+  want[bassPc] = 1;
+  let s0 = -1, f0 = 0;
+  for (let s = 0; s < 3 && s0 < 0; s++) { const f = mod(bassPc - GUITAR_TUNING[s], 12); if (f <= 4) { s0 = s; f0 = f; } }
+  if (s0 < 0) { s0 = 1; f0 = mod(bassPc - GUITAR_TUNING[1], 12); }          // high bass note: A string, barre shape
+  const out = [{ string: s0, fret: f0, midi: GUITAR_TUNING[s0] + f0 }];
+  const maxN = ch.qual === '5' ? 3 : 6;                                       // power chord: root, fifth, octave only
+  let prev = out[0].midi;
+  for (let s = s0 + 1; s < 6 && out.length < maxN; s++) {
+    const lo = Math.max(1, f0 - 2), hi = Math.min(12, f0 + 3);
+    let best = null;
+    for (let f = 0; f <= hi; f++) {
+      if (f > 0 && f < lo) continue;
+      const midi = GUITAR_TUNING[s] + f;
+      if (midi > prev && want[mod(midi, 12)] && (best === null || midi < best.midi)) best = { string: s, fret: f, midi: midi };
+    }
+    if (best) { out.push(best); prev = best.midi; }
+  }
+  /* Characteristic tones (3rd, 7th, sus / altered / extension tones: everything except the root and a perfect fifth) must not be lost:
+     if one is missing, a string that does not carry a needed tone gives its place to it (ordering and hand span kept). */
+  const need = {};
+  Q.iv.forEach(function (i) { if (i !== 7 && i % 12 !== 0) need[mod(ch.rootPc + i, 12)] = 1; });
+  need[bassPc] = 1;
+  const count = function (list, pc) { return list.filter(function (x) { return mod(x.midi, 12) === pc; }).length; };
+  Object.keys(need).forEach(function (k) {
+    const pc = Number(k);
+    if (count(out, pc) || out.length === 0) return;
+    for (let s = s0 + 1; s < 6; s++) {
+      const lo = Math.max(1, f0 - 2), hi = Math.min(12, f0 + 3);
+      for (let f = 0; f <= hi; f++) {
+        if (f > 0 && f < lo) continue;
+        const midi = GUITAR_TUNING[s] + f;
+        if (mod(midi, 12) !== pc) continue;
+        const rest = out.filter(function (x) { return x.string !== s; }), cand = rest.concat([{ string: s, fret: f, midi: midi }]).sort(function (a, b) { return a.string - b.string; });
+        if (cand.some(function (x, i) { return i > 0 && x.midi <= cand[i - 1].midi; })) continue;       // must stay ascending
+        if (Object.keys(need).some(function (kk) { return count(out, Number(kk)) && !count(cand, Number(kk)); })) continue;   // do not lose another needed tone
+        out.length = 0; Array.prototype.push.apply(out, cand);
+        return;
+      }
+    }
+  });
+  return out;
+}
+/* Stroke direction per step: 'd' / 'u' / null. Eighth-note patterns: down on the beat, up on the "and". As soon as a pattern uses
+   "e" or "a" (odd steps) the hand moves in sixteenths: down on the even steps, up on the odd steps. over = manual overrides {step: 'd'|'u'}. */
+function strumDirs(grid, over) {
+  const sixteenth = grid.some(function (v, i) { return v && i % 2 === 1; });
+  return grid.map(function (v, i) {
+    if (!v) return null;
+    if (over && over[i]) return over[i];
+    return sixteenth ? (i % 2 === 0 ? 'd' : 'u') : (i % 4 === 0 ? 'd' : 'u');
+  });
+}
+const STRUM_DEFAULTS = { speed: 14, human: 30, down: 100, up: 65, upStrings: 4, bright: 60, ring: 70 };
+/* One stroke. p = { speed (ms between strings), human (0..100 %), down (level %), up (level %), upStrings (3|4|6) }, opts = { soft, beat, rng }.
+   Returns [{ dt (seconds after the hit), midi, level }]; the strings sound in picking order. */
+function strumNotes(ch, dir, p, opts) {
+  opts = opts || {};
+  const rng = opts.rng || Math.random, hum = Math.max(0, Math.min(1, p.human / 100));
+  const v = guitarVoicing(ch);                                                // low string first
+  const list = dir === 'u' ? v.slice(-Math.min(p.upStrings, v.length)).reverse() : v;
+  const gap = p.speed * (dir === 'u' ? 0.7 : 1) / 1000;                        // up-strokes are a little quicker
+  const base = 0.27 * (dir === 'u' ? p.up : p.down) / 100 * (opts.soft ? 0.6 : 1) * (opts.beat ? 1.12 : 1);
+  return list.map(function (n, i) {
+    const jit = (rng() * 2 - 1) * 0.45 * gap * hum;
+    const shape = dir === 'u' ? 0.9 + 0.025 * i : 1 - 0.05 * i;               // down: bass strings a little stronger; up: the first (highest) string leads
+    return { dt: Math.max(0, i * gap + (i === 0 ? Math.abs(jit) : jit)), midi: n.midi, level: Math.max(0.01, base * shape * (1 + (rng() * 2 - 1) * 0.2 * hum)) };
+  });
+}
+/* One chord sounding from bar-relative tick fromT to toT. Returns [{tick, len, note, vel}].
+   With cp.strum = { params, dirs, tps (ticks per second), rng } every hit is a guitar stroke: the notes are the strings of
+   guitarVoicing(), shifted in time by strumNotes() (events then also carry level / rel / snd for the WAV export). */
 function patMidi(ch, base, fromT, toT, cp) {
   const notes = [ch.bass].concat(ch.upper), hits = [], out = [];
   for (let s = Math.ceil(fromT / 120); s * 120 < toT; s++) if (cp.grid[s]) hits.push(s);
@@ -1316,6 +1514,15 @@ function patMidi(ch, base, fromT, toT, cp) {
     const tick = base + s * 120, end = hi + 1 < hits.length ? base + hits[hi + 1] * 120 : base + toT;
     const len = cp.short ? Math.max(1, Math.min(Math.round(120 * 0.9), end - tick)) : end - tick;
     const soft = cp.grid[s] === 2 ? 0.65 : 1;
+    if (cp.strum) {
+      const st = cp.strum, dir = (st.dirs && st.dirs[s]) || 'd';
+      strumNotes(ch, dir, st.params, { soft: soft < 1, beat: s % 4 === 0, rng: st.rng }).forEach(function (n, k) {
+        const off = Math.round(n.dt * st.tps), l = Math.max(1, len - off);
+        out.push({ tick: tick + off, len: l, note: n.midi, vel: Math.max(1, Math.min(127, Math.round(n.level / 0.27 * 88))), k: k, count: 6, soft: soft < 1,
+                   level: n.level, strumNote: true, snd: st.snd, rel: st.rel });
+      });
+      return;
+    }
     notes.forEach(function (n, k) { out.push({ tick: tick, len: len, note: n, vel: Math.round((k === 0 ? 90 : 72) * soft), k: k, count: notes.length, soft: soft < 1 }); });
   });
   return out;
@@ -1341,7 +1548,9 @@ function buildDrumMidi(o) {
         const v = o.grid[r][step];
         if (!v) return;
         const gm = (o.kit === 'cajon' ? GM_CAJON : GM_DRUM)[r];
-        t1.add(tick, 3, [0x99, gm, DRUM_VEL[r][v]]);
+        const dv = drumMidiVel(r, v, o.rowVol);
+        if (!dv) return;
+        t1.add(tick, 3, [0x99, gm, dv]);
         t1.add(tick + (r === 'ohat' ? 200 : 90), 1, [0x89, gm, 0]);
       });
     }
@@ -1433,7 +1642,8 @@ function exportPlan(real, o) {
       }
       if (o.block === false) { /* block chords switched off for this export */ }
       else if (o.cpat) {
-        patMidi(ch, base, on - base, off - base, o.cpat).forEach(function (e) {
+        patMidi(ch, base, on - base, off - base, cpatFor(o.cpat, 1 / sec)).forEach(function (e) {
+          if (e.strumNote) { plan.chord.push({ t: e.tick * sec, dur: e.len * sec, midi: shiftNote(e.note, o.chordOct), level: e.level, strum: false, k: 0, snd: e.snd, rel: e.rel }); return; }
           plan.chord.push({ t: e.tick * sec, dur: e.len * sec, midi: shiftNote(e.note, o.chordOct), level: norm * (e.k === 0 ? 1 : 0.85) * (e.soft ? 0.6 : 1), strum: true, k: e.k });
         });
       } else notes.forEach(function (n, k) {
@@ -1627,6 +1837,8 @@ const QUAL_ALIAS = {
   '6': '6', 'add9': 'add9', 'sus2': 'sus2', 'sus4': 'sus4', 'sus': 'sus4',
   'm7': 'm7', 'min7': 'm7', '-7': 'm7', 'm9': 'm9', 'min9': 'm9', '-9': 'm9',
   'm6': 'm6', 'min6': 'm6', '-6': 'm6', 'madd9': 'madd9', 'm(add9)': 'madd9', 'minadd9': 'madd9',
+  '5': '5', 'power': '5', '7sus4': '7sus4', '7sus': '7sus4', '+': 'aug', 'aug': 'aug', 'Aug': 'aug', 'augmented': 'aug',
+  '7#9': '7#9', '7♯9': '7#9', '7b5': '7b5', '7♭5': '7b5', '7-5': '7b5', '7#5': '7#5', '7♯5': '7#5', '7+': '7#5', '+7': '7#5', 'aug7': '7#5', '7aug': '7#5',
   '7': '7', '9': '9', '13': '13', '7b9': '7b9', '7♭9': '7b9', '7alt': '7alt', '9#11': '9#11', '9♯11': '9#11',
   'm7b5': 'm7b5', 'm7♭5': 'm7b5', 'min7b5': 'm7b5', '-7b5': 'm7b5', 'ø': 'm7b5', 'ø7': 'm7b5',
   'dim': 'dim', '°': 'dim', 'o': 'dim', 'dim7': 'dim7', '°7': 'dim7', 'o7': 'dim7'
@@ -1926,6 +2138,7 @@ function createAudioEngine(makeCtx, opts) {
     if (voices.size >= MAX_VOICES) { const oldest = voices.values().next().value; if (oldest) oldest.kill(); }
     const bus = dest === 'arp' ? arpBus : dest === 'bass' ? bassBus : instBus;
     if (inst === 'samples' && sampleBank) return startSample(midi, t, level, bus);
+    if (inst.indexOf('ks-') === 0) return startPluck(inst, midi, t, level, bus);       // ADDED: guitar strumming voices
     const spec = INST[inst] || INST.piano;
     const f = midiToFreq(midi);
     const env = ctx.createGain();
@@ -1956,6 +2169,50 @@ function createAudioEngine(makeCtx, opts) {
     });
     const v = makeVoice(env, sources, tail, gains.concat([lp]));
     v.relTc = spec.rel;
+    return v;
+  }
+
+  /* ADDED: plucked-string voice for guitar strumming (Karplus-Strong). A burst of filtered noise circulates in a delay line of one
+     period (fractional delay, so every string is in tune); the loop filter and loop gain give the natural decay: bright at first,
+     darker later, low strings ring longer. kind 'steel' | 'nylon', bright 0..4 = hardness of the pick attack. Buffers are cached. */
+  const pluckCache = {}; let pluckCount = 0;
+  function pluckBuffer(kind, midi, bright) {
+    const key = kind + midi + ':' + bright;
+    if (pluckCache[key]) return pluckCache[key];
+    const sr = ctx.sampleRate, f = midiToFreq(midi), steel = kind === 'steel';
+    const t60 = (steel ? 3.6 : 2.4) * Math.min(1.6, Math.max(0.4, Math.pow(110 / f, 0.35)));
+    const len = Math.floor(sr * Math.min(steel ? 3.2 : 2.4, t60)), out = new Float32Array(len);
+    const D = sr / f - 0.5, L = Math.ceil(D) + 2;
+    const a = [0.16, 0.3, 0.5, 0.78, 1][Math.max(0, Math.min(4, bright))] * (steel ? 1 : 0.65);   // one-pole low-pass on the noise: small = soft pick
+    let y = 0, mean = 0;
+    for (let i = 0; i < L; i++) { y += a * ((Math.random() * 2 - 1) - y); out[i] = y; mean += y; }
+    mean /= L; for (let i = 0; i < L; i++) out[i] -= mean;                                  // no DC
+    const pp = Math.max(1, Math.round(L * 0.16));                                           // pick position: comb filter like a pick 1/6 along the string
+    for (let i = L - 1; i >= pp; i--) out[i] -= 0.8 * out[i - pp];
+    const g = Math.pow(10, -3 / (f * t60)), fl = Math.floor(D), fr = D - fl;
+    for (let n = L; n < len; n++) {
+      const x1 = out[n - fl] * (1 - fr) + out[n - fl - 1] * fr, x2 = out[n - fl - 1] * (1 - fr) + out[n - fl - 2] * fr;
+      out[n] = g * 0.5 * (x1 + x2);
+    }
+    let peak = 1e-6; for (let i = 0; i < len; i++) { const v = Math.abs(out[i]); if (v > peak) peak = v; }
+    const fade = Math.floor(sr * 0.04);
+    for (let i = 0; i < len; i++) out[i] = out[i] / peak * (i > len - fade ? (len - i) / fade : 1);
+    const buf = ctx.createBuffer(1, len, sr); buf.getChannelData(0).set(out);
+    if (++pluckCount > 120) { Object.keys(pluckCache).forEach(function (k) { delete pluckCache[k]; }); pluckCount = 1; }
+    pluckCache[key] = buf;
+    return buf;
+  }
+  function startPluck(inst, midi, t, level, bus) {
+    const m = /^ks-(steel|nylon)-(\d)$/.exec(inst);
+    const src = ctx.createBufferSource();
+    src.buffer = pluckBuffer(m[1], midi, Number(m[2]));
+    const env = ctx.createGain();
+    env.gain.setValueAtTime(0, t);
+    env.gain.linearRampToValueAtTime(level * 1.6, t + 0.0015);
+    src.connect(env); env.connect(bus);
+    src.start(t);
+    const v = makeVoice(env, [src], 0, null);
+    v.relTc = 0.09;
     return v;
   }
 
@@ -2103,8 +2360,11 @@ function createAudioEngine(makeCtx, opts) {
                                  tone('sine', 3300, 0, 0, 0.07, 0.7, 1.1); tone('sine', 5100, 0, 0, 0.05, 0.5, 1.1); }
     return { out: out, srcs: srcs, nodes: nodes };
   }
+  const rowVol = {};                                             // ADDED: per-row drum volume in % (undefined = 80 % = unchanged)
+  function setDrumRowVolume(name, pct) { rowVol[name] = pct; }
   function drum(name, t, vel) {
     ensureBuses();
+    vel = vel * drumRowGain(rowVol[name]);
     const d = synthDrum(ctx, drumBus, noiseBuf, name, t, vel, drumKit);
     const dv = makeVoice(d.out, d.srcs, 0, d.nodes);
     /* Hi-hat choke: a closed hat (or pedal) cuts a ringing open hat, like on a real kit. */
@@ -2138,7 +2398,7 @@ function createAudioEngine(makeCtx, opts) {
         DRUM_ROWS.forEach(function (r) {
           const v = o.grid[r][step];
           if (!v) return;
-          const d = synthDrum(oc, bus, nb, r, st, v === 2 ? 0.45 : 1, o.kit);
+          const d = synthDrum(oc, bus, nb, r, st, (v === 2 ? 0.45 : 1) * drumRowGain(o.rowVol ? o.rowVol[r] : undefined), o.kit);
           if (o.kit === 'cajon') return;
           if (r === 'ohat') open = d.out;
           else if (r === 'hat' && open) { open.gain.setTargetAtTime(0, st, 0.007); open = null; }   // same choke as live
@@ -2153,7 +2413,7 @@ function createAudioEngine(makeCtx, opts) {
 
   return {
     ensure: ensure, resume: resume, setVolume: setVolume, startVoice: startVoice, click: click, killAll: killAll,
-    countClick: countClick, drum: drum, setDrumVolume: setDrumVolume, setMetronomeVolume: setMetronomeVolume,
+    countClick: countClick, drum: drum, setDrumRowVolume: setDrumRowVolume, setDrumVolume: setDrumVolume, setMetronomeVolume: setMetronomeVolume,
     setDrumSample: setDrumSample, clearDrumSamples: clearDrumSamples, drumSampleNames: drumSampleNames, renderDrums: renderDrums,
     setChordVolume: setChordVolume, setArpVolume: setArpVolume, setBassVolume: setBassVolume, setCountVolume: setCountVolume, setDrumKit: setDrumKit, getBanks: getBanks,
     setSampleBank: setSampleBank, hasSamples: function () { return !!sampleBank; },
@@ -2291,7 +2551,16 @@ const Transport = (function () {
     const stepLen = pulseSeconds(live.bpm, m) / spp, drumsOn = !!(live.drums && live.drums.on);
     for (let k = 0; k < spp; k++) {
       const step = pip * spp + k, v = cp.grid[step], st = t + k * stepLen;
-      if (v) {
+      if (v && cp.strum) {                                           // ADDED: guitar stroke (string by string, see strumNotes)
+        releaseCurrent(st);
+        const sn = strumNotes(ch, cp.strum.dirs[step] || 'd', cp.strum.params, { soft: v === 2, beat: step % 4 === 0 });
+        T.current = sn.map(function (n) {
+          const voice = AudioEngine.startVoice(cp.strum.snd, shiftNote(n.midi, live.chordOct), st + n.dt, n.level);
+          voice.relTc = cp.strum.rel;
+          return voice;
+        });
+        if (cp.short) T.current.forEach(function (voice) { voice.release(st + stepLen * 0.9, voice.relTc); });
+      } else if (v) {
         startChord(ch, st, live, v === 2 ? 0.6 : 1);
         if (cp.short) T.current.forEach(function (voice) { voice.release(st + stepLen * 0.9, voice.relTc || 0.15); });
       }
@@ -2897,7 +3166,7 @@ const I18N = (function () {
       const hide = !E.pbMixer.classList.contains('collapsed');
       E.pbMixer.classList.toggle('collapsed', hide); E.btnMixer.setAttribute('aria-expanded', hide ? 'false' : 'true'); syncPlaybarHeight();
     });
-    if (window.innerWidth < 640) { E.pbMixer.classList.add('collapsed'); E.btnMixer.setAttribute('aria-expanded', 'false'); }   // phones: faders folded away until needed
+    E.pbMixer.classList.add('collapsed'); E.btnMixer.setAttribute('aria-expanded', 'false');   // the Mixer is a tab: folded away until opened
     syncPlaybarHeight();                                               // ADDED: keep page padding = footer height
     if (window.ResizeObserver) new ResizeObserver(syncPlaybarHeight).observe(E.playbar);
     window.addEventListener('resize', syncPlaybarHeight);
@@ -2916,7 +3185,8 @@ const I18N = (function () {
   ['countBox','countNum','countLbl','chkDrums','selDrumKit','selDrumGenre','selDrumPattern','selDrumMeter','drumInfo','drumSources','rngSwing','outSwing',
    'swingNote','rngDrumVol','outDrumVol','matrixWrap','btnDrumClear','btnDrumReload','btnMidi','btnWav','selMidiPasses','chkMidiDrums','chkMidiCount','midiStatus','filePerc','btnPercFolder','btnPercClear','percSampStatus']
     .forEach(function (id) { X[id] = $(id); });
-  const drum = { presetId: 'pop-rock', base: 'pop-rock', grid: emptyGrid('4/4'), custom: {}, cells: {}, cols: [], now: -1 };
+  const drum = { presetId: 'pop-rock', base: 'pop-rock', grid: emptyGrid('4/4'), custom: {}, cells: {}, cols: [], now: -1, vol: {} };
+  DRUM_ROWS.forEach(function (r) { drum.vol[r] = 80; });                 // ADDED: per-row volume in % (80 = unchanged)
 
   /* ----- count-in / beat display ----- */
   function showExtra(ev) {
@@ -2965,6 +3235,40 @@ const I18N = (function () {
     bassHighlight(i);                                                  // ADDED: bass matrix too
   }
 
+  /* ADDED: round volume knob (accessible slider). Drag up/down (or left/right), mouse wheel, arrow keys (±5), PageUp/PageDown (±10),
+     Home/End; double click or Delete resets to 80 %. Range 0..100 %; the pointer angle runs from -135° to +135°. */
+  function makeKnob(label, value, onChange) {
+    const k = el('span', 'knob'); k.tabIndex = 0; k.setAttribute('role', 'slider');
+    k.setAttribute('aria-label', label); k.setAttribute('aria-valuemin', '0'); k.setAttribute('aria-valuemax', '100');
+    const dot = el('span', 'knob-dot'); k.appendChild(dot);
+    let val = value;
+    function paint() {
+      k.setAttribute('aria-valuenow', String(val)); k.setAttribute('aria-valuetext', val + ' %');
+      k.title = label + ': ' + val + ' %'; dot.style.transform = 'rotate(' + (-135 + val * 2.7) + 'deg)';
+    }
+    function set(v, fire) { v = Math.max(0, Math.min(100, Math.round(v))); if (v === val && fire !== 'force') return; val = v; paint(); if (fire) onChange(val); }
+    let drag = null;
+    k.addEventListener('pointerdown', function (e) {
+      drag = { x: e.clientX, y: e.clientY, v: val };
+      try { k.setPointerCapture(e.pointerId); } catch (x) { /* not supported / synthetic event */ }
+      k.focus(); e.preventDefault();
+    });
+    k.addEventListener('pointermove', function (e) { if (drag) set(drag.v + (drag.y - e.clientY) * 0.8 + (e.clientX - drag.x) * 0.4, true); });
+    function end() { drag = null; }
+    k.addEventListener('pointerup', end); k.addEventListener('pointercancel', end);
+    k.addEventListener('wheel', function (e) { e.preventDefault(); set(val + (e.deltaY < 0 ? 5 : -5), true); }, { passive: false });
+    k.addEventListener('dblclick', function () { set(80, true); });
+    k.addEventListener('keydown', function (e) {
+      const step = { ArrowUp: 5, ArrowRight: 5, ArrowDown: -5, ArrowLeft: -5, PageUp: 10, PageDown: -10 }[e.key];
+      if (step !== undefined) { e.preventDefault(); e.stopPropagation(); set(val + step, true); }
+      else if (e.key === 'Home') { e.preventDefault(); e.stopPropagation(); set(0, true); }
+      else if (e.key === 'End') { e.preventDefault(); e.stopPropagation(); set(100, true); }
+      else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); e.stopPropagation(); set(80, true); }
+    });
+    paint();
+    return k;
+  }
+
   /* ----- matrix editor (rebuilt only when the time signature changes) ----- */
   function buildMatrix() {
     const meterKey = E.selMeter.value, n = stepsPerBar(meterKey), m = METERS[meterKey];
@@ -2981,7 +3285,12 @@ const I18N = (function () {
     drum.cells = {}; drum.cols = []; drum.now = -1;
     for (let i = 0; i < n; i++) drum.cols.push([]);
     DRUM_ROWS.forEach(function (r, ri) {
-      const tr = el('tr'), rh = el('th', 'rowh', rowLabel(r)); rh.scope = 'row'; tr.appendChild(rh);
+      const tr = el('tr'), rh = el('th', 'rowh'); rh.scope = 'row'; tr.appendChild(rh);
+      const rhIn = el('span', 'rowh-in'); rh.appendChild(rhIn);
+      rhIn.appendChild(el('span', 'rowh-name', rowLabel(r)));
+      rhIn.appendChild(makeKnob(rowLabel(r) + ' volume', drum.vol[r], function (v) {      // ADDED: round volume knob for this row
+        drum.vol[r] = v; AudioEngine.setDrumRowVolume(r, v);
+      }));
       drum.cells[r] = [];
       for (let i = 0; i < n; i++) {
         const td = el('td', (m.ppb === 3 ? i % 2 === 0 && i > 0 : i % 4 === 0 && i > 0) ? 'bs' : '');
@@ -3076,11 +3385,11 @@ const I18N = (function () {
         meter: meterKey, bpm: Number(E.rngBpm.value), key: k, instrument: E.selInst.value,
         arpInstrument: M.selArpInst.value, bassInstrument: M.selBassInst.value, bass: M.chkMidiBass.checked ? bassLive() : null, title: tpl ? tpl.name + ' in ' + k.label : 'Manual chord entry', countBars: X.chkMidiCount.checked ? Math.max(1, Number(E.selCountIn.value) || 1) : 0,
         passes: Number(X.selMidiPasses.value), drums: X.chkMidiDrums.checked ? drum.grid : null,
-        swing: Number(X.rngSwing.value) / 100, kit: currentKit(),
+        swing: Number(X.rngSwing.value) / 100, kit: currentKit(), rowVol: drum.vol,
         arp: $('chkMidiArp').checked ? arpLive() : null,               // arpeggio ...
         chordOct: octChord,                                            // octave shifter of the block chords
         block: M.chkMidiBlock.checked,                                 // ... and/or block chords (both may be exported together)
-        cpat: M.chkMidiPat.checked ? { grid: cp.grid.slice(), short: C.selChordGate.value === 'short' } : null   // chord rhythm pattern for the block chords
+        cpat: M.chkMidiPat.checked ? exportCpat() : null   // chord rhythm pattern for the block chords (with guitar strumming when switched on)
       };
       const bytes = buildMidi(state.realized, o);
       const name = 'acoustix-' + state.abstract.style + '-' + k.name.replace(SHARP, 's').replace(FLAT, 'b') + '-' + k.mode + '-' + o.bpm + 'bpm.mid';
@@ -3101,9 +3410,22 @@ const I18N = (function () {
      OfflineAudioContext, so the file sounds like live playback: same instrument, chord/drum/count-in
      volumes from the sliders, same Cajon/drum samples. Master is fixed at 100 %; the result is
      peak-normalised to 0.9 afterwards (turned up or down). */
+  /* ADDED: renders an OfflineAudioContext in every browser variant: Promise form (modern) and the older
+     event form (Safari < 14.1 returns nothing from startRendering). A 3-minute watchdog turns a silent hang into an error. */
+  function renderOffline(c) {
+    return new Promise(function (resolve, reject) {
+      const timer = setTimeout(function () { reject(new Error('The browser did not finish rendering (timeout) – try fewer passes or switch off layers.')); }, 180000);
+      const ok = function (b) { clearTimeout(timer); resolve(b); }, bad = function (e) { clearTimeout(timer); reject(e); };
+      c.oncomplete = function (ev) { ok(ev.renderedBuffer); };
+      let p;
+      try { p = c.startRendering(); } catch (e) { bad(e); return; }
+      if (p && typeof p.then === 'function') p.then(ok, bad);
+    });
+  }
   async function exportWav() {
     if (!state.realized) return;
     X.btnWav.disabled = true; X.midiStatus.textContent = 'Rendering WAV …';
+    await new Promise(function (r) { setTimeout(r, 40); });              // let the browser paint the message before the heavy work starts
     try {
       const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
       if (!OAC) throw new Error('Offline rendering is not supported by this browser.');
@@ -3111,9 +3433,9 @@ const I18N = (function () {
       const o = {
         meter: E.selMeter.value, bpm: Number(E.rngBpm.value), countBars: X.chkMidiCount.checked ? countBars() || 1 : 0,
         passes: Number(X.selMidiPasses.value), drums: X.chkMidiDrums.checked ? drum.grid : null,
-        swing: Number(X.rngSwing.value) / 100, kit: currentKit(),
+        swing: Number(X.rngSwing.value) / 100, kit: currentKit(), rowVol: drum.vol,
         arp: $('chkMidiArp').checked ? arpLive() : null, block: M.chkMidiBlock.checked, chordOct: octChord, bass: M.chkMidiBass.checked ? bassLive() : null,
-        cpat: M.chkMidiPat.checked ? { grid: cp.grid.slice(), short: C.selChordGate.value === 'short' } : null
+        cpat: M.chkMidiPat.checked ? exportCpat() : null
       };
       const plan = exportPlan(state.realized, o);
       if (plan.endSec > 600) throw new Error('Longer than 10 minutes – reduce the passes.');
@@ -3125,16 +3447,17 @@ const I18N = (function () {
       Object.keys(banks.cajon).forEach(function (n) { eng.setDrumSample(n, banks.cajon[n], 'cajon'); });
       Object.keys(banks.perc).forEach(function (n) { eng.setDrumSample(n, banks.perc[n], 'perc'); });
       eng.setDrumKit(o.kit); eng.setVolume(100);
+      DRUM_ROWS.forEach(function (r) { eng.setDrumRowVolume(r, drum.vol[r]); });   // ADDED: per-row drum volumes
       eng.setChordVolume(Number(E.rngChordVol.value)); eng.setArpVolume(Number(E.rngArpVol.value)); eng.setBassVolume(Number(E.rngBassVol.value)); eng.setDrumVolume(Number(X.rngDrumVol.value)); eng.setCountVolume(Number(E.rngCountVol.value));
       plan.chord.forEach(function (n) {
-        const sound = n.bass ? bassInst : n.arp ? arpInst : inst;      // each layer has its own sound
+        const sound = n.snd || (n.bass ? bassInst : n.arp ? arpInst : inst);      // each layer has its own sound (guitar strums carry their own plucked sound)
         const t = n.t + (n.strum ? n.k * eng.strumOf(sound) : 0);
         const v = eng.startVoice(sound, n.midi, t, n.level, n.bass ? 'bass' : n.arp ? 'arp' : undefined);
-        v.release(n.t + n.dur, v.relTc || eng.releaseTc(sound));
+        v.release(n.t + n.dur, n.rel || v.relTc || eng.releaseTc(sound));
       });
       plan.drums.forEach(function (d) { eng.drum(d.row, d.t, d.vel); });
       plan.count.forEach(function (n) { eng.countClick(n.t, n.first, n.strong); });
-      const buf = await c.startRendering();
+      const buf = await renderOffline(c);
       const chans = []; let peak = 0;
       for (let ch = 0; ch < buf.numberOfChannels; ch++) {
         const d = buf.getChannelData(ch); chans.push(d);
@@ -3148,7 +3471,7 @@ const I18N = (function () {
       X.midiStatus.textContent = 'WAV file created: ' + name + ' (' + Math.round(bytes.length / 1024) + ' KB, 16 bit, ' + Math.round(plan.endSec + tail) + ' s, ' + o.passes + ' pass(es)' +
         (o.countBars ? ', with count-in' : '') + (o.drums ? ', with drum track' : '') + ').';
     } catch (e) {
-      X.midiStatus.textContent = 'WAV export failed: ' + (e.message || e);
+      X.midiStatus.textContent = 'WAV export failed: ' + ((e && e.message) || String(e) || 'unknown error');
     }
     updateMidiButton();
   }
@@ -3503,11 +3826,103 @@ const I18N = (function () {
     specs.pop(); applyBars(specs, specs.length - 1); editMsg('Bar removed.', false);
   }
 
+  /* ----- ADDED: save / load of the progression -----
+     File = JSON text: { format, version, key, meter, bpm, style, mood, complexity, length, progression: "C Am | F G", bars: ["C Am", "F G"] }.
+     Chords are always written in the international notation (B, B♭), whatever the display notation is.
+     Loading also accepts a plain text file with chords (one bar per line or separated by "|"). */
+  const PROG_FORMAT = 'acoustix-chord-progression';
+  function progStatus(msg, isErr) { const p = $('progFileStatus'); p.textContent = msg; p.className = 'hint' + (isErr ? ' err' : ''); }
+  function saveProgression() {
+    if (!state.realized) { progStatus('There is no progression to save yet.', true); return; }
+    try {
+      const bars = state.realized.bars.map(function (b) { return b.chords.map(function (c) { return c.name; }).join(' '); });
+      const data = {
+        format: PROG_FORMAT, version: 1, key: E.selKey.value, meter: E.selMeter.value, bpm: Number(E.rngBpm.value),
+        style: E.selStyle.value, mood: E.selMood.value, complexity: E.selComplexity.value, length: E.selLength.value,
+        progression: bars.join(' | '), bars: bars
+      };
+      const bytes = new TextEncoder().encode(JSON.stringify(data, null, 2) + '\n');
+      const k = currentKey(), name = 'acoustix-progression-' + k.name.replace(SHARP, 's').replace(FLAT, 'b') + '-' + k.mode + '-' + data.bpm + 'bpm.json';
+      saveBytes(bytes, name, 'application/json');
+      progStatus('Progression saved: ' + name + ' (' + bars.length + ' bar' + (bars.length > 1 ? 's' : '') + ').', false);
+    } catch (e) { progStatus('Saving failed: ' + ((e && e.message) || e), true); }
+  }
+  /* Parses the file text; returns { error } or { bars (specs), key?, meter?, bpm?, sel? }. */
+  function parseProgressionFile(text) {
+    text = String(text).replace(/^﻿/, '');
+    let data = null, chordText;
+    if (/^\s*\{/.test(text)) {
+      try { data = JSON.parse(text); } catch (e) { return { error: 'the file is not valid JSON' }; }
+      if (!data || (data.format && data.format !== PROG_FORMAT)) return { error: 'the file is not a progression of this app' };
+      chordText = Array.isArray(data.bars) ? data.bars.join(' | ') : typeof data.progression === 'string' ? data.progression : '';
+    } else chordText = text.split(/\r?\n/).filter(function (l) { return l.trim(); }).join(' | ');
+    if (!chordText.trim()) return { error: 'no chords found in the file' };
+    const meter = data && METERS[data.meter] ? data.meter : E.selMeter.value;
+    const r = parseChordText(chordText, maxChordsPerBar(meter), false);
+    if (r.error) return { error: r.error };
+    if (r.bars.length > 16) return { error: 'at most 16 bars are possible' };
+    return { specs: r.bars, data: data, meter: meter };
+  }
+  function applyProgressionFile(res) {
+    const d = res.data || {};
+    if (typeof d.key === 'string' && ALL_KEYS.some(function (k) { return k.id === d.key; }) && E.selKey.value !== d.key) {
+      E.selKey.value = d.key; E.selKey.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    if (res.meter !== E.selMeter.value) { E.selMeter.value = res.meter; E.selMeter.dispatchEvent(new Event('change', { bubbles: true })); }
+    if (typeof d.bpm === 'number' && isFinite(d.bpm)) setBpm(Math.round(d.bpm));
+    [['selStyle', d.style], ['selMood', d.mood], ['selComplexity', d.complexity], ['selLength', d.length]].forEach(function (p) {
+      const sel = E[p[0]];
+      if (sel && typeof p[1] === 'string' && [].some.call(sel.options, function (o) { return o.value === p[1]; })) sel.value = p[1];
+    });
+    applyBars(res.specs, null);
+    editMsg(EDIT_HINT, false);
+  }
+  function loadProgressionFile(file) {
+    if (!file) return;
+    if (file.size > 200000) { progStatus('Could not load ' + file.name + ': the file is too large.', true); return; }
+    const fr = new FileReader();
+    fr.onerror = function () { progStatus('Could not load ' + file.name + ': the file cannot be read.', true); };
+    fr.onload = function () {
+      const res = parseProgressionFile(fr.result);
+      if (res.error) { progStatus('Could not load ' + file.name + ': ' + res.error, true); return; }
+      applyProgressionFile(res);
+      progStatus('Progression loaded: ' + res.specs.length + ' bar' + (res.specs.length > 1 ? 's' : '') + ' from ' + file.name + '.', false);
+    };
+    fr.readAsText(file);
+  }
+  function initSaveLoad() {
+    $('btnProgSave').addEventListener('click', saveProgression);
+    $('btnProgLoad').addEventListener('click', function () { $('fileProg').click(); });
+    $('fileProg').addEventListener('change', function (e) { loadProgressionFile(e.target.files && e.target.files[0]); e.target.value = ''; });
+  }
+
   /* ----- chord rhythm pattern (block chords on a 16th-note grid) ----- */
   const C = {};
   ['chkChordPat','selChordPat','selChordGate','cpatWrap','btnCpatClear'].forEach(function (id) { C[id] = $(id); });
-  const cp = { presetId: 'quarters', grid: [], custom: {}, cells: [], now: -1 };
-  function cpatLive() { return { on: C.chkChordPat.checked, grid: cp.grid, short: C.selChordGate.value === 'short' }; }
+  const cp = { presetId: 'quarters', grid: [], custom: {}, cells: [], now: -1, scells: [], over: {} };
+  ['chkStrum','strumStatus','rngStrumSpeed','rngStrumHuman','rngStrumDown','rngStrumUp','selStrumUpStr','rngStrumBright','rngStrumRing'].forEach(function (id) { C[id] = $(id); });
+  /* ADDED: guitar strumming settings (sliders -> strumNotes() parameters, sound name for the plucked voice, release time of the previous stroke) */
+  function strumSettings() {
+    const bright = Number(C.rngStrumBright.value), ring = Number(C.rngStrumRing.value);
+    return {
+      params: { speed: Number(C.rngStrumSpeed.value), human: Number(C.rngStrumHuman.value), down: Number(C.rngStrumDown.value), up: Number(C.rngStrumUp.value), upStrings: Number(C.selStrumUpStr.value) },
+      dirs: strumDirs(cp.grid, cp.over),
+      snd: 'ks-' + (E.selInst.value === 'nylon' ? 'nylon' : 'steel') + '-' + Math.round(bright / 25),
+      rel: 0.03 + ring / 100 * 0.55
+    };
+  }
+  function cpatLive() { return { on: C.chkChordPat.checked, grid: cp.grid, short: C.selChordGate.value === 'short', strum: C.chkStrum.checked ? strumSettings() : null }; }
+  function exportCpat() { return { grid: cp.grid.slice(), short: C.selChordGate.value === 'short', strum: C.chkStrum.checked ? strumSettings() : null }; }
+  function cpatPaintStrum() {                                         // arrow row: direction of every hit (same columns as the pattern)
+    const dirs = strumDirs(cp.grid, cp.over);
+    cp.scells.forEach(function (b, i) {
+      const d = dirs[i], v = cp.grid[i];
+      b.className = 'scell' + (d ? ' ' + d : '') + (v === 2 ? ' soft' : '') + (cp.now === i ? ' now' : '');
+      b.textContent = d === 'd' ? '\u2193' : d === 'u' ? '\u2191' : '';
+      b.disabled = !d;
+      b.setAttribute('aria-label', 'Strum, ' + stepName(E.selMeter.value, i) + ': ' + (d === 'd' ? 'down' : d === 'u' ? 'up' : 'no stroke'));
+    });
+  }
   function cpatPaint(i) {
     const b = cp.cells[i], v = cp.grid[i];
     b.className = 'cell s' + v + (cp.now === i ? ' now' : '');
@@ -3519,6 +3934,8 @@ const I18N = (function () {
     const prev = cp.now; cp.now = i;
     if (prev >= 0 && cp.cells[prev]) cp.cells[prev].classList.remove('now');
     if (i >= 0 && cp.cells[i]) cp.cells[i].classList.add('now');
+    if (prev >= 0 && cp.scells[prev]) cp.scells[prev].classList.remove('now');
+    if (i >= 0 && cp.scells[i]) cp.scells[i].classList.add('now');
   }
   function cpatBuild() {
     const meterKey = E.selMeter.value, n = stepsPerBar(meterKey), m = METERS[meterKey];
@@ -3539,6 +3956,14 @@ const I18N = (function () {
       td.appendChild(b); tr.appendChild(td); cp.cells.push(b); cpatPaint(i);
     }
     const tbody = el('tbody'); tbody.appendChild(tr); tbl.appendChild(tbody);
+    const tr2 = el('tr'), rh2 = el('th', 'rowh', 'Strum'); rh2.scope = 'row'; tr2.appendChild(rh2);       // ADDED: strum arrows, one cell per step, same columns
+    cp.scells = [];
+    for (let i = 0; i < n; i++) {
+      const td = el('td', (m.ppb === 3 ? i % 2 === 0 && i > 0 : i % 4 === 0 && i > 0) ? 'bs' : '');
+      const b = el('button', 'scell'); b.type = 'button'; b.dataset.i = String(i); b.tabIndex = i === 0 ? 0 : -1;
+      td.appendChild(b); tr2.appendChild(td); cp.scells.push(b);
+    }
+    tbody.appendChild(tr2); cpatPaintStrum();
     C.cpatWrap.textContent = ''; C.cpatWrap.appendChild(tbl);
   }
   function cpatFillPresets() {
@@ -3548,7 +3973,7 @@ const I18N = (function () {
   }
   function cpatApply(id) {
     const meterKey = E.selMeter.value;
-    cp.presetId = id;
+    cp.presetId = id; cp.over = {};
     if (id === 'custom') { cp.grid = cp.custom[meterKey] || new Array(stepsPerBar(meterKey)).fill(0); cp.custom[meterKey] = cp.grid; }
     else cp.grid = cpatGridFor(CPAT_PRESETS.filter(function (p) { return p.id === id; })[0], meterKey);
     C.selChordPat.value = id; cpatBuild();
@@ -3562,12 +3987,26 @@ const I18N = (function () {
     C.selChordPat.addEventListener('change', function () { cpatApply(C.selChordPat.value); });
     E.selMeter.addEventListener('change', function () { cpatApply(cp.presetId); });
     C.cpatWrap.addEventListener('click', function (e) {
+      const sb = e.target.closest ? e.target.closest('.scell') : null;
+      if (sb) {                                                        // flip the stroke direction of this hit
+        const i = Number(sb.dataset.i), cur = strumDirs(cp.grid, cp.over)[i];
+        if (cur) { cp.over[i] = cur === 'd' ? 'u' : 'd'; cpatPaintStrum(); }
+        return;
+      }
       const b = e.target.closest ? e.target.closest('.cell') : null;
       if (!b) return;
       const i = Number(b.dataset.i);
-      cp.grid[i] = (cp.grid[i] + 1) % 3; cpatPaint(i); cpatMarkCustom();
+      cp.grid[i] = (cp.grid[i] + 1) % 3; if (!cp.grid[i]) delete cp.over[i]; cpatPaint(i); cpatMarkCustom(); cpatPaintStrum();
     });
     C.cpatWrap.addEventListener('keydown', function (e) {
+      const sb = e.target.closest ? e.target.closest('.scell') : null;
+      if (sb && ['ArrowLeft', 'ArrowRight'].indexOf(e.key) >= 0) {     // roving focus inside the arrow row (empty steps are skipped)
+        e.preventDefault();
+        let j = Number(sb.dataset.i); const step = e.key === 'ArrowLeft' ? -1 : 1;
+        do { j += step; } while (j >= 0 && j < cp.scells.length && cp.scells[j].disabled);
+        if (j >= 0 && j < cp.scells.length) { sb.tabIndex = -1; cp.scells[j].tabIndex = 0; cp.scells[j].focus(); }
+        return;
+      }
       const b = e.target.closest ? e.target.closest('.cell') : null;
       if (!b || ['ArrowLeft', 'ArrowRight'].indexOf(e.key) < 0) return;
       e.preventDefault();
@@ -3575,12 +4014,28 @@ const I18N = (function () {
       i = e.key === 'ArrowLeft' ? Math.max(0, i - 1) : Math.min(cp.cells.length - 1, i + 1);
       b.tabIndex = -1; cp.cells[i].tabIndex = 0; cp.cells[i].focus();
     });
-    C.btnCpatClear.addEventListener('click', function () { cp.grid.fill(0); cpatMarkCustom(); cp.grid.forEach(function (v, i) { cpatPaint(i); }); });
+    C.btnCpatClear.addEventListener('click', function () { cp.grid.fill(0); cp.over = {}; cpatMarkCustom(); cp.grid.forEach(function (v, i) { cpatPaint(i); }); cpatPaintStrum(); });
+    [['rngStrumSpeed', 'outStrumSpeed', ' ms'], ['rngStrumHuman', 'outStrumHuman', ' %'], ['rngStrumDown', 'outStrumDown', ' %'], ['rngStrumUp', 'outStrumUp', ' %'],
+     ['rngStrumBright', 'outStrumBright', ' %'], ['rngStrumRing', 'outStrumRing', ' %']].forEach(function (p) {
+      C[p[0]].addEventListener('input', function () { $(p[1]).textContent = C[p[0]].value + p[2]; });
+    });
+    C.chkStrum.addEventListener('change', function () {              // strums need the chord rhythm and a guitar sound
+      const st = C.strumStatus;
+      if (!C.chkStrum.checked) return;
+      let r = false, snd = false;
+      if (!C.chkChordPat.checked) { C.chkChordPat.checked = true; C.chkChordPat.dispatchEvent(new Event('change', { bubbles: true })); r = true; }
+      if (E.selInst.value !== 'steel' && E.selInst.value !== 'nylon') { E.selInst.value = 'steel'; snd = true; }
+      st.textContent = r && snd ? 'Guitar strumming on. The chord rhythm was switched on. Sound set to Steel Guitar.' : r ? 'Guitar strumming on. The chord rhythm was switched on.' : snd ? 'Guitar strumming on. Sound set to Steel Guitar.' : 'Guitar strumming on.';
+    });
     C.chkChordPat.addEventListener('change', function () { M.chkMidiPat.checked = C.chkChordPat.checked; });   // arpeggio and block chords (with or without rhythm) may play together
     E.chkChords.addEventListener('change', function () { M.chkMidiBlock.checked = E.chkChords.checked; });
   }
   function resetChordPattern() {
     C.chkChordPat.checked = false; M.chkMidiPat.checked = false; M.chkMidiBlock.checked = true; C.selChordGate.value = 'held'; cp.custom = {};
+    C.chkStrum.checked = false;                                        // ADDED: guitar strumming back to its defaults
+    [['rngStrumSpeed', 14, ' ms', 'outStrumSpeed'], ['rngStrumHuman', 30, ' %', 'outStrumHuman'], ['rngStrumDown', 100, ' %', 'outStrumDown'], ['rngStrumUp', 65, ' %', 'outStrumUp'],
+     ['rngStrumBright', 75, ' %', 'outStrumBright'], ['rngStrumRing', 40, ' %', 'outStrumRing']].forEach(function (p) { C[p[0]].value = p[1]; $(p[3]).textContent = p[1] + p[2]; });
+    C.selStrumUpStr.value = '4';
     cpatApply('quarters');
   }
 
@@ -3599,7 +4054,7 @@ const I18N = (function () {
   function exportDrumMidi() {
     try {
       const bars = Number(D.selDrumBars.value);
-      const bytes = buildDrumMidi({ meter: E.selMeter.value, bpm: Number(E.rngBpm.value), grid: drum.grid, swing: Number(X.rngSwing.value) / 100, bars: bars, kit: currentKit(), title: (currentKit() === 'cajon' ? 'Cajon groove ' : 'Drum groove ') + E.selMeter.value });
+      const bytes = buildDrumMidi({ meter: E.selMeter.value, bpm: Number(E.rngBpm.value), grid: drum.grid, swing: Number(X.rngSwing.value) / 100, bars: bars, kit: currentKit(), rowVol: drum.vol, title: (currentKit() === 'cajon' ? 'Cajon groove ' : 'Drum groove ') + E.selMeter.value });
       saveBytes(bytes, drumFileBase() + '.mid', 'audio/midi');
       D.drumExportStatus.textContent = 'MIDI file created (' + bars + ' bar' + (bars > 1 ? 's' : '') + ', ' + bytes.length + ' bytes). General MIDI drums on channel 10.';
     } catch (e) { D.drumExportStatus.textContent = 'MIDI export failed: ' + (e.message || e); }
@@ -3608,7 +4063,7 @@ const I18N = (function () {
     D.drumExportStatus.textContent = 'Rendering …'; D.btnDrumWav.disabled = true;
     try {
       const bars = Number(D.selDrumBars.value);
-      const buf = await AudioEngine.renderDrums({ meter: E.selMeter.value, bpm: Number(E.rngBpm.value), grid: drum.grid, swing: Number(X.rngSwing.value) / 100, bars: bars, kit: currentKit() });
+      const buf = await AudioEngine.renderDrums({ meter: E.selMeter.value, bpm: Number(E.rngBpm.value), grid: drum.grid, swing: Number(X.rngSwing.value) / 100, bars: bars, kit: currentKit(), rowVol: drum.vol });
       const chans = []; let peak = 0;
       for (let c = 0; c < buf.numberOfChannels; c++) {
         const d = buf.getChannelData(c); chans.push(d);
@@ -3734,6 +4189,7 @@ const I18N = (function () {
   function initManualArp() {
     M.btnBarAdd.addEventListener('click', addBar);
     M.btnBarRemove.addEventListener('click', removeBar);
+    initSaveLoad();
     E.selKey.addEventListener('change', function () {                    // entered chords stay as entered; only the Roman numerals follow the key
       if (!state.abstract || state.abstract.templateId !== 'manual') return;
       const k = currentKey();
@@ -3754,6 +4210,71 @@ const I18N = (function () {
       M.chkBass.checked = false; M.chkMidiBass.checked = false; M.selBassInst.value = 'fingered'; M.selBassGate.value = 'held'; bass.custom = {}; bassSetMode('follow');
     });
     initChordPattern(); initArpMatrix(); initDrumExtras(); initBass(); applyKit();
+  }
+
+  /* ----- ADDED: phone layout – panels that fold up from the footer -----
+     The panels marked data-sheet are hidden until their tab button in the footer is pressed (one panel at a time; the Mixer button
+     counts as a tab, on every screen size). Escape or the close button folds the panel away again and returns focus to its tab.
+     On phones (below 40rem) the Repeat / Count-in checkboxes also move into the Player panel to keep the footer low. */
+  function initSheets() {
+    const mq = window.matchMedia ? window.matchMedia('(max-width: 40rem)') : { matches: false };
+    const tabs = [].slice.call(document.querySelectorAll('[data-sheet-tab]')), sheets = [].slice.call(document.querySelectorAll('[data-sheet]'));
+    const tabsHost = $('pbTabs');
+    const loopBox = E.chkLoop.parentNode, countBox = E.chkCount.parentNode, extrasHome = loopBox.parentNode, extrasNext = $('btnBpmMinus').parentNode;   // Repeat / Count-in checkboxes
+    const extras = document.createElement('div'); extras.className = 'sheet-extras'; extras.setAttribute('role', 'group'); extras.setAttribute('aria-label', 'Playback options');
+    function sheetOf(t) { return document.getElementById('sheet-' + t.getAttribute('data-sheet-tab')); }
+    function closeAll(returnFocus) {
+      let was = null;
+      tabs.forEach(function (t) { if (t.getAttribute('aria-expanded') === 'true') was = t; t.setAttribute('aria-expanded', 'false'); });
+      sheets.forEach(function (sh) { sh.classList.remove('open'); });
+      document.documentElement.style.removeProperty('--pin-max'); document.documentElement.classList.remove('sheet-open');
+      syncPlaybarHeight();
+      if (returnFocus && was) was.focus();
+    }
+    function foldMixer() { E.pbMixer.classList.add('collapsed'); E.btnMixer.setAttribute('aria-expanded', 'false'); }
+    function openSheet(t) {
+      const sh = sheetOf(t), wasOpen = t.getAttribute('aria-expanded') === 'true';
+      closeAll(false);
+      if (wasOpen) { t.focus(); return; }                              // second press folds the panel away again
+      foldMixer();
+      sh.classList.add('open'); t.setAttribute('aria-expanded', 'true'); document.documentElement.classList.add('sheet-open');
+      syncPlaybarHeight();
+      const h = sh.querySelector('h2'); if (h) { h.tabIndex = -1; h.focus({ preventScroll: true }); }
+      sh.scrollTop = 0;
+      const pin = document.querySelector('.prog-pin');                  // keep the progression in view above the panel
+      if (pin) {
+        window.scrollTo(0, Math.max(0, pin.getBoundingClientRect().top + window.pageYOffset - 1));   // pin natural top -> it sticks to the top edge
+        document.documentElement.style.setProperty('--pin-max', Math.max(110, Math.floor(sh.getBoundingClientRect().top)) + 'px');
+      }
+    }
+    sheets.forEach(function (sh) {                                     // close button in every panel (only shown on phones)
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'sheet-close'; b.textContent = '×';
+      b.setAttribute('aria-label', 'Close panel');
+      b.addEventListener('click', function () { closeAll(true); });
+      sh.insertBefore(b, sh.firstChild);
+    });
+    tabs.forEach(function (t) { t.addEventListener('click', function () { openSheet(t); }); });
+    E.btnMixer.addEventListener('click', function () {                 // runs after the Mixer toggle: an opened mixer replaces any open panel
+      if (!E.pbMixer.classList.contains('collapsed')) closeAll(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      if (sheets.some(function (sh) { return sh.classList.contains('open'); })) { e.preventDefault(); closeAll(true); }
+    });
+    function layout() {
+      const ps = document.getElementById('sheet-player');
+      tabsHost.appendChild(E.btnMixer); foldMixer();                    // the Mixer is a tab on every screen size
+      if (mq.matches) {
+        extras.appendChild(loopBox); extras.appendChild(countBox);
+        const h2 = ps.querySelector('h2'); h2.parentNode.insertBefore(extras, h2.nextSibling);
+      } else {
+        extrasHome.insertBefore(loopBox, extrasNext); extrasHome.insertBefore(countBox, extrasNext);
+        if (extras.parentNode) extras.parentNode.removeChild(extras);
+      }
+      closeAll(false);
+    }
+    if (mq.addEventListener) mq.addEventListener('change', layout); else if (mq.addListener) mq.addListener(layout);
+    layout();
   }
 
   /* ----- language and chord notation (header) ----- */
@@ -3792,6 +4313,7 @@ const I18N = (function () {
   applyDefaults();
   generate(null);                                                      // show a progression immediately (no audio is started)
   setStatus('');
+  initSheets();                                                        // ADDED: phone layout (panels fold up from the footer)
   initLanguage();                                                      // ADDED: language file + chord notation
 })();
 </script>
