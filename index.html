@@ -161,6 +161,10 @@ body { padding-bottom: var(--pb-h); }
 /* Mixer: vertical faders. The range input is rotated by -90 degrees inside a fixed box; keyboard, touch and screen readers work as for a normal slider. */
 .pb-mixer { display: flex; justify-content: center; gap: .2rem .05rem; padding-top: .2rem; }
 .pb-mixer.collapsed { display: none; }
+.pb-pan { display: flex; flex-direction: column; align-items: center; margin-top: .15rem; }
+.pb-pansp { display: block; width: 2.1rem; height: 2.1rem; }
+.pb-ch output { white-space: nowrap; }
+.pb-panv { font-size: .72rem; font-weight: 700; font-variant-numeric: tabular-nums; min-height: 1em; }
 .pb-ch { display: flex; flex-direction: column; align-items: center; min-width: 2.8rem; flex: 0 1 3.7rem; }
 .pb-lab { font-weight: 600; height: 2.8rem; display: flex; align-items: flex-end; font-size: .9rem; }   /* switch row and label row share one height so all faders line up */
 .pb-ch .check { height: 2.8rem; min-height: 0; flex-direction: column; gap: 0; justify-content: flex-end; }
@@ -259,6 +263,66 @@ table.tab td { text-align: center; min-width: 2rem; height: 1.8rem; padding: 0; 
   background: linear-gradient(to bottom, transparent calc(50% - 1px), var(--muted) calc(50% - 1px), var(--muted) calc(50% + 1px), transparent calc(50% + 1px)); }
 table.tab td.bs { border-left: 2px solid var(--line); }
 table.tab td.off { background-color: var(--line); opacity: .55; }                /* steps in which another chord of the bar sounds */
+:root {
+  --ic-play: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M7%204.5v15l12-7.5z%22%20fill%3D%22%23000%22%2F%3E%3C%2Fsvg%3E");
+  --ic-stop: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%226%22%20y%3D%226%22%20width%3D%2212%22%20height%3D%2212%22%20rx%3D%221.5%22%20fill%3D%22%23000%22%2F%3E%3C%2Fsvg%3E");
+  --ic-gen: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%203l1.8%205.2L19%2010l-5.2%201.8L12%2017l-1.8-5.2L5%2010l5.2-1.8z%22%20fill%3D%22%23000%22%2F%3E%3Cpath%20d%3D%22M19%2015v5M16.5%2017.5h5%22%2F%3E%3C%2Fsvg%3E");
+  --ic-again: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M20%2012a8%208%200%201%201-2.5-5.8%22%2F%3E%3Cpath%20d%3D%22M20%204v5h-5%22%2F%3E%3C%2Fsvg%3E");
+  --ic-reset: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%2012a8%208%200%201%200%202.5-5.8%22%2F%3E%3Cpath%20d%3D%22M4%204v5h5%22%2F%3E%3C%2Fsvg%3E");
+  --ic-add: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%205v14M5%2012h14%22%2F%3E%3C%2Fsvg%3E");
+  --ic-minus: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M5%2012h14%22%2F%3E%3C%2Fsvg%3E");
+  --ic-save: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%204v11%22%2F%3E%3Cpath%20d%3D%22M7%2011l5%205%205-5%22%2F%3E%3Cpath%20d%3D%22M5%2020h14%22%2F%3E%3C%2Fsvg%3E");
+  --ic-load: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%2016V5%22%2F%3E%3Cpath%20d%3D%22M7%209l5-5%205%205%22%2F%3E%3Cpath%20d%3D%22M5%2020h14%22%2F%3E%3C%2Fsvg%3E");
+  --ic-folder: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%207a2%202%200%200%201%202-2h4l2%202h8a2%202%200%200%201%202%202v8a2%202%200%200%201-2%202H5a2%202%200%200%201-2-2z%22%2F%3E%3C%2Fsvg%3E");
+  --ic-trash: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%207h16M9%207V4h6v3M6%207l1%2013h10l1-13M10%2011v6M14%2011v6%22%2F%3E%3C%2Fsvg%3E");
+  --ic-x: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M6%206l12%2012M18%206L6%2018%22%2F%3E%3C%2Fsvg%3E");
+  --ic-png: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%223%22%20y%3D%224%22%20width%3D%2218%22%20height%3D%2216%22%20rx%3D%222%22%2F%3E%3Ccircle%20cx%3D%229%22%20cy%3D%2210%22%20r%3D%221.7%22%2F%3E%3Cpath%20d%3D%22M4%2018l5-5%204%204%203-3%204%204%22%2F%3E%3C%2Fsvg%3E");
+  --ic-midi: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M9%2018V6l10-2v12%22%2F%3E%3Ccircle%20cx%3D%226.5%22%20cy%3D%2218%22%20r%3D%222.5%22%20fill%3D%22%23000%22%2F%3E%3Ccircle%20cx%3D%2216.5%22%20cy%3D%2216%22%20r%3D%222.5%22%20fill%3D%22%23000%22%2F%3E%3C%2Fsvg%3E");
+  --ic-wav: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2012h2M7%207v10M11%204v16M15%208v8M19%2010v4M21%2012h0%22%2F%3E%3C%2Fsvg%3E");
+  --ic-mic: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%229%22%20y%3D%223%22%20width%3D%226%22%20height%3D%2211%22%20rx%3D%223%22%2F%3E%3Cpath%20d%3D%22M5%2011a7%207%200%200%200%2014%200M12%2018v3%22%2F%3E%3C%2Fsvg%3E");
+  --ic-test: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%2010v4h4l5%204V6L8%2010z%22%20fill%3D%22%23000%22%2F%3E%3Cpath%20d%3D%22M16%209a4%204%200%200%201%200%206M18.5%206.5a8%208%200%200%201%200%2011%22%2F%3E%3C%2Fsvg%3E");
+  --ic-help: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%229%22%2F%3E%3Cpath%20d%3D%22M9.5%209.5a2.6%202.6%200%201%201%203.6%202.4c-.8.4-1.1.9-1.1%201.8M12%2017h0%22%2F%3E%3C%2Fsvg%3E");
+  --ic-home: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%2011l8-7%208%207M6%2010v10h12V10%22%2F%3E%3C%2Fsvg%3E");
+  --ic-back: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M19%2012H5M11%206l-6%206%206%206%22%2F%3E%3C%2Fsvg%3E");
+  --ic-player: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%207h16M4%2012h16M4%2017h16%22%2F%3E%3Ccircle%20cx%3D%229%22%20cy%3D%227%22%20r%3D%222%22%20fill%3D%22%23fff%22%2F%3E%3Ccircle%20cx%3D%2215%22%20cy%3D%2212%22%20r%3D%222%22%20fill%3D%22%23fff%22%2F%3E%3Ccircle%20cx%3D%228%22%20cy%3D%2217%22%20r%3D%222%22%20fill%3D%22%23fff%22%2F%3E%3C%2Fsvg%3E");
+  --ic-arp: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%2018l4-4%204%203%204-8%206%203%22%2F%3E%3Ccircle%20cx%3D%227%22%20cy%3D%2214%22%20r%3D%221.2%22%20fill%3D%22%23000%22%2F%3E%3Ccircle%20cx%3D%2211%22%20cy%3D%2217%22%20r%3D%221.2%22%20fill%3D%22%23000%22%2F%3E%3Ccircle%20cx%3D%2215%22%20cy%3D%229%22%20r%3D%221.2%22%20fill%3D%22%23000%22%2F%3E%3C%2Fsvg%3E");
+  --ic-chords: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%228%22%20cy%3D%227%22%20r%3D%222.2%22%20fill%3D%22%23000%22%2F%3E%3Ccircle%20cx%3D%228%22%20cy%3D%2212%22%20r%3D%222.2%22%20fill%3D%22%23000%22%2F%3E%3Ccircle%20cx%3D%228%22%20cy%3D%2217%22%20r%3D%222.2%22%20fill%3D%22%23000%22%2F%3E%3Cpath%20d%3D%22M13%207h7M13%2012h7M13%2017h7%22%2F%3E%3C%2Fsvg%3E");
+  --ic-strum: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M6%204v14M10%204v14M14%204v14M18%204v14%22%2F%3E%3Cpath%20d%3D%22M3%2012l18-3%22%20stroke-width%3D%223%22%2F%3E%3C%2Fsvg%3E");
+  --ic-bass: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M5%208c0-3%206-3%206%200v7a3%203%200%201%201-6%200z%22%2F%3E%3Cpath%20d%3D%22M11%2010l8-6M17%203l3%203%22%2F%3E%3C%2Fsvg%3E");
+  --ic-drums: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cellipse%20cx%3D%2212%22%20cy%3D%2213%22%20rx%3D%228%22%20ry%3D%223.5%22%2F%3E%3Cpath%20d%3D%22M4%2013v4c0%202%203.6%203.5%208%203.5s8-1.5%208-3.5v-4M7%204l5%206M17%204l-5%206%22%2F%3E%3C%2Fsvg%3E");
+  --ic-tuner: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12%204v3M5%208l2%202M19%208l-2%202%22%2F%3E%3Cpath%20d%3D%22M4%2018a8%208%200%200%201%2016%200z%22%2F%3E%3Cpath%20d%3D%22M12%2018l3-6%22%20stroke-width%3D%222.6%22%2F%3E%3C%2Fsvg%3E");
+  --ic-mixer: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M6%204v16M12%204v16M18%204v16%22%2F%3E%3Crect%20x%3D%223.5%22%20y%3D%2214%22%20width%3D%225%22%20height%3D%223%22%20rx%3D%221%22%20fill%3D%22%23000%22%2F%3E%3Crect%20x%3D%229.5%22%20y%3D%227%22%20width%3D%225%22%20height%3D%223%22%20rx%3D%221%22%20fill%3D%22%23000%22%2F%3E%3Crect%20x%3D%2215.5%22%20y%3D%2212%22%20width%3D%225%22%20height%3D%223%22%20rx%3D%221%22%20fill%3D%22%23000%22%2F%3E%3C%2Fsvg%3E");
+  --ic-sf2: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%224%22%20y%3D%223%22%20width%3D%2216%22%20height%3D%2218%22%20rx%3D%222%22%2F%3E%3Cpath%20d%3D%22M8%208h8M8%2012h8%22%2F%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2217%22%20r%3D%221.6%22%20fill%3D%22%23000%22%2F%3E%3C%2Fsvg%3E");
+  --ic-pack: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%208l9-5%209%205v9l-9%205-9-5z%22%2F%3E%3Cpath%20d%3D%22M3%208l9%205%209-5M12%2013v9%22%2F%3E%3C%2Fsvg%3E");
+  --ic-check: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M5%2012l5%205%209-10%22%2F%3E%3C%2Fsvg%3E");
+  --ic-server: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%2216%22%20height%3D%226%22%20rx%3D%221.5%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%2214%22%20width%3D%2216%22%20height%3D%226%22%20rx%3D%221.5%22%2F%3E%3Cpath%20d%3D%22M8%207h0M8%2017h0%22%2F%3E%3C%2Fsvg%3E");
+}
+/* ADDED: small icons in front of the button texts. Decorative only (the text stays the accessible name); drawn with a CSS mask so they take the text colour
+   and survive when a script changes the button text. Assigned by id / tab name in initIcons(). */
+button[data-ic]::before { content: ""; display: inline-block; width: 1.15em; height: 1.15em; margin-right: .4em; vertical-align: -.2em; flex: none;
+  background: currentColor; -webkit-mask: var(--ic) center/contain no-repeat; mask: var(--ic) center/contain no-repeat; }
+.pb-tabs button[data-ic]::before { display: block; margin: 0 auto .05rem; width: 1.1rem; height: 1.1rem; }
+.pb-tabs button[data-ic] { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; }
+.tun-str[data-ic]::before { display: none; }
+/* ADDED: tuner */
+.tun { margin: .4rem 0 .8rem; max-width: 26rem; }
+.tun-note { font-size: 3.4rem; font-weight: 700; line-height: 1.1; text-align: center; font-variant-numeric: tabular-nums; }
+.tun-meter { position: relative; height: 2.4rem; border: 2px solid var(--text); border-radius: 8px; background: var(--surface, #f3f4f6); }
+.tun-mid { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; margin-left: -2px; background: var(--text); }
+.tun-mark { position: absolute; top: 3px; bottom: 3px; width: 12px; margin-left: -6px; left: 50%; border-radius: 6px; background: var(--muted); transition: left .12s linear; }
+.tun-meter.ok .tun-mark { background: #1a7f37; }
+.tun-meter.off .tun-mark { background: #8a3b00; }
+.tun-scale { display: flex; justify-content: space-between; font-weight: 700; padding: 0 .3rem; }
+.tun-info { margin: .3rem 0; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; }
+.tun-strings { display: flex; flex-wrap: wrap; gap: .5rem; margin: .3rem 0 .8rem; }
+.tun-str { min-width: 3.6rem; min-height: 3.4rem; font-size: 1.5rem; font-weight: 700; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; margin: 0; }
+.tun-str small { font-size: .7rem; font-weight: 400; }
+.tun-str.hit, .tun-str[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.sf2-box { border: 2px solid var(--accent); border-radius: 10px; padding: .1rem .7rem .5rem; background: #eef3fb; margin: .6rem 0; }
+.sf2-box > summary { color: var(--accent); font-size: 1.05rem; gap: .5rem; flex-wrap: wrap; }
+.sf2-box > summary::before { content: ""; width: 1.4rem; height: 1.4rem; flex: none; background: currentColor; -webkit-mask: var(--ic-sf2) center/contain no-repeat; mask: var(--ic-sf2) center/contain no-repeat; }
+.sf2-badge { font-size: .8rem; font-weight: 700; padding: .05rem .55rem; border-radius: 999px; border: 2px solid var(--muted); color: var(--muted); background: #fff; }
+.sf2-badge.on { border-color: #1a7f37; color: #1a7f37; }
 .tabrow { display: flex; flex-wrap: wrap; gap: .6rem 1.2rem; align-items: flex-start; }
 .tabrow .matrix-wrap { flex: 1 1 18rem; min-width: 0; }
 .chordbox { margin: 0; flex: none; }
@@ -321,7 +385,63 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
   .playbar .pos { order: 3; flex: 1 1 100%; font-size: .85rem; min-height: 1.3rem; }
   .sheet-extras { display: flex; flex-wrap: wrap; gap: .2rem 1.2rem; margin: 0 0 .4rem; }
 }
-@media (max-width: 26rem) { .pb-tabs { gap: .15rem; } .pb-tabs button, .pb-tabs .mixer-toggle { font-size: .7rem; padding-left: 0; padding-right: 0; } }   /* 7 footer tabs on narrow phones */
+@media (max-width: 26rem) { .pb-tabs { gap: .2rem; flex-wrap: wrap; } .pb-tabs button, .pb-tabs .mixer-toggle { flex: 1 1 22%; font-size: .8rem; padding-left: 0; padding-right: 0; } }   /* 7 footer tabs on narrow phones */
+
+/* ===== COMPACT PHONE LAYOUT (ADDED) – saves vertical space; touch targets stay >= 2.3 rem (about 40 px), contrast and focus rings unchanged ===== */
+.hint:empty { display: none; }
+details.fold > summary { font-size: 1.05rem; color: var(--accent); }
+details.fold > summary::before { content: "\25B8"; display: inline-block; width: 1.1rem; transition: none; }
+details.fold[open] > summary::before { content: "\25BE"; }
+details.fold > summary { list-style: none; }
+details.fold > summary::-webkit-details-marker { display: none; }
+@media (max-width: 40rem) {
+  .wrap { padding: .5rem .6rem 2rem; }
+  h1 { font-size: 1.25rem; margin: .2rem 0 .2rem; }
+  h2 { margin-bottom: .5rem; }
+  section.panel { padding: .7rem; margin-bottom: .7rem; }
+  .langbar { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: .5rem; margin-top: .3rem; }
+  .langbar .field { min-width: 0; }
+  .langbar select { width: 100%; min-width: 0; }
+  .pagenav { margin: .1rem 0 .5rem; }
+  .pagenav button { flex: 1 1 0; }
+  .grid { grid-template-columns: repeat(auto-fit, minmax(7.2rem, 1fr)); gap: .5rem .7rem; }
+  .grid .field:has(.txt-in), .grid .field:has(#selProgFmt) { grid-column: 1 / -1; }
+  .row.spaced { margin-top: .5rem; }
+  .row > button { flex: 1 1 auto; }
+  .hint { margin-top: .3rem; font-size: .88rem; }
+  .check { min-height: 2.2rem; }
+  h3 { margin: .8rem 0 .4rem; }
+  details { margin-top: .5rem; padding-top: .4rem; }
+  .langbar { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
+  .field:has(#selStrumSound), .field:has(#selStrumPat), .field:has(#selStrumGate), .field:has(#selArpPat), .field:has(#selArpGate), .field:has(#selChordPat), .field:has(#selChordGate),
+  .field:has(#selDrumSrc), .field:has(#selDrumPattern), .field:has(#selStrumFmt), .field:has(#selInst), .field:has(#selArpInst), .field:has(#selBassInst), .field:has(#selBassMode), .field:has(#selBassGate) { grid-column: 1 / -1; }
+  details.hintfold { border-top: 0; margin-top: .2rem; padding-top: 0; }
+  details.hintfold > summary { font-size: .95rem; min-height: 2.2rem; }
+  .langbar label { font-size: .9rem; white-space: nowrap; }
+  .langbar select { font-size: .85rem; padding-left: .35rem; padding-right: .2rem; }
+  .sf2-box { padding: 0 .6rem .4rem; margin: .4rem 0; }
+  .sf2-box > summary { font-size: 1rem; min-height: 2.2rem; }
+  .fxrow { margin: 0 0 .4rem; }
+  .sheet.open { padding-bottom: .8rem; }
+  .pb-inner { padding: .2rem .6rem .25rem; gap: 0; }
+  .pb-tabs { padding: .05rem 0 .2rem; }
+  .pb-tabs button, .pb-tabs .mixer-toggle { min-height: 2.15rem; }
+  .pb-tempo input[type="range"] { height: 1.8rem; }
+  .pb-tempo button { min-height: 2.15rem; }
+  .playbar .pos { min-height: 1.1rem; font-size: .8rem; line-height: 1.2; }
+  .pb-lab { font-size: .8rem; letter-spacing: -.01em; }
+  .pb-ch output { font-size: .78rem; }
+  .pb-lab, .pb-ch .check { height: 2.5rem; }
+}
+
+/* ADDED: song arrangement list */
+.songlist { list-style: none; margin: .4rem 0 0; padding: 0; display: grid; gap: .4rem; }
+.songrow { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .4rem; border: 1px solid var(--line); border-radius: 8px; padding: .3rem .4rem; background: var(--bg); }
+.songrow .songno { font-weight: 700; min-width: 1.6rem; text-align: right; }
+.songrow select { width: auto; flex: 1 1 7rem; min-width: 0; }
+.songrow select.sr { flex: 0 0 4.6rem; }
+.songrow .slen { color: var(--muted); font-size: .88rem; flex: 1 1 4rem; }
+.songrow button { min-width: 2.3rem; padding: .1rem .4rem; }
 </style>
 </head>
 <body>
@@ -350,6 +470,8 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
 <section class="panel" aria-labelledby="h-gen">
   <h2 id="h-gen">Generator</h2>
   <div class="grid">
+    <div class="field"><label for="selPart">Song part</label>
+      <select id="selPart"></select></div>
     <div class="field"><label for="selStyle">Style</label>
       <select id="selStyle"><option value="pop">Pop</option><option value="jazz">Jazz</option></select></div>
     <div class="field"><label for="selLength">Progression length</label>
@@ -358,6 +480,12 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
       <select id="selMood"></select></div>
     <div class="field"><label for="selKey">Key</label>
       <select id="selKey"></select></div>
+    <div class="field"><span class="lbl" id="lblTranspose">Transpose (semitones)</span>
+      <div class="octsh" role="group" aria-labelledby="lblTranspose">
+        <button type="button" id="btnTransDn" aria-label="Transpose one semitone down">&minus;</button>
+        <output id="outTrans" for="btnTransDn btnTransUp" aria-live="polite">0</output>
+        <button type="button" id="btnTransUp" aria-label="Transpose one semitone up">+</button>
+      </div></div>
     <div class="field"><label for="selComplexity">Harmonic complexity</label>
       <select id="selComplexity"><option value="simple">Simple</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select></div>
   </div>
@@ -384,8 +512,29 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
     <button type="button" id="btnBarRemove">Remove last bar</button>
   </div>
   <p class="hint" id="editStatus" role="status" aria-live="polite">Click a bar to edit its chords: up to four per bar, e.g. C Am F G (one per beat).</p>
+  <!-- ADDED: song arrangement: the parts (Intro ... End) in a list with repeats -->
+  <details class="fold" open id="songFold"><summary>Song arrangement</summary>
+  <p class="hint">Each song part (Intro, Verse, Chorus, Bridge, Outro, End) keeps its own chords: choose the part under “Song part” in the Generator and create or type its chords. Here you list the parts in the order they are played and how often each is repeated. Then choose “Whole arrangement” under “What to play” in the Player panel: playing and the MIDI / WAV export follow this list. After the End part the last chord rings out.</p>
+  <ol class="songlist" id="songList" aria-label="Song sections"></ol>
+  <div class="row spaced">
+    <button type="button" id="btnSongAdd">Add section</button>
+    <button type="button" id="btnSongStd">Standard order</button>
+    <button type="button" id="btnSongClear">Clear list</button>
+  </div>
+  <p class="hint" id="songInfo" role="status" aria-live="polite"></p>
+  <div class="grid">
+    <div class="field"><label for="txtSongName">File name (optional)</label><input type="text" id="txtSongName" class="txt-in" maxlength="80" autocomplete="off" spellcheck="false" placeholder="e.g. my-song"></div>
+  </div>
+  <div class="row spaced">
+    <button type="button" id="btnSongSave">Save song</button>
+    <button type="button" id="btnSongLoad">Load song</button>
+    <input type="file" id="fileSong" accept=".json,application/json,text/plain" hidden>
+  </div>
+  <p class="hint" id="songFileStatus" role="status" aria-live="polite">Saves all parts and the list in one small text file (JSON).</p>
+  </details>
   <!-- ADDED: save / load of the progression -->
-  <h3>Save and load</h3>
+  <details class="fold" open>
+  <summary>Save and load</summary>
   <div class="grid">
     <div class="field"><label for="txtProgName">File name (optional)</label><input type="text" id="txtProgName" class="txt-in" maxlength="80" autocomplete="off" spellcheck="false" placeholder="e.g. my-blues-in-A"></div>
     <div class="field"><label for="selProgFmt">File type</label>
@@ -397,8 +546,10 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
     <input type="file" id="fileProg" accept=".json,.txt,application/json,text/plain" hidden>
   </div>
   <p class="hint" id="progFileStatus" role="status" aria-live="polite">Saves the chords with key, time signature and tempo as a small text file (JSON). A plain .txt file with chords such as C Am F G (one bar per line) can be loaded too. The file extension is added automatically; without a name a suggestion is used.</p>
+  </details>
   <!-- ADDED: preset packs -->
-  <h3>Preset packs</h3>
+  <details class="fold" open>
+  <summary>Preset packs</summary>
   <p class="hint">A preset pack is a small file (JSON) with your own presets. Each preset can contain a progression plus arpeggio, bass sequencer, block chord rhythm and guitar strumming. Load packs from your computer, apply their presets, or create and save your own.</p>
   <div class="row spaced">
     <button type="button" id="btnPackLoad">Load preset pack …</button>
@@ -432,8 +583,10 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
   </div>
   <div class="row spaced"><button type="button" id="btnPackSave">Save selected pack</button></div>
   <p class="hint" id="packStatus" role="status" aria-live="polite">No pack loaded. Packs stay available in this browser until you remove them.</p>
+  </details>
   <!-- ADDED: MIDI export -->
-  <h3>Export</h3>
+  <details class="fold" open>
+  <summary>Export</summary>
   <div class="grid">
     <div class="field"><label for="selMidiPasses">Repeats</label>
       <select id="selMidiPasses"><option value="1" selected>1 time</option><option value="2">2 times</option><option value="4">4 times</option></select></div>
@@ -446,6 +599,7 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
   </div>
   <div class="row spaced"><button type="button" id="btnMidi" disabled>Export MIDI file</button><button type="button" id="btnWav" disabled>Export WAV file</button></div>
   <p class="hint" id="midiStatus" role="status" aria-live="polite">Standard MIDI file of the current progression.</p>
+  </details>
   <details>
     <summary>Harmonic background and references</summary>
     <div id="refsHost"></div>
@@ -460,6 +614,8 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
   <div class="countbox" id="countBox" aria-hidden="true"><span class="num" id="countNum">–</span><span class="lbl" id="countLbl">Ready</span></div>
 
   <div class="grid spaced" style="margin-top:1rem">
+    <div class="field"><label for="selPlayMode">What to play</label>
+      <select id="selPlayMode"><option value="part" selected>This part only</option><option value="song">Whole arrangement</option></select></div>
     <div class="field"><label for="selMeter">Time signature</label>
       <select id="selMeter"><option>2/4</option><option>3/4</option><option selected>4/4</option><option>6/8</option></select></div>
     <div class="field"><label for="selCountIn">Count-in</label>
@@ -490,7 +646,9 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
 <!-- ============================== ARPEGGIATOR (ADDED) ============================== -->
 <section class="panel sheet" id="sheet-arp" data-sheet="arp" aria-labelledby="h-arp">
   <h2 id="h-arp">Arpeggiator</h2>
+  <details class="fold hintfold" open><summary>How it works</summary>
   <p class="hint">Switch the arpeggiator on with “Arp” in the mixer at the bottom. It can sound together with the block chords.</p>
+  </details>
   <div class="grid">
     <div class="field"><label for="selArpInst">Sound</label>
       <select id="selArpInst">
@@ -514,7 +672,9 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
       <select id="selArpGate"><option value="step" selected>One step</option><option value="held">Rings until next hit</option></select></div>
   </div>
   <div class="check"><input type="checkbox" id="chkArpGuitar" checked><label for="chkArpGuitar">Play the notes of the guitar chord shape (fingerpicking, standard tuning E A D G B e)</label></div>
+  <details class="fold hintfold" open><summary>How it works</summary>
   <p class="hint">Click a cell: on → soft → off. Several rows in one column play together. Extra rows (7th–13th) appear when a chord has them. With the guitar chord shape the rows are the strings of the shape, e.g. C: bass = A string, 3rd = D string, 5th = G string, root = B string, 3rd ↑ = high e string.</p>
+  </details>
   <div class="matrix-wrap" id="arpWrap" role="region" aria-label="Arpeggio editor" tabindex="0"></div>
   <div class="row spaced"><button type="button" id="btnArpClear">Clear pattern</button></div>
   <h3>Guitar tablature</h3>
@@ -586,9 +746,19 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
         <button type="button" id="btnStrumOctUp" aria-label="Strums one octave up">+</button>
       </div></div>
   </div>
+  <details class="fold hintfold" open><summary>How it works</summary>
   <p class="hint">Click a cell: on (●) → soft (○) → chuck (×, muted stroke: the strings are dampened with the fretting hand, a short “chk”) → off. The arrow row shows the stroke of every hit: ↓ down-stroke, ↑ up-stroke. Click an arrow to flip it.</p>
+  </details>
   <div class="matrix-wrap" id="strumWrap" role="region" aria-label="Guitar strumming editor" tabindex="0"></div>
   <div class="row spaced"><button type="button" id="btnStrumClear">Clear pattern</button></div>
+  <h3>Chord diagram</h3>
+  <div class="grid">
+    <div class="field"><label for="selStrumDiagChord">Chord shown</label><select id="selStrumDiagChord"></select></div>
+  </div>
+  <div class="tabrow">
+    <figure class="chordbox" id="strumChordBox"></figure>
+    <p class="hint" id="strumDiagInfo" role="status" aria-live="polite"></p>
+  </div>
   <div class="grid">
     <div class="field"><label for="rngStrumSpeed">Strum speed (time between strings)</label>
       <div class="slider-line"><input type="range" id="rngStrumSpeed" min="4" max="40" step="1" value="14"><output id="outStrumSpeed" for="rngStrumSpeed">14 ms</output></div></div>
@@ -606,7 +776,7 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
       <div class="slider-line"><input type="range" id="rngStrumRing" min="0" max="100" step="5" value="40"><output id="outStrumRing" for="rngStrumRing">40 %</output></div></div>
   </div>
   <div class="sf2-slot" data-slot="strum"></div>
-  <h4>Save and load strumming patterns</h4>
+  <details class="fold" open><summary>Save and load strumming patterns</summary>
   <div class="grid">
     <div class="field"><label for="txtStrumName">File name (optional)</label><input type="text" id="txtStrumName" class="txt-in" maxlength="80" autocomplete="off" spellcheck="false" placeholder="e.g. my-folk-strum"></div>
     <div class="field"><label for="selStrumFmt">File type</label>
@@ -618,12 +788,46 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
     <input type="file" id="fileStrum" accept=".json,.txt,application/json,text/plain" hidden>
   </div>
   <p class="hint" id="strumFileStatus" role="status" aria-live="polite">A text file has two lines: the rhythm (x = hit, o = soft hit, . = rest) and the strokes (D = down, U = up), for example x...x.x...x.x.x. and D...D.U...U.D.U.</p>
+  </details>
 </section>
 
 <!-- ============================== BASS SEQUENCER (ADDED) ============================== -->
+<section class="panel sheet" id="sheet-tuner" data-sheet="tuner" aria-labelledby="h-tuner">
+  <h2 id="h-tuner">Guitar tuner</h2>
+  <p class="hint">Standard tuning E A D G B e. Press a string to hear its reference tone, or switch the microphone on and pluck one string at a time.</p>
+  <div class="grid">
+    <div class="field"><label for="selTunRef">Reference pitch A4 (Hz)</label>
+      <select id="selTunRef"><option>435</option><option>436</option><option>437</option><option>438</option><option>439</option><option selected>440</option><option>441</option><option>442</option><option>443</option><option>444</option><option>445</option></select></div>
+  </div>
+  <div class="row spaced">
+    <button type="button" id="btnTunMic" aria-pressed="false">Start microphone</button>
+  </div>
+  <div class="tun" aria-label="Tuner display">
+    <div class="tun-note" id="tunNote" aria-hidden="true">–</div>
+    <div class="tun-meter" id="tunMeter" role="meter" aria-label="Tuning deviation in cents" aria-valuemin="-50" aria-valuemax="50" aria-valuenow="0" aria-valuetext="No signal">
+      <span class="tun-mid" aria-hidden="true"></span><span class="tun-mark" id="tunMark" aria-hidden="true"></span>
+    </div>
+    <div class="tun-scale" aria-hidden="true"><span>♭</span><span>0</span><span>♯</span></div>
+    <p class="tun-info"><span id="tunHz">– Hz</span> · <span id="tunCents">– cents</span></p>
+    <p class="hint" id="tunSay" role="status" aria-live="polite">Microphone is off.</p>
+  </div>
+  <h3>Reference tones</h3>
+  <div class="tun-strings" role="group" aria-label="Reference tones, standard tuning">
+    <button type="button" class="tun-str" data-string="0" aria-label="Play reference tone E, low string (6th)" aria-pressed="false">E<small>String 6</small></button>
+    <button type="button" class="tun-str" data-string="1" aria-label="Play reference tone A (5th string)" aria-pressed="false">A<small>String 5</small></button>
+    <button type="button" class="tun-str" data-string="2" aria-label="Play reference tone D (4th string)" aria-pressed="false">D<small>String 4</small></button>
+    <button type="button" class="tun-str" data-string="3" aria-label="Play reference tone G (3rd string)" aria-pressed="false">G<small>String 3</small></button>
+    <button type="button" class="tun-str" data-string="4" aria-label="Play reference tone B (2nd string)" aria-pressed="false">B<small>String 2</small></button>
+    <button type="button" class="tun-str" data-string="5" aria-label="Play reference tone e, high string (1st)" aria-pressed="false">e<small>String 1</small></button>
+  </div>
+  <p class="hint">The microphone signal is analysed in your browser only; nothing is recorded or sent anywhere. Works best in a quiet room with one string at a time. If the microphone is blocked, the reference tones still work.</p>
+</section>
+
 <section class="panel sheet" id="sheet-bass" data-sheet="bass" aria-labelledby="h-bass">
   <h2 id="h-bass">Bass sequencer</h2>
+  <details class="fold hintfold" open><summary>How it works</summary>
   <p class="hint">Switch it on with “Bass” in the mixer at the bottom. By default the bass follows the kick of the drum computer.</p>
+  </details>
   <div class="grid">
     <div class="field"><label for="selBassInst">Sound</label>
       <select id="selBassInst">
@@ -656,6 +860,9 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
   <div class="grid">
     <div class="field"><label for="selDrumKit">Sound set</label>
       <select id="selDrumKit"><option value="drums" selected>Drum kit</option><option value="cajon">Cajon</option></select></div>
+    <div class="field"><label for="selDrumSrc">Drum sound source</label>
+      <select id="selDrumSrc"><option value="builtin" selected>Built-in kit or own samples</option><option value="sf2" disabled>SoundFont (none loaded)</option></select></div>
+    <div class="sf2-slot" data-slot="drum" style="grid-column:1/-1"></div>
     <div class="field"><label for="selDrumGenre">Drum genre</label>
       <select id="selDrumGenre"><option value="pop">Pop</option><option value="jazz">Jazz</option></select></div>
     <div class="field"><label for="selDrumPattern">Rhythm</label>
@@ -670,7 +877,7 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
   </details>
 
   <div style="margin-top:.8rem">
-    <label for="rngSwing">Swing</label>
+    <label for="rngSwing">Swing (all instruments)</label>
     <div class="slider-line">
       <input type="range" id="rngSwing" min="0" max="100" step="5" value="0">
       <output class="big" id="outSwing" for="rngSwing">0 %</output>
@@ -712,7 +919,7 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
     <p class="status" id="percSampStatus" role="status" aria-live="polite"></p>
   </details>
 
-  <h3>Export drum groove</h3>
+  <details class="fold" open><summary>Export drum groove</summary>
   <div class="row">
     <div class="field"><label for="selDrumBars">Length</label>
       <select id="selDrumBars"><option value="1">1 bar</option><option value="2" selected>2 bars</option><option value="4">4 bars</option><option value="8">8 bars</option></select></div>
@@ -720,6 +927,7 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
     <button type="button" id="btnDrumWav">Export WAV</button>
   </div>
   <p class="hint" id="drumExportStatus" role="status" aria-live="polite"></p>
+  </details>
 </section>
 
 </main>
@@ -734,6 +942,7 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
       <li><a href="#help-quick">Quick start</a></li>
       <li><a href="#help-bar">The bottom bar</a></li>
       <li><a href="#help-prog">Chords and progression</a></li>
+      <li><a href="#help-song">Song parts and arrangement</a></li>
       <li><a href="#help-block">Block chords</a></li>
       <li><a href="#help-strum">Guitar strumming</a></li>
       <li><a href="#help-arp">Arpeggiator and guitar tablature</a></li>
@@ -741,6 +950,7 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
       <li><a href="#help-drums">Drums and rhythm editor</a></li>
       <li><a href="#help-fx">Reverb and chorus</a></li>
       <li><a href="#help-sound">Sounds and SoundFonts</a></li>
+      <li><a href="#help-tuner">Tuner</a></li>
       <li><a href="#help-files">Save, load and export</a></li>
       <li><a href="#help-access">Keyboard and accessibility</a></li>
       <li><a href="#help-trouble">If something does not work</a></li>
@@ -766,6 +976,8 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
       <li>Tempo: use the slider or the buttons − and + (one beat per minute per click).</li>
       <li>The four circles show the current beat.</li>
       <li>Mixer: every part has its own switch and its own fader. “Master” sets the overall volume. “Metro” is the metronome.</li>
+      <li>Count: the switch and the fader “Count” set the count-in (the bars of clicks before the music starts). On a phone this is the quickest way to switch the count-in off; the same switch is in the Player panel. The count-in is independent of “Metro”: switch it off here if you do not want it.</li>
+      <li>Panning: under the fader of every part (not Master) a round knob places the part in the stereo picture. “C” means centre, “L30” 30 % to the left, “R30” 30 % to the right. Drag the knob up or down, use the arrow keys (steps of 10 %), Home for fully left, End for fully right, double click or Delete for centre. Use headphones or two speakers.</li>
       <li>All parts are independent: block chords, strums, arpeggio, bass and drums can be switched on alone or in any combination.</li>
     </ul>
   </section>
@@ -775,9 +987,23 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
       <li>Style, length, mood, key and harmonic complexity steer the generator. “Simple” uses basic chords, “Advanced” also uses richer chords.</li>
       <li>Click a bar to edit its chords. Type up to four chords separated by spaces, for example C Am F G, and press Enter.</li>
       <li>In the edit field: Escape cancels, an empty field deletes the bar, and a vertical bar “|” splits the text into two bars.</li>
-      <li>“Add bar” and “Remove last bar” change the length of the progression.</li>
+      <li>“Add bar” and “Remove last bar” change the length of the progression. Up to 32 bars are possible.</li>
+      <li>Transpose: the buttons “−” and “+” next to Key move the whole progression one semitone down or up. The Key list follows (same mode), and all instruments, the tablature and the chord diagrams play and show the new key. Typed chords are transposed chord by chord. The number shows the semitones since the progression was generated; twelve steps lead back to the start. Choosing a key by hand starts the count again.</li>
       <li>“Show Roman numerals” shows the position of each chord in the key (I, IV, V …).</li>
       <li>Chord notation in the header: International (B, B♭) or German (H, B). Language switches the whole page between English and German.</li>
+    </ul>
+  </section>
+  <section class="panel help-sec" id="help-song" aria-labelledby="hh-song">
+    <h3 id="hh-song" tabindex="-1">Song parts and arrangement</h3>
+    <ul>
+      <li>A song has six parts: Intro, Verse, Chorus, Bridge, Outro and End. Each part has its own chords (up to 32 bars) and remembers the key it was made in.</li>
+      <li>Choose the part under “Song part” in the Generator. Then “Generate Progression”, editing a bar, “Add bar” and Transpose work on that part only. The list shows how many bars each part has.</li>
+      <li>Under “Song arrangement” you build the order of the song: “Add section” appends the open part. For every line choose the part and how often it is repeated (1× to 16×). The arrows move a line, the cross removes it. “Standard order” fills the list with Intro, Verse ×2, Chorus ×2, Bridge, Chorus, Outro and End (only parts that have chords).</li>
+      <li>In the Player panel choose “Whole arrangement” under “What to play”. Play then runs through the list; the display switches to the part that is playing and shows its repeat, for example “Chorus (2/2)”. “Repeat” in the bottom bar repeats the whole arrangement until the End part. “This part only” plays just the open part as before.</li>
+      <li>The End part is the finish: when it has been played, the player stops by itself. The last chord rings out for one bar while the sound fades away, even when Repeat is on. Sections after the End part in the list are not played. The same ring-out is part of the MIDI and WAV export.</li>
+      <li>MIDI and WAV export follow “What to play”: with “Whole arrangement” the whole song is exported (the MIDI file contains a marker for every section). The ring-out in the MIDI file is a held chord with a volume fade (CC 7).</li>
+      <li>“Save song” stores all parts and the list in one small file (JSON); “Load song” reads it back. Songs are loaded with the typed-chord format, so Roman numerals are computed again. A part that has no chords is skipped while playing.</li>
+      <li>Tempo, time signature and the instrument settings are the same for all parts. Reset clears only the open part.</li>
     </ul>
   </section>
   <section class="panel help-sec" id="help-block" aria-labelledby="hh-block">
@@ -803,6 +1029,7 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
       <li>Settings: strum speed, humanize, down-stroke and up-stroke level, how many strings up-strokes play, pick attack (soft to hard) and ring-out (muted to ringing).</li>
       <li>Sound: built-in steel or nylon guitar, or a SoundFont. The built-in sound has a guitar body and a short pick noise at the start of every stroke.</li>
       <li>You can save a strumming pattern as a file (JSON with all settings, or a text file with rhythm and strokes) and load it again.</li>
+      <li>Chord diagram: at the bottom of the panel the grip diagram shows the guitar shape that the strums play. “Chord shown” follows the playing chord or shows a chord of your choice.</li>
     </ul>
   </section>
   <section class="panel help-sec" id="help-arp" aria-labelledby="hh-arp">
@@ -811,7 +1038,7 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
     <ul>
       <li>Matrix: each row is a tone of the chord (bass, root, 3rd, 5th, …), each column is one sixteenth note. Click a cell to switch it on, then soft, then off. Several rows in one column play together.</li>
       <li>Pattern: choose a ready-made picking pattern or draw your own. Note length: one step, or ringing until the next hit.</li>
-      <li>“Play the notes of the guitar chord shape” makes the rows the strings of the real guitar chord. Then you hear exactly what the tablature shows. This option is on by default.</li>
+      <li>“Play the notes of the guitar chord shape” makes the rows the real strings of the guitar chord: “Bass (lowest string)” is the thumb on the lowest string of the shape, the other rows are the A, D, G, B and e strings. If the shape does not use a string, the nearest string above it sounds, so no hit is silent. The ready-made patterns play the bass with the thumb and the G, B and e strings with the fingers. Then you hear exactly what the tablature shows. This option is on by default.</li>
       <li>Octave: the buttons − and + move the arpeggio by whole octaves.</li>
       <li>Tablature: six lines for the strings e, B, G, D, A, E (top to bottom). The numbers are fret numbers; 0 is an open string. Soft notes are shown in grey.</li>
       <li>“Chord shown” chooses the chord. “Follows the playing chord” changes the display while the music plays. In a bar with two chords only the steps of the shown chord are filled.</li>
@@ -833,7 +1060,7 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
     <ul>
       <li>Choose the sound set (drum kit or cajon), the genre, a ready-made rhythm and the time signature (2/4, 3/4, 4/4, 6/8).</li>
       <li>Pattern editor: click a cell to switch it on, then soft, then off. Each row has a round volume knob.</li>
-      <li>Swing delays the off-beat notes for a shuffled feel.</li>
+      <li>Swing delays the off-beat notes for a shuffled feel. It acts on all instruments: drums, block chords, strums, arpeggio and bass. The metronome stays straight. Not used in 6/8.</li>
       <li>Own WAV samples can replace the built-in drum sounds.</li>
       <li>“Export drum groove” saves only the drums as a MIDI or WAV file.</li>
     </ul>
@@ -854,7 +1081,20 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
       <li>Block chords, arpeggio, bass and strums can each load their own SoundFont (a file ending in .sf2). Load the file, choose a preset, then choose “SoundFont” in the sound list of that part.</li>
       <li>Only plain .sf2 files work, not .sf3 or .sfz. The file stays on your computer and must be loaded again after every visit.</li>
       <li>Large SoundFonts need a lot of memory in the browser. Small and medium files are safest.</li>
+      <li>Drums: choose “Drum sound source” = SoundFont after loading a .sf2 file with a drum kit (usually bank 128). The rows are played with the General MIDI drum keys (kick 36, snare 38, hi-hat 42, open hi-hat 46, ride 51, percussion 54 to 69). Keys that the file does not contain use the built-in sound. The test button plays a short groove.</li>
       <li>Own samples (WAV files named by note, for example piano_C4.wav) can be loaded in the Player panel.</li>
+    </ul>
+  </section>
+  <section class="panel help-sec" id="help-tuner" aria-labelledby="hh-tuner">
+    <h3 id="hh-tuner" tabindex="-1">Tuner</h3>
+    <p>The tuner is in the bottom bar under “Tuner”. It helps you to tune the guitar to standard tuning (E A D G B e).</p>
+    <ul>
+      <li>Reference tones: press a string button (E, A, D, G, B, e) to hear its note for about four seconds. Press again to stop. Tune your string until it sounds the same.</li>
+      <li>Microphone: press “Start microphone” and allow the access when your browser asks. Pluck one string. The display shows the note, the frequency and how many cents (hundredths of a semitone) the string is too low or too high. Within ±5 cents it counts as in tune.</li>
+      <li>The display is written out as text as well, so a screen reader announces the note and “too low”, “too high” or “in tune”.</li>
+      <li>Reference pitch: the setting A4 (Hz) is 440 by default. Change it only if your ensemble tunes differently.</li>
+      <li>Privacy: the microphone signal is analysed in your browser only. Nothing is recorded or sent anywhere. The microphone is switched off when you close the panel.</li>
+      <li>Limits: the microphone needs a secure web address (https) and a quiet room. If the microphone is blocked, the reference tones still work. Play one string at a time; chords cannot be tuned this way.</li>
     </ul>
   </section>
   <section class="panel help-sec" id="help-files" aria-labelledby="hh-files">
@@ -905,6 +1145,7 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
       <button type="button" data-sheet-tab="strum" aria-controls="sheet-strum" aria-expanded="false" aria-label="Guitar strumming">Strums</button>
       <button type="button" data-sheet-tab="bass" aria-controls="sheet-bass" aria-expanded="false" aria-label="Bass sequencer">Bass</button>
       <button type="button" data-sheet-tab="drum" aria-controls="sheet-drum" aria-expanded="false" aria-label="Drums and rhythm editor">Drums</button>
+      <button type="button" data-sheet-tab="tuner" aria-controls="sheet-tuner" aria-expanded="false" aria-label="Guitar tuner">Tuner</button>
     </div>
     <div class="pb-main">
       <button type="button" id="btnPlay" class="primary" disabled>Play</button>
@@ -954,6 +1195,12 @@ textarea { font: inherit; color: var(--text); width: 100%; min-height: 5rem; pad
         <div class="check"><input type="checkbox" id="chkMetro" checked aria-label="Metronome"><label for="chkMetro">Metro</label></div>
         <div class="fader"><label class="sr-only" for="rngMetroVol">Metronome volume</label><input type="range" id="rngMetroVol" min="0" max="100" step="1" value="80" aria-orientation="vertical"></div>
         <output id="outMetroVol" for="rngMetroVol">80 %</output>
+      </div>
+      <div class="pb-ch">
+        <div class="check"><input type="checkbox" id="chkCountMix" checked aria-label="Count-in"><label for="chkCountMix">Count</label></div>
+        <div class="fader"><label class="sr-only" for="rngCountVolMix">Count-in volume</label><input type="range" id="rngCountVolMix" min="0" max="100" step="1" value="100" aria-orientation="vertical"></div>
+        <output id="outCountVolMix" for="rngCountVolMix">100 %</output>
+        <div class="pb-pan" aria-hidden="true"><span class="pb-pansp"></span></div>
       </div>
       <div class="pb-ch">
         <div class="check"><input type="checkbox" id="chkDrums"><label for="chkDrums">Drums</label></div>
@@ -1643,6 +1890,7 @@ function buildMidi(real, o) {
   t0.add(0, 0, [0xFF, 0x51, 0x03, (usq >> 16) & 255, (usq >> 8) & 255, usq & 255]);
   t0.add(0, 0, [0xFF, 0x59, 0x02, sf & 255, o.key.mode === 'major' ? 0 : 1]);
 
+  const swT = (m.ppb === 1 && o.swing > 0) ? Math.round(o.swing * 80) : 0;   // swing for every layer ("and" 240 -> 320 ticks at 100 %)
   const t3 = o.arp ? makeTrack() : null;                       // arpeggio track: own channel and own sound
   if (t3) { t3.add(0, 0, metaText(0x03, 'Arpeggio')); t3.add(0, 2, [0xC1, GM_PROGRAM[o.arpInstrument || o.instrument] || 0]); }
   const t5 = o.bass ? makeTrack() : null;                      // ADDED: bass track on its own channel (3)
@@ -1655,31 +1903,41 @@ function buildMidi(real, o) {
   for (let p = 0; p < passes; p++) {
     for (let b = 0; b < nBars; b++) {
       const base = startT + (p * nBars + b) * barT, chords = real.bars[b].chords;
+      if (real.bars[b].sect) t0.add(base, 0, metaText(0x06, 'Section: ' + midiAscii(real.bars[b].sect)));   // ADDED: song part markers
+      if (real.bars[b].ring) {                                 // ADDED: ring-out bar: the last chord is held for the whole bar, the volume (CC 7) fades out
+        [chords[0].bass].concat(chords[0].upper).forEach(function (n, k) {
+          t1.add(base, 3, [0x90, shiftNote(n, o.chordOct), k === 0 ? 90 : 72]);
+          t1.add(base + barT, 1, [0x80, shiftNote(n, o.chordOct), 0]);
+        });
+        for (let i = 0; i <= 8; i++) t1.add(Math.round(base + barT * (0.15 + 0.85 * i / 8)), 2, [0xB0, 7, Math.round(100 * (1 - i / 8))]);
+        t1.add(base + barT, 4, [0xB0, 7, 100]);
+        continue;
+      }
       chords.forEach(function (ch, ci) {
         const sp = chordSpan(m, chords.length, ci), on = base + sp.from * pulseT, off = base + sp.to * pulseT;
         if (off <= on) return;                                 // more chords than places in this time signature: this one is never heard
         t0.add(on, 0, metaText(0x06, 'Bar ' + (p * nBars + b + 1) + ': ' + midiAscii(ch.name)));
         if (o.arp) {                                           // ADDED: arpeggio (same onsets as the live arpeggiator); may sound together with block chords
-          arpMidi(ch, base, on - base, off - base, o.arp).forEach(function (e) {
+          arpMidi(ch, base, on - base, off - base, o.arp, swT).forEach(function (e) {
             t3.add(e.tick, 3, [0x91, e.note, e.vel]);
             t3.add(e.tick + e.len, 1, [0x81, e.note, 0]);
           });
         }
         if (o.bass) {                                          // ADDED: bass sequencer (same hits as live)
-          bassMidi(ch, base, on - base, off - base, o.bass).forEach(function (e) {
+          bassMidi(ch, base, on - base, off - base, o.bass, swT).forEach(function (e) {
             t5.add(e.tick, 3, [0x92, e.note, e.vel]);
             t5.add(e.tick + e.len, 1, [0x82, e.note, 0]);
           });
         }
         if (o.strum) {                                         // ADDED: guitar strumming (own layer, same steps as live)
-          patMidi(ch, base, on - base, off - base, cpatFor(o.strum, qpm * MIDI_PPQ / 60)).forEach(function (e) {
+          patMidi(ch, base, on - base, off - base, swc(cpatFor(o.strum, qpm * MIDI_PPQ / 60), swT)).forEach(function (e) {
             t6.add(e.tick, 3, [0x93, shiftNote(e.note, o.strum.oct || 0), e.vel]);
             t6.add(e.tick + e.len, 1, [0x83, shiftNote(e.note, o.strum.oct || 0), 0]);
           });
         }
         if (o.block === false) { /* block chords switched off for this export */ }
         else if (o.cpat) {                                   // ADDED: block chords in the chord rhythm pattern (same steps as live)
-          patMidi(ch, base, on - base, off - base, cpatFor(o.cpat, qpm * MIDI_PPQ / 60)).forEach(function (e) {
+          patMidi(ch, base, on - base, off - base, swc(cpatFor(o.cpat, qpm * MIDI_PPQ / 60), swT)).forEach(function (e) {
             t1.add(e.tick, 3, [0x90, shiftNote(e.note, o.chordOct), e.vel]);
             t1.add(e.tick + e.len, 1, [0x80, shiftNote(e.note, o.chordOct), 0]);
           });
@@ -1704,6 +1962,7 @@ function buildMidi(real, o) {
     if (wantDrums) {
       const swingTicks = (m.ppb === 1 && o.swing > 0) ? Math.round(o.swing * 80) : 0;   // "and" moves from 240 to 320 ticks at 100 %
       for (let bar = 0; bar < passes * nBars; bar++) {
+        if (real.bars[bar % nBars].ring) continue;             // no drums in the ring-out bar
         for (let step = 0; step < grid.hat.length; step++) {
           const tick = startT + bar * barT + step * 120 + (step % 4 === 2 ? swingTicks : 0);
           DRUM_ROWS.forEach(function (r) {
@@ -1780,7 +2039,7 @@ const GUITAR_OPEN = {
   9:  { maj: 'x02220', m: 'x02210', 7: 'x02020', m7: 'x02010', maj7: 'x02120', sus2: 'x02200', sus4: 'x02230', 6: 'x02222', m6: 'x02212', add9: 'x02420', '7sus4': 'x02030', 5: 'x022xx', dim: 'x0121x', m7b5: 'x0101x' },
   11: { 7: 'x21202' }
 };
-const GUITAR_SLASH = { '0:4:maj': '032010', '0:7:maj': '332010', '2:6:maj': '2x0232', '7:11:maj': 'x20003', '9:1:maj': 'x42220' };
+const GUITAR_SLASH = { '0:4:maj': '032010', '0:7:maj': '332010', '2:6:maj': '2x0232', '7:11:maj': 'x20003', '9:1:maj': 'x42220', '7:2:m7': 'xx0333' };
 const GUITAR_E_SHAPE = { maj: '022100', m: '022000', 7: '020100', m7: '020000', maj7: '021100', sus4: '022200', sus2: '0244x0', 6: '022120', m6: '022020', 9: '020102', 5: '022xxx', '7sus4': '020200' };
 const GUITAR_A_SHAPE = { maj: 'x02220', m: 'x02210', 7: 'x02020', m7: 'x02010', maj7: 'x02120', sus4: 'x02230', sus2: 'x02200', 6: 'x02222', m6: 'x02212', add9: 'x02420', '7sus4': 'x02030', 5: 'x022xx', dim: 'x0121x', m7b5: 'x0101x' };
 function guitarShapeFromFrets(frets) {
@@ -1836,22 +2095,24 @@ function guitarVoicing(ch) {
      if one is missing, a string that does not carry a needed tone gives its place to it (ordering and hand span kept). */
   const need = {};
   Q.iv.forEach(function (i) { if (i !== 7 && i % 12 !== 0) need[mod(ch.rootPc + i, 12)] = 1; });
-  need[bassPc] = 1;
+  need[bassPc] = 1; need[ch.rootPc] = 1;                                     // slash chord: the root must stay audible above the bass tone
   const count = function (list, pc) { return list.filter(function (x) { return mod(x.midi, 12) === pc; }).length; };
   Object.keys(need).forEach(function (k) {
     const pc = Number(k);
     if (count(out, pc) || out.length === 0) return;
-    for (let s = s0 + 1; s < 6; s++) {
-      const lo = Math.max(1, f0 - 2), hi = Math.min(12, f0 + 3);
-      for (let f = 0; f <= hi; f++) {
-        if (f > 0 && f < lo) continue;
-        const midi = GUITAR_TUNING[s] + f;
-        if (mod(midi, 12) !== pc) continue;
-        const rest = out.filter(function (x) { return x.string !== s; }), cand = rest.concat([{ string: s, fret: f, midi: midi }]).sort(function (a, b) { return a.string - b.string; });
-        if (cand.some(function (x, i) { return i > 0 && x.midi <= cand[i - 1].midi; })) continue;       // must stay ascending
-        if (Object.keys(need).some(function (kk) { return count(out, Number(kk)) && !count(cand, Number(kk)); })) continue;   // do not lose another needed tone
-        out.length = 0; Array.prototype.push.apply(out, cand);
-        return;
+    for (let wide = 3; wide <= (bassPc !== ch.rootPc ? 6 : 3); wide += 3) {   // first the normal hand window; slash chords may stretch further to keep the root audible
+      for (let s = s0 + 1; s < 6; s++) {
+        const lo = Math.max(1, f0 - 2), hi = Math.min(12, f0 + wide);
+        for (let f = 0; f <= hi; f++) {
+          if (f > 0 && f < lo) continue;
+          const midi = GUITAR_TUNING[s] + f;
+          if (mod(midi, 12) !== pc) continue;
+          const rest = out.filter(function (x) { return x.string !== s; }), cand = rest.concat([{ string: s, fret: f, midi: midi }]).sort(function (a, b) { return a.string - b.string; });
+          if (cand.some(function (x, i) { return i > 0 && x.midi <= cand[i - 1].midi; })) continue;       // must stay ascending
+          if (Object.keys(need).some(function (kk) { return count(out, Number(kk)) && !count(cand, Number(kk)); })) continue;   // do not lose another needed tone
+          out.length = 0; Array.prototype.push.apply(out, cand);
+          return;
+        }
       }
     }
   });
@@ -1887,11 +2148,13 @@ function strumNotes(ch, dir, p, opts) {
 /* One chord sounding from bar-relative tick fromT to toT. Returns [{tick, len, note, vel}].
    With cp.strum = { params, dirs, tps (ticks per second), rng } every hit is a guitar stroke: the notes are the strings of
    guitarVoicing(), shifted in time by strumNotes() (events then also carry level / rel / snd for the WAV export). */
+function swingOffs(step, sw) { return sw && step % 4 === 2 ? sw : 0; }                 // swing: the "and" of the beat is delayed by sw ticks (not in 6/8: sw = 0 there)
+function swc(cp, sw) { return cp ? Object.assign({}, cp, { sw: sw || 0 }) : cp; }        // pattern + swing ticks for patMidi
 function patMidi(ch, base, fromT, toT, cp) {
-  const notes = [ch.bass].concat(ch.upper), hits = [], out = [];
+  const notes = [ch.bass].concat(ch.upper), hits = [], out = [], sw = cp.sw || 0;
   for (let s = Math.ceil(fromT / 120); s * 120 < toT; s++) if (cp.grid[s]) hits.push(s);
   hits.forEach(function (s, hi) {
-    const tick = base + s * 120, end = hi + 1 < hits.length ? base + hits[hi + 1] * 120 : base + toT;
+    const tick = base + s * 120 + swingOffs(s, sw), end = hi + 1 < hits.length ? base + hits[hi + 1] * 120 + swingOffs(hits[hi + 1], sw) : base + toT;
     const chuck = cp.grid[s] === 3;                                               // muted stroke: always short
     const len = chuck ? Math.max(1, Math.min(Math.round(120 * 0.35), end - tick)) : cp.short ? Math.max(1, Math.min(Math.round(120 * 0.9), end - tick)) : end - tick;
     const soft = cp.grid[s] === 2 ? 0.65 : 1;
@@ -2004,31 +2267,38 @@ function exportPlan(real, o) {
   const countBars = o.countBars || 0, passes = o.passes || 1, nBars = real.bars.length;
   const startT = countBars * barT, endT = startT + passes * nBars * barT;
   const plan = { chord: [], drums: [], count: [], endSec: endT * sec };
+  const swT = (m.ppb === 1 && o.swing > 0) ? Math.round(o.swing * 80) : 0;   // swing for every layer
   for (let p = 0; p < countBars * m.pulses; p++) plan.count.push({ t: p * pulseT * sec, first: p % m.pulses === 0, strong: m.strong.indexOf(p % m.pulses) >= 0 });
   for (let p = 0; p < passes; p++) for (let b = 0; b < nBars; b++) {
     const base = startT + (p * nBars + b) * barT, chords = real.bars[b].chords;
+    if (real.bars[b].ring) {                                     // ADDED: ring-out bar: last chord held for the bar, the mix fades out (plan.fade)
+      const rn = [chords[0].bass].concat(chords[0].upper), rnorm = 0.5 / Math.sqrt(rn.length);
+      rn.forEach(function (n, k) { plan.chord.push({ t: base * sec, dur: barT * sec, midi: shiftNote(n, o.chordOct), level: rnorm * (k === 0 ? 1 : 0.85), strum: true, k: k }); });
+      plan.fade = { t0: (base + barT * 0.15) * sec, t1: (base + barT) * sec };
+      continue;
+    }
     chords.forEach(function (ch, ci) {
       const sp = chordSpan(m, chords.length, ci), on = base + sp.from * pulseT, off = base + sp.to * pulseT;
       if (off <= on) return;
       const notes = [ch.bass].concat(ch.upper), norm = 0.5 / Math.sqrt(notes.length);
       if (o.arp) {
-        arpMidi(ch, base, on - base, off - base, o.arp).forEach(function (e) {
+        arpMidi(ch, base, on - base, off - base, o.arp, swT).forEach(function (e) {
           plan.chord.push({ t: e.tick * sec, dur: e.len * sec, midi: e.note, level: arpLevel(e), strum: false, k: 0, arp: true });
         });
       }
       if (o.bass) {
-        bassMidi(ch, base, on - base, off - base, o.bass).forEach(function (e) {
+        bassMidi(ch, base, on - base, off - base, o.bass, swT).forEach(function (e) {
           plan.chord.push({ t: e.tick * sec, dur: e.len * sec, midi: e.note, level: bassLevel(e), strum: false, k: 0, bass: true });
         });
       }
       if (o.strum) {                                           // ADDED: guitar strumming layer (own sound per note)
-        patMidi(ch, base, on - base, off - base, cpatFor(o.strum, 1 / sec)).forEach(function (e) {
+        patMidi(ch, base, on - base, off - base, swc(cpatFor(o.strum, 1 / sec), swT)).forEach(function (e) {
           plan.chord.push({ t: e.tick * sec, dur: e.len * sec, midi: shiftNote(e.note, o.strum.oct || 0), level: e.level, strum: false, k: 0, snd: e.snd, rel: e.rel, layer: 'strum', mute: e.mute, dir: e.dir, first: e.first });
         });
       }
       if (o.block === false) { /* block chords switched off for this export */ }
       else if (o.cpat) {
-        patMidi(ch, base, on - base, off - base, cpatFor(o.cpat, 1 / sec)).forEach(function (e) {
+        patMidi(ch, base, on - base, off - base, swc(cpatFor(o.cpat, 1 / sec), swT)).forEach(function (e) {
           plan.chord.push({ t: e.tick * sec, dur: e.len * sec, midi: shiftNote(e.note, o.chordOct), level: norm * (e.k === 0 ? 1 : 0.85) * (e.soft ? 0.6 : 1), strum: true, k: e.k });
         });
       } else notes.forEach(function (n, k) {
@@ -2039,12 +2309,46 @@ function exportPlan(real, o) {
   const grid = o.drums;
   if (grid) {
     const swingTicks = (m.ppb === 1 && o.swing > 0) ? Math.round(o.swing * 80) : 0;
-    for (let bar = 0; bar < passes * nBars; bar++) for (let step = 0; step < grid.hat.length; step++) {
+    for (let bar = 0; bar < passes * nBars; bar++) if (!real.bars[bar % nBars].ring) for (let step = 0; step < grid.hat.length; step++) {
       const tick = startT + bar * barT + step * 120 + (step % 4 === 2 ? swingTicks : 0);
       DRUM_ROWS.forEach(function (r) { const v = grid[r][step]; if (v) plan.drums.push({ t: tick * sec, row: r, vel: v === 2 ? 0.45 : 1 }); });
     }
   }
   return plan;
+}
+/* ---------- ADDED: song parts and arrangement (pure functions) ----------
+   A song has six parts (Intro, Verse, Chorus, Bridge, Outro, End); each part keeps its own chords (realize() result).
+   The arrangement is a list of entries { part, rep }: the part is played rep times. songBuild() joins them into ONE progression
+   { bars } that the player and the exports play exactly like an ordinary progression. When the last entry is the End part (and ring is true)
+   one extra bar is appended that holds only the last chord: the song rings out (the mix fades out over that bar). The End part ends the song:
+   entries after the first End entry are ignored, and `ended` tells the player not to repeat.
+   map[i] tells for every bar of the joined progression which part / repeat / bar of the part it came from. */
+const SONG_PARTS = [{ id: 'intro', name: 'Intro' }, { id: 'verse', name: 'Verse' }, { id: 'chorus', name: 'Chorus' },
+                    { id: 'bridge', name: 'Bridge' }, { id: 'outro', name: 'Outro' }, { id: 'end', name: 'End' }];
+function songPartName(id) { const p = SONG_PARTS.filter(function (x) { return x.id === id; })[0]; return p ? p.name : id; }
+function songRingBar(bar) { return { chords: [bar.chords[bar.chords.length - 1]], ring: true }; }
+function songBuild(realByPart, song, ring) {
+  const bars = [], map = [], missing = [];
+  let lastPart = null;
+  let ended = false;
+  for (let ei = 0; ei < song.length && !ended; ei++) {
+    const e = song[ei], real = realByPart[e.part];
+    if (!real || !real.bars || !real.bars.length) { if (missing.indexOf(e.part) < 0) missing.push(e.part); continue; }
+    for (let r = 0; r < e.rep; r++) real.bars.forEach(function (b, bi) {
+      const nb = Object.assign({}, b, { partId: e.part });
+      if (bi === 0) nb.sect = songPartName(e.part) + (e.rep > 1 ? ' ' + (r + 1) + '/' + e.rep : '');
+      bars.push(nb); map.push({ entry: ei, rep: r, reps: e.rep, part: e.part, local: bi });
+    });
+    lastPart = e.part;
+    if (e.part === 'end') ended = true;                      // the End part finishes the song: later entries are not played
+  }
+  if (!bars.length) return null;
+  if (ring && lastPart === 'end') {
+    const last = bars[bars.length - 1], lm = map[map.length - 1];
+    bars.push(songRingBar(last));
+    map.push({ entry: lm.entry, rep: lm.rep, reps: lm.reps, part: lm.part, local: lm.local, ring: true });
+  }
+  return { prog: { bars: bars }, map: map, missing: missing, ended: lastPart === 'end' };
 }
 // <EXTRA-END>
 
@@ -2076,14 +2380,14 @@ function exportPlan(real, o) {
    fn = function, oct = octave offset.
    ext = extension lane (shown only when a chord of the progression has that tone). */
 const ARP_LANES = [
-  { id: 'b',   label: 'Bass',      fn: 'b', oct: 0 },
-  { id: '1',   label: 'Root',      fn: '1', oct: 0 },
-  { id: '3',   label: '3rd',       fn: '3', oct: 0 },
-  { id: '5',   label: '5th',       fn: '5', oct: 0 },
+  { id: 'b',   label: 'Bass',      fn: 'b', oct: 0, gr: 0, gl: 'Bass (lowest string)' },
+  { id: '1',   label: 'Root',      fn: '1', oct: 0, gr: 1, gs: 1, gl: 'A string' },
+  { id: '3',   label: '3rd',       fn: '3', oct: 0, gr: 2, gs: 2, gl: 'D string' },
+  { id: '5',   label: '5th',       fn: '5', oct: 0, gr: 3, gs: 3, gl: 'G string' },
   { id: '7',   label: '7th / 6th', fn: '7', oct: 0, ext: true },
-  { id: 'o1',  label: 'Root ↑', fn: '1', oct: 1 },
+  { id: 'o1',  label: 'Root ↑', fn: '1', oct: 1, gr: 4, gs: 4, gl: 'B string' },
   { id: '9',   label: '9th',       fn: '9', oct: 0, ext: true },
-  { id: 'o3',  label: '3rd ↑',  fn: '3', oct: 1 },
+  { id: 'o3',  label: '3rd ↑',  fn: '3', oct: 1, gr: 5, gs: 5, gl: 'e string' },
   { id: '11',  label: '11th',      fn: '11', oct: 0, ext: true },
   { id: 'o5',  label: '5th ↑',  fn: '5', oct: 1 },
   { id: '13',  label: '13th',      fn: '13', oct: 0, ext: true }
@@ -2101,19 +2405,20 @@ function arpLaneNote(ch, lane) {
   const r = ch.arpRoot !== undefined ? ch.arpRoot : arpRegister(ch, Q, 62);
   return r + iv + 12 * lane.oct;
 }
-/* ADDED: guitar chord shape for the arpeggio ("Play the notes of the guitar chord shape"). The lanes then play the STRINGS of
-   guitarVoicing(): Bass = lowest string; every other lane = the strings carrying that chord function above the bass string
-   (lane "3rd" = lowest such string, "3rd ↑" = the next one). C major (x32010): bass C3, root C4 (B string), 3rd E3 (D string),
-   5th G3 (G string), 3rd↑ E4 (high e string). null = the shape has no such string. */
+/* Guitar chord shape for the arpeggio ("Play the notes of the guitar chord shape"): the rows are the sounding STRINGS of guitarVoicing() counted from the bass string (thumb), see arpGuitarNote. */
 function arpGuitarNote(ch, lane) {
+  /* Guitar mode: the rows are the real strings. "Bass (lowest string)" = the lowest sounding string of the shape (the thumb);
+     the other rows are the strings A, D, G, B and e: the row plays the note of the shape on that string. A string that the shape
+     does not use plays the nearest string above it (below it if there is none), so no hit is ever silent; the tablature shows
+     exactly the string that sounds. */
+  if (lane.gr === undefined) return null;
   const sh = guitarVoicing(ch);
-  if (lane.fn === 'b') return sh[0].midi;
-  const Q = QUAL[ch.qual];
-  if (!Q) return null;
-  const fnOfPc = {};
-  Q.iv.forEach(function (i) { const pc = mod(ch.rootPc + i, 12); if (fnOfPc[pc] === undefined) fnOfPc[pc] = arpToneFn(i); });
-  const pool = sh.slice(1).filter(function (n) { return fnOfPc[mod(n.midi, 12)] === lane.fn; });
-  return pool[lane.oct] ? pool[lane.oct].midi : null;
+  if (!sh.length) return null;
+  if (lane.gr === 0) return sh[0].midi;
+  const byString = {}; sh.forEach(function (n) { byString[n.string] = n; });
+  for (let s = lane.gs; s < 6; s++) if (byString[s]) return byString[s].midi;
+  for (let s = lane.gs - 1; s >= 0; s--) if (byString[s]) return byString[s].midi;
+  return null;
 }
 function arpNoteFor(ch, lane, guitar) { return guitar ? arpGuitarNote(ch, lane) : arpLaneNote(ch, lane); }
 /* ADDED: tablature position of a MIDI note: the string of the chord shape that plays exactly this note, otherwise the playable
@@ -2137,7 +2442,7 @@ function arpTabData(ch, steps, arp, from, to) {
   const shape = guitarVoicing(ch), cells = [];
   for (let st = 0; st < 6; st++) cells.push(new Array(steps).fill(null));
   let missing = 0;
-  arpHits(ch, from, to, Object.assign({}, arp, { guitar: true })).forEach(function (h) {      // the tablature always shows the guitar chord shape
+  arpHits(ch, from, to, Object.assign({}, arp, { guitar: true, oct: 0 })).forEach(function (h) {      // the tablature always shows the guitar chord shape (the octave setting only transposes the sound)
     const p = tabPosition(h.note, shape);
     if (!p) { missing++; return; }
     cells[p.string][h.step] = { fret: p.fret, soft: h.soft };
@@ -2168,9 +2473,9 @@ function arpHits(ch, fromStep, toStep, arp) {
 function arpLevel(h) { return Math.min(0.34, 0.5 / Math.sqrt(h.count)) * (h.soft ? 0.65 : 1); }   // live / WAV level
 /* MIDI version: [{tick, len, note, vel, count, soft}] for one chord sounding from tick base+fromT to base+toT.
    16th step = 120 ticks in every time signature, so the onsets coincide with the live scheduler. */
-function arpMidi(ch, base, fromT, toT, arp) {
+function arpMidi(ch, base, fromT, toT, arp, sw) {
   return arpHits(ch, Math.round(fromT / 120), Math.round(toT / 120), arp).map(function (h) {
-    return { tick: base + h.step * 120, len: Math.max(1, Math.round(h.len * 120)), note: h.note,
+    return { tick: base + h.step * 120 + swingOffs(h.step, sw), len: Math.max(1, Math.round(h.len * 120)), note: h.note,
              vel: Math.round((h.count === 1 ? 92 : 80) * (h.soft ? 0.65 : 1)), count: h.count, soft: h.soft, lane: h.lane };
   });
 }
@@ -2227,32 +2532,35 @@ function bassHits(ch, fromStep, toStep, bass) {
   return hits;
 }
 function bassLevel(h) { return Math.min(0.36, 0.45 / Math.sqrt(h.count)) * (h.soft ? 0.6 : 1); }
-function bassMidi(ch, base, fromT, toT, bass) {
+function bassMidi(ch, base, fromT, toT, bass, sw) {
   return bassHits(ch, Math.round(fromT / 120), Math.round(toT / 120), bass).map(function (h) {
-    return { tick: base + h.step * 120, len: Math.max(1, Math.round(h.len * 120)), note: h.note, vel: Math.round((h.count === 1 ? 100 : 90) * (h.soft ? 0.65 : 1)), count: h.count, soft: h.soft, lane: h.lane };
+    return { tick: base + h.step * 120 + swingOffs(h.step, sw), len: Math.max(1, Math.round(h.len * 120)), note: h.note, vel: Math.round((h.count === 1 ? 100 : 90) * (h.soft ? 0.65 : 1)), count: h.count, soft: h.soft, lane: h.lane };
   });
 }
 function arpEmptyGrid(n) { const g = {}; ARP_LANES.forEach(function (l) { g[l.id] = new Array(n).fill(0); }); return g; }
 /* Presets. seq = lanes played one after another every `every` steps (2 = eighth notes); p = explicit rows per meter. */
 const ARP_PRESETS = [
-  { id: 'up',      name: 'Up (eighths)',          seq: ['1', '3', '5', 'o1'], every: 2 },
-  { id: 'down',    name: 'Down (eighths)',        seq: ['o1', '5', '3', '1'], every: 2 },
-  { id: 'updown',  name: 'Up and down (eighths)', seq: ['1', '3', '5', 'o1', '5', '3'], every: 2 },
-  { id: 'alberti', name: 'Alberti bass',          seq: ['1', '5', '3', '5'], every: 2 },
-  { id: 'folk',    name: 'Bass and fingerpicking', p: {
+  { id: 'up',      name: 'Up (eighths)',          seq: ['1', '3', '5', 'o1'], gseq: ['b', '5', 'o1', 'o3'], every: 2 },
+  { id: 'down',    name: 'Down (eighths)',        seq: ['o1', '5', '3', '1'], gseq: ['o3', 'o1', '5', 'b'], every: 2 },
+  { id: 'updown',  name: 'Up and down (eighths)', seq: ['1', '3', '5', 'o1', '5', '3'], gseq: ['b', '5', 'o1', 'o3', 'o1', '5'], every: 2 },
+  { id: 'alberti', name: 'Alberti bass',          seq: ['1', '5', '3', '5'], gseq: ['b', 'o3', 'o1', 'o3'], every: 2 },
+  { id: 'folk',    name: 'Bass and fingerpicking', gmap: { b: 'b', '3': '5', '5': 'o3' }, p: {
       '4/4': { b: 'x.......x.......', '3': '..x...x...x...x.', '5': '....x.......x...' },
       '3/4': { b: 'x...........', '3': '..x...x.....', '5': '....x...x...' },
       '6/8': { b: 'x.....x.....', '3': '..x.....x...', '5': '....x.....x.' } } },
-  { id: 'stabs',   name: 'Bass and chord stabs',  p: {
+  { id: 'stabs',   name: 'Bass and chord stabs',  gmap: { b: 'b', '3': '5', '5': 'o1', 'o1': 'o3' }, p: {
       '4/4': { b: 'x.......x.......', '3': '....x.......x...', '5': '....x.......x...', 'o1': '....x.......x...' },
       '3/4': { b: 'x...........', '3': '....x...x...', '5': '....x...x...', 'o1': '....x...x...' },
       '6/8': { b: 'x.....x.....', '3': '..x.x...x.x.', '5': '..x.x...x.x.', 'o1': '..x.x...x.x.' } } }
 ];
-function arpGridFor(preset, meterKey) {
+function arpGridFor(preset, meterKey, guitar) {
+  /* guitar = true: the presets use the strings of the guitar shape: the thumb plays the bass string, the fingers the G, B and e strings
+     (gseq = sequence of rows, gmap = row translation of the explicit patterns). */
   const n = stepsPerBar(meterKey), g = arpEmptyGrid(n);
-  if (preset.seq) { for (let st = 0, i = 0; st < n; st += preset.every, i++) g[preset.seq[i % preset.seq.length]][st] = 1; return g; }
-  const rows = preset.p[meterKey] || preset.p['4/4'];
-  Object.keys(rows).forEach(function (id) { for (let st = 0; st < n; st++) g[id][st] = rows[id][st] === 'x' ? 1 : rows[id][st] === 'o' ? 2 : 0; });
+  const seq = guitar && preset.gseq ? preset.gseq : preset.seq;
+  if (seq) { for (let st = 0, i = 0; st < n; st += preset.every, i++) g[seq[i % seq.length]][st] = 1; return g; }
+  const rows = preset.p[meterKey] || preset.p['4/4'], map = guitar && preset.gmap ? preset.gmap : null;
+  Object.keys(rows).forEach(function (id) { const to = map ? map[id] : id; for (let st = 0; st < n; st++) if (rows[id][st] === 'x' || rows[id][st] === 'o') g[to][st] = rows[id][st] === 'x' ? 1 : 2; });
   return g;
 }
 
@@ -2316,7 +2624,7 @@ function parseChordText(text, maxPerBar, german) {
   const limit = maxPerBar || 4;                                        // chords per bar: up to four (one per quarter); the UI passes the limit of the time signature
   const bars = String(text).split(/[|\n\r]+/).map(function (b) { return b.trim(); }).filter(Boolean);
   if (!bars.length) return { error: 'Please enter at least one chord.' };
-  if (bars.length > 16) return { error: 'Please use at most 16 bars (you entered ' + bars.length + ').' };
+  if (bars.length > 32) return { error: 'Please use at most 32 bars (you entered ' + bars.length + ').' };
   const out = [];
   for (let i = 0; i < bars.length; i++) {
     const toks = bars[i].split(/[\s,]+/).filter(Boolean);
@@ -2499,6 +2807,21 @@ function createAudioEngine(makeCtx, opts) {
   let ctx = null, master = null, comp = null, instBus = null, arpBus = null, bassBus = null, strumBus = null, clickBus = null, safety = null;
   let metroVol01 = 0.8;                                     // ADDED: metronome volume (own slider, own gain node)
   let volume01 = 0.7;
+  /* ADDED: stereo PANNING per layer (chord, arp, strum, bass, metro, drum). One StereoPanner sits behind each bus volume; value -1 (left) .. 0 (centre) .. +1 (right).
+     The effect sends are taken before the panner (reverb stays centred); the count-in is always centred. */
+  const panVal = { chord: 0, arp: 0, strum: 0, bass: 0, metro: 0, drum: 0 }, panNode = {};
+  function panFor(layer) {
+    if (!panNode[layer]) {
+      if (ctx.createStereoPanner) { panNode[layer] = ctx.createStereoPanner(); panNode[layer].pan.value = panVal[layer]; }
+      else panNode[layer] = ctx.createGain();                        // very old browsers: no panning, sound unchanged
+    }
+    return panNode[layer];
+  }
+  function setPan(layer, v) {
+    if (!(layer in panVal)) return;
+    panVal[layer] = Math.max(-1, Math.min(1, Number(v) || 0));
+    const n = panNode[layer]; if (n && n.pan) n.pan.setTargetAtTime(panVal[layer], ctx.currentTime, 0.02);
+  }
   let chordVol01 = 0.8, countVol01 = 1.0, arpVol01 = 0.8, bassVol01 = 0.8, strumVol01 = 0.8;   // ADDED: guitar strumming has its own bus and volume
     // ADDED: arpeggiator volume (own gain node, arpBus)                   // ADDED: chord volume and count-in volume (each with its own gain node)
   const voices = new Set();                 // every live note/click, so Stop can silence all of them
@@ -2577,8 +2900,9 @@ function createAudioEngine(makeCtx, opts) {
        and drums each have their own bus gain (clickBus / drumBus) that no other control touches.
        A last-resort safety limiter (threshold -2 dB) stays in the master path; it only acts when the
        sum approaches full scale. */
-    instBus.connect(comp); arpBus.connect(comp); bassBus.connect(comp); strumBus.connect(comp); comp.connect(master);   // both instrument buses share the compressor
-    clickBus.connect(master);
+    [['chord', instBus], ['arp', arpBus], ['bass', bassBus], ['strum', strumBus]].forEach(function (b) { b[1].connect(panFor(b[0])); panFor(b[0]).connect(comp); });
+    comp.connect(master);   // both instrument buses share the compressor
+    clickBus.connect(panFor('metro')); panFor('metro').connect(master);
     safety = ctx.createDynamicsCompressor();
     safety.threshold.value = -2; safety.knee.value = 0; safety.ratio.value = 20; safety.attack.value = 0.002; safety.release.value = 0.1;
     master.connect(safety); safety.connect(ctx.destination);
@@ -2690,6 +3014,22 @@ function createAudioEngine(makeCtx, opts) {
     master.gain.setValueAtTime(master.gain.value, t);
     if (target === 0) master.gain.linearRampToValueAtTime(0, t + 0.03);
     else master.gain.setTargetAtTime(target, t, 0.02);
+  }
+
+  /* ADDED: fade-out of the whole mix (end of a song: the last chord rings out). fadeMaster() schedules a linear ramp of the master gain from t0 to t1
+     (seconds on the context clock); unfadeMaster() puts the master volume back (called when playback starts or stops). */
+  function fadeMaster(t0, t1) {
+    if (!ctx) return;
+    const a = Math.max(t0, ctx.currentTime);
+    master.gain.cancelScheduledValues(a);
+    master.gain.setValueAtTime(volume01 * volume01, a);
+    master.gain.linearRampToValueAtTime(0.0001, Math.max(t1, a + 0.05));
+  }
+  function unfadeMaster() {
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    master.gain.cancelScheduledValues(t);
+    master.gain.setValueAtTime(volume01 * volume01, t);
   }
 
   /* Build a voice wrapper around an envelope node and its sources. */
@@ -2854,10 +3194,10 @@ function createAudioEngine(makeCtx, opts) {
 
   /* ADDED: SoundFont voice. Every zone that matches key and velocity plays its sample (several zones = stereo pair or layers),
      pitch-shifted with playbackRate, shaped by the zone's volume envelope (delay/attack/hold/decay/sustain), attenuation and pan. */
-  function sf2Buffer(slot, z) {
+  function sf2Buffer(slot, z, c) {
     const key = [slot, z.sample, z.startOff, z.endOff, z.loopStartOff, z.loopEndOff, z.loop].join(':');
     if (sf2Bufs[key]) return sf2Bufs[key];
-    const smp = SF2.sample(sf2Slots[slot].font, z), buf = ctx.createBuffer(1, smp.data.length, smp.rate);
+    const smp = SF2.sample(sf2Slots[slot].font, z), buf = (c || ctx).createBuffer(1, smp.data.length, smp.rate);
     buf.getChannelData(0).set(smp.data);
     return (sf2Bufs[key] = { buf: buf, loop: smp.loop, rate: smp.rate });
   }
@@ -2933,7 +3273,7 @@ function createAudioEngine(makeCtx, opts) {
   let drumBus = null, countBus = null, noiseBuf = null, drumVol01 = 0.8;
   function ensureBuses() {
     if (drumBus) return;
-    drumBus = ctx.createGain(); drumBus.gain.value = drumVol01 * drumVol01; drumBus.connect(master); fxAttach('drum', drumBus);
+    drumBus = ctx.createGain(); drumBus.gain.value = drumVol01 * drumVol01; drumBus.connect(panFor('drum')); panFor('drum').connect(master); fxAttach('drum', drumBus);
     countBus = ctx.createGain(); countBus.gain.value = countGain(countVol01); countBus.connect(master);
     const len = Math.floor(ctx.sampleRate * 1.5);                     // 1.5 s of white noise, shared by all drum voices
     noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
@@ -2988,6 +3328,28 @@ function createAudioEngine(makeCtx, opts) {
   /* Builds ONE drum hit on audio context c into node dest. Used by live playback (ctx) and by the offline
      WAV export (OfflineAudioContext). If the user loaded a sample for this instrument it plays that
      sample (vel scales the level), otherwise the synthetic sound. Returns {out, srcs, nodes}. */
+  /* ADDED: drums from a SoundFont. The drum rows are mapped to General MIDI percussion keys; the preset is normally the drum kit of bank 128.
+     One-shot playback (loops are ignored), velocity layers are chosen from the hit strength. Returns true when at least one zone sounded;
+     a key that the font does not contain falls back to the built-in sound. */
+  let drumSf2 = false;
+  const DRUM_GM = { kick: 36, snare: 38, hat: 42, ohat: 46, ride: 51, bgh: 60, bgl: 61, cgh: 63, cgl: 64, tmb: 54, cab: 69 };
+  function sf2DrumHit(c, name, t, vel, out, srcs, nodes) {
+    const slot = sf2Slots.drum, key = DRUM_GM[name];
+    if (!slot || key === undefined) return false;
+    const zs = SF2.pick(slot.zones, key, Math.round(20 + 107 * Math.max(0, Math.min(1, vel))));
+    if (!zs.length) return false;
+    zs.forEach(function (z) {
+      const b = sf2Buffer('drum', z, c), src = c.createBufferSource(), g = c.createGain();
+      src.buffer = b.buf; src.playbackRate.value = Math.pow(2, SF2.semis(slot.font, z, key) / 12);
+      g.gain.value = 0.9 * vel * Math.pow(10, -z.atten / 200);
+      let tail = g;
+      if (c.createStereoPanner && z.pan) { const pn = c.createStereoPanner(); pn.pan.value = Math.max(-1, Math.min(1, z.pan / 500)); g.connect(pn); tail = pn; nodes.push(pn); }
+      src.connect(g); tail.connect(out); src.start(t); src.stop(t + b.buf.duration / src.playbackRate.value + 0.05);
+      srcs.push(src); nodes.push(g);
+    });
+    return true;
+  }
+  function setDrumSf2(on) { drumSf2 = !!on; }
   function synthDrum(c, dest, nb, name, t, vel, kit) {
     const out = c.createGain(); out.gain.value = 1; out.connect(dest);
     const srcs = [], nodes = [out];
@@ -3009,7 +3371,9 @@ function createAudioEngine(makeCtx, opts) {
       s.connect(f); f.connect(env(peak, dur)); s.start(t, Math.random() * 0.4); s.stop(t + end); srcs.push(s); nodes.push(f);
     }
     const bank = isPerc(name) ? percBank : bankOf(kit);            // percussion rows always use the percussion samples
-    if (bank[name]) {                                              // ADDED: user sample
+    const sfDone = drumSf2 && !!sf2Slots.drum && sf2DrumHit(c, name, t, vel, out, srcs, nodes);   // ADDED: SoundFont drums (falls back to the sounds below)
+    if (sfDone) { /* the SoundFont hit is already built */ }
+    else if (bank[name]) {                                              // ADDED: user sample
       const s = c.createBufferSource(), e = c.createGain();
       s.buffer = bank[name]; e.gain.setValueAtTime(0.9 * vel, t);
       s.connect(e); e.connect(out); s.start(t); srcs.push(s); nodes.push(e);
@@ -3088,10 +3452,10 @@ function createAudioEngine(makeCtx, opts) {
   function setSf2(slot, a) { if (a) sf2Slots[slot] = a; else delete sf2Slots[slot]; Object.keys(sf2Bufs).forEach(function (k) { if (k.indexOf(slot + ':') === 0) delete sf2Bufs[k]; }); }   // ADDED: SoundFont preset of one layer (or null)
 
   return {
-    ensure: ensure, resume: resume, setVolume: setVolume, startVoice: startVoice, click: click, killAll: killAll,
+    ensure: ensure, resume: resume, setVolume: setVolume, fadeMaster: fadeMaster, unfadeMaster: unfadeMaster, startVoice: startVoice, click: click, killAll: killAll,
     countClick: countClick, drum: drum, setDrumRowVolume: setDrumRowVolume, setDrumVolume: setDrumVolume, setMetronomeVolume: setMetronomeVolume,
     setDrumSample: setDrumSample, clearDrumSamples: clearDrumSamples, drumSampleNames: drumSampleNames, renderDrums: renderDrums,
-    setChordVolume: setChordVolume, setStrumVolume: setStrumVolume, strumNoise: strumNoise, setFx: setFx, setArpVolume: setArpVolume, setBassVolume: setBassVolume, setCountVolume: setCountVolume, setDrumKit: setDrumKit, getBanks: getBanks,
+    setPan: setPan, setDrumSf2: setDrumSf2, setChordVolume: setChordVolume, setStrumVolume: setStrumVolume, strumNoise: strumNoise, setFx: setFx, setArpVolume: setArpVolume, setBassVolume: setBassVolume, setCountVolume: setCountVolume, setDrumKit: setDrumKit, getBanks: getBanks,
     setSampleBank: setSampleBank, setSf2: setSf2, getSf2: function (slot) { return sf2Slots[slot] || null; }, hasSamples: function () { return !!sampleBank; },
     get ctx() { return ctx; }, strumOf: function (inst) { return (INST[inst] && INST[inst].strum) || 0; },
     releaseTc: function (inst) { return (INST[inst] && INST[inst].rel) || 0.25; }
@@ -3139,6 +3503,16 @@ const Transport = (function () {
     }
     const qq = q % total, barIdx = Math.floor(qq / barLen), pip = qq % barLen;
     const bar = T.prog.bars[barIdx];
+    if (bar.ring) {                                                   // ADDED: ring-out bar after the End part: only the last chord, the mix fades out
+      if (pip === 0) {
+        releaseArp(t); releaseBass(t); releaseStrum(t);
+        startChord(bar.chords[0], t, live);
+        const barSec = pulseSeconds(live.bpm, m) * barLen;
+        AudioEngine.fadeMaster(t + barSec * 0.15, t + barSec);
+      }
+      T.visual.push({ t: t, kind: 'play', bar: barIdx, chord: 0, pip: pip });
+      return true;
+    }
     const nCh = bar.chords.length, chordIdx = chordIndexAt(m, nCh, pip);             // ADDED: up to four chords per bar
     const startsHere = chordStarts(m, nCh).indexOf(pip) >= 0;
     const arpOn = !!(live.arp && live.arp.on);                        // ADDED: arpeggiator (own switch, own volume)
@@ -3163,6 +3537,7 @@ const Transport = (function () {
   /* ADDED: arpeggiator (matrix). For the 16th steps inside this pulse every ticked cell of the matrix starts the
      tone of its row (root / 3rd / 5th / extension / bass) taken from the CURRENT chord's voicing; several cells
      in one column sound together. arpHits() is the same function the MIDI / WAV export uses. */
+  function swingDelay(live, m, step, stepLen) { return m.ppb === 1 && live.swing > 0 && step % 4 === 2 ? live.swing * (2 / 3) * stepLen : 0; }   // swing for every layer
   function scheduleArp(t, pip, bar, chordIdx, live) {
     const m = T.meter, a = live.arp, ch = bar.chords[chordIdx], spp = m.ppb === 3 ? 2 : 4;
     const stepLen = pulseSeconds(live.bpm, m) / spp;
@@ -3170,7 +3545,7 @@ const Transport = (function () {
     const sp = chordSpan(m, bar.chords.length, chordIdx), from = sp.from * spp, to = sp.to * spp;
     const hits = arpHits(ch, from, to, a);
     for (let k = 0; k < spp; k++) {
-      const step = pip * spp + k, st = t + k * stepLen;
+      const step = pip * spp + k, st = t + k * stepLen + swingDelay(live, m, step, stepLen);
       hits.forEach(function (h) {
         if (h.step !== step) return;
         const v = AudioEngine.startVoice(live.arpInstrument || live.instrument, h.note, st, arpLevel(h), 'arp');   // own bus = own volume slider
@@ -3194,7 +3569,7 @@ const Transport = (function () {
     const sp = chordSpan(m, bar.chords.length, chordIdx), from = sp.from * spp, to = sp.to * spp;
     const hits = bassHits(ch, from, to, b);
     for (let k = 0; k < spp; k++) {
-      const step = pip * spp + k, st = t + k * stepLen;
+      const step = pip * spp + k, st = t + k * stepLen + swingDelay(live, m, step, stepLen);
       hits.forEach(function (h) {
         if (h.step !== step) return;
         const v = AudioEngine.startVoice(live.bassInstrument || 'fingered', h.note, st, bassLevel(h), 'bass');   // own bus = own volume slider
@@ -3227,7 +3602,7 @@ const Transport = (function () {
     const m = T.meter, cp = live.cpat, spp = m.ppb === 3 ? 2 : 4;
     const stepLen = pulseSeconds(live.bpm, m) / spp, drumsOn = !!(live.drums && live.drums.on);
     for (let k = 0; k < spp; k++) {
-      const step = pip * spp + k, v = cp.grid[step], st = t + k * stepLen;
+      const step = pip * spp + k, v = cp.grid[step], st = t + k * stepLen + swingDelay(live, m, step, stepLen);
       if (v) {
         startChord(ch, st, live, v === 2 ? 0.6 : 1);
         if (cp.short) T.current.forEach(function (voice) { voice.release(st + stepLen * 0.9, voice.relTc || 0.15); });
@@ -3243,7 +3618,7 @@ const Transport = (function () {
     const m = T.meter, cp = live.cpat || {}, ss = live.strum, spp = m.ppb === 3 ? 2 : 4;
     const stepLen = pulseSeconds(live.bpm, m) / spp, stepsDone = !!(live.drums && live.drums.on) || (!!cp.on && live.chords !== false), sg = ss.grid;
     for (let k = 0; k < spp; k++) {
-      const step = pip * spp + k, v = sg[step], st = t + k * stepLen;
+      const step = pip * spp + k, v = sg[step], st = t + k * stepLen + swingDelay(live, m, step, stepLen);
       if (v) {
         releaseStrum(st);
         const dir = ss.dirs[step] || 'd', chuck = v === 3;
@@ -3339,6 +3714,7 @@ const Transport = (function () {
       if (ctx.state !== 'running') throw new Error('The browser blocked audio. Click Play again.');
       T.meter = METERS[meterKey]; T.prog = prog; T.loop = loop;
       T.ciPulses = countInBars * T.meter.pulses;
+      AudioEngine.unfadeMaster();
       T.pulse = 0; T.ending = false; T.visual = []; T.steps = []; T.current = []; T.arpCur = []; T.bassCur = []; T.strumCur = [];
       T.nextTime = ctx.currentTime + 0.12;                            // small lead-in so the first pulse is never late
       hooks.started();
@@ -3356,7 +3732,7 @@ const Transport = (function () {
     clearTimeout(T.timer); T.timer = null;
     cancelAnimationFrame(T.raf); T.raf = 0;
     T.visual = []; T.steps = []; T.current = []; T.arpCur = []; T.bassCur = []; T.strumCur = [];
-    if (AudioEngine.ctx) AudioEngine.killAll();
+    if (AudioEngine.ctx) { AudioEngine.killAll(); AudioEngine.unfadeMaster(); }
   }
   return { start: start, stop: stop, isRunning: function () { return T.running; } };
 })();
@@ -3495,6 +3871,8 @@ const I18N = (function () {
   const E = {};
   let sheetsCloseAll = function () { };                                 // set by initSheets(): folds every open panel away
   const FX = { chord: { rev: 0, cho: 0 }, strum: { rev: 0, cho: 0 }, arp: { rev: 0, cho: 0 }, bass: { rev: 0, cho: 0 }, drum: { rev: 0 } };   // ADDED: reverb / chorus amounts in %
+  const PAN = { chord: 0, arp: 0, strum: 0, bass: 0, metro: 0, drum: 0 };   // ADDED: stereo position per layer, -100 (left) .. +100 (right) %
+  let panResetAll = function () {};
   ['selStyle','selLength','selMood','selKey','selComplexity','btnGenerate','btnAnother','btnReset','progMeta','chkRoman','barsHost',
    'refsHost','btnPlay','btnStop','chkLoop','beatDots','posText','selMeter','selInst','selCountIn','selAccent','meterHint','chkMetro',
    'rngBpm','outBpm','btnBpmMinus','btnBpmPlus','rngVol','outVol','rngMetroVol','outMetroVol','playbar','chkChords','chkCount','rngCountVol','outCountVol','rngChordVol','outChordVol','rngArpVol','outArpVol','rngBassVol','outBassVol','rngStrumVol','outStrumVol','btnMixer','pbMixer','status','fileSamples','btnServer','soundStatus']
@@ -3533,7 +3911,7 @@ const I18N = (function () {
     E.rngBpm.value = DEFAULTS.bpm; E.rngVol.value = DEFAULTS.volume;
     E.selInst.value = DEFAULTS.instrument; E.selMeter.value = DEFAULTS.meter; E.selCountIn.value = DEFAULTS.countIn;
     E.chkMetro.checked = DEFAULTS.metronome; E.selAccent.value = DEFAULTS.accent;
-    E.chkCount.checked = true; E.rngCountVol.value = 100; updateCountVolume(); E.rngChordVol.value = 80; updateChordVolume(); E.rngArpVol.value = 80; updateArpVolume(); E.rngBassVol.value = 80; updateBassVolume(); E.rngStrumVol.value = 80; updateStrumVolume();
+    E.chkCount.checked = true; E.rngCountVol.value = 100; updateCountVolume(); if (window.__countMixSync) window.__countMixSync(); E.rngChordVol.value = 80; updateChordVolume(); E.rngArpVol.value = 80; updateArpVolume(); E.rngBassVol.value = 80; updateBassVolume(); E.rngStrumVol.value = 80; updateStrumVolume();
     E.chkLoop.checked = DEFAULTS.loop; E.chkRoman.checked = DEFAULTS.roman;
     updateBpm(); updateVolume(); updateRomanVisibility(); buildBeatDots(); updateMeterHint();
   }
@@ -3613,6 +3991,7 @@ const I18N = (function () {
 
   /* ---------- rendering the progression ---------- */
   function renderProgression() {
+    refreshParts();                                                    // ADDED: song parts: bar counts in the list, arrangement summary
     if (typeof arpBuild === 'function' && arp.cols.length) { arpBuild(false); arpTabSync(); }   // ADDED: extension rows and the tablature follow the chords
     E.barsHost.textContent = '';
     state.barEls = []; state.chordEls = []; state.activeBar = -1; state.activeChord = null;
@@ -3620,7 +3999,7 @@ const I18N = (function () {
       E.barsHost.appendChild(el('p', 'empty', 'Press \u201CGenerate Progression\u201D to create a chord progression.'));
       E.progMeta.textContent = 'No progression yet.';
       E.refsHost.textContent = '';
-      E.btnPlay.disabled = true;
+      E.btnPlay.disabled = !canPlay() || Transport.isRunning();
       return;
     }
     const m = meterNow(), ol = el('ol', 'bars');
@@ -3656,7 +4035,7 @@ const I18N = (function () {
     E.progMeta.textContent = tpl.name + ' \u00B7 ' + cap(a.style) + ' \u00B7 ' + a.length + ' bars \u00B7 ' + a.mood + ' \u00B7 ' +
       cap(a.complexity) + ' \u00B7 ' + keyLabel(currentKey());
     renderRefs(tpl);
-    E.btnPlay.disabled = Transport.isRunning();
+    E.btnPlay.disabled = !canPlay() || Transport.isRunning();
   }
   function renderRefs(tpl) {
     const h = E.refsHost; h.textContent = '';
@@ -3715,7 +4094,7 @@ const I18N = (function () {
 
   /* ---------- play / stop ---------- */
   function setPlayingUI(on) {
-    E.btnPlay.disabled = on || !state.realized;
+    E.btnPlay.disabled = on || !canPlay();
     E.btnStop.disabled = !on;
     updateMidiButton();                                                // ADDED: MIDI export needs a progression
   }
@@ -3725,22 +4104,53 @@ const I18N = (function () {
     clearHighlight();
     clearExtra();                                                      // ADDED: reset count-in display and drum step highlight
     E.posText.textContent = 'Stopped';
+    if (songRun) { const pre = songRun.prePart; songRun = null; if (activePart !== pre) showPart(pre); }   // ADDED: after the arrangement the part that was open before is shown again
     setPlayingUI(false);
     if (message && was) setStatus(message);
   }
   function play() {
-    if (!state.realized || Transport.isRunning()) return;
+    if (Transport.isRunning()) return;
+    let prog = state.realized, run = null;
+    if ($('selPlayMode').value === 'song') {                          // ADDED: whole arrangement = the parts joined by the list, with repeats
+      storeActive();
+      run = buildSong(true);
+      if (!run) { setStatus('The arrangement is empty, or all its parts have no chords yet. Add sections and give the parts chords.', true); return; }
+      prog = run.prog;
+    } else {
+      if (!state.realized) return;
+      if (activePart === 'end') prog = { bars: state.realized.bars.concat([songRingBar(state.realized.bars[state.realized.bars.length - 1])]) };   // End part: the last chord rings out
+    }
     if (!E.chkChords.checked && !E.chkMetro.checked && !X.chkDrums.checked && !M.chkArp.checked && !M.chkBass.checked && !C.chkStrum.checked) {   // nothing selected -> explain instead of silence
       setStatus('Nothing to play: switch on Arp, Chords, Bass, Metronome or Drums in the bar at the bottom.', true); return;
     }
     setStatus('');
+    if (run) {
+      if (run.missing.length) setStatus('Parts without chords are skipped: ' + run.missing.map(songPartName).join(', ') + '.', false);
+      songRun = { map: run.map, prePart: activePart };
+      if (run.map[0].part !== activePart) showPart(run.map[0].part);
+    }
     setPlayingUI(true);
-    Transport.start(state.realized, E.selMeter.value, countBars(), E.chkLoop.checked, {
+    const looping = E.chkLoop.checked && !(run ? run.ended : activePart === 'end');   // the End part finishes the song: no repeat
+    Transport.start(prog, E.selMeter.value, countBars(), looping, {
       live: function () {
         return { bpm: Number(E.rngBpm.value), chords: E.chkChords.checked, metronome: E.chkMetro.checked, accent: E.selAccent.value, instrument: E.selInst.value, arpInstrument: M.selArpInst.value, bassInstrument: M.selBassInst.value,
-                 drums: drumLive(), arp: arpLive(), cpat: cpatLive(), chordOct: octChord, chordSpread: C.chkChordSpread.checked, strum: strumLive(), bass: bassLive() };
+                 swing: meterNow().ppb === 1 ? Number(X.rngSwing.value) / 100 : 0, drums: drumLive(), arp: arpLive(), cpat: cpatLive(), chordOct: octChord, chordSpread: C.chkChordSpread.checked, strum: strumLive(), bass: bassLive() };
       },
-      show: function (ev) { showEvent(ev); showExtra(ev); },
+      show: function (ev) {
+        if (ev.kind === 'play') {
+          const mp = songRun ? songRun.map[ev.bar] : null;
+          if (mp) {                                                    // arrangement: show the part that is playing, bar numbers local to the part
+            if (mp.part !== activePart) showPart(mp.part);
+            const nb = state.realized.bars[mp.local];
+            ev = Object.assign({}, ev, { bar: mp.local, chord: mp.ring ? nb.chords.length - 1 : ev.chord });
+            showEvent(ev); showExtra(ev);
+            E.posText.textContent = mp.ring ? songPartName(mp.part) + ': ringing out' : songPartName(mp.part) + ' (' + (mp.rep + 1) + '/' + mp.reps + ') \u00B7 ' + E.posText.textContent;
+            return;
+          }
+          if (ev.bar >= state.barEls.length) ev = Object.assign({}, ev, { bar: state.barEls.length - 1, chord: state.realized.bars[state.barEls.length - 1].chords.length - 1 });   // ring-out bar of the End part
+        }
+        showEvent(ev); showExtra(ev);
+      },
       step: highlightStep,
       started: function () { /* UI already switched */ },
       finished: function () { stopPlayback('Finished.'); },
@@ -3755,6 +4165,7 @@ const I18N = (function () {
   }
   function generate(avoid) {
     stopPlayback('Playback stopped because a new progression was generated.');
+    transOff = 0; transShow();
     state.abstract = generateProgression(readSettings(), Math.random, avoid ? avoid : null);
     state.realized = realize(state.abstract, currentKey());
     renderProgression();
@@ -3770,9 +4181,36 @@ const I18N = (function () {
       renderProgression(); setPlayingUI(false);
     } else generate(null);                                             // major <-> minor: templates differ, generate a new one
   }
+  /* ----- ADDED: transpose. One click moves the whole progression one semitone up or down. The Key list follows (same mode), so
+         generated progressions are realised again in the new key (Roman numerals unchanged) and typed chords are transposed chord by
+         chord with the spelling of the new key. Every layer (block chords, strums, arpeggio, bass, tablature, diagrams) reads the chords
+         and therefore sounds in the new key. transOff = net semitones since the progression was generated. ----- */
+  let transOff = 0;
+  const PC_SHARP = ['C', 'C' + SHARP, 'D', 'D' + SHARP, 'E', 'F', 'F' + SHARP, 'G', 'G' + SHARP, 'A', 'A' + SHARP, 'B'];
+  const PC_FLAT = ['C', 'D' + FLAT, 'D', 'E' + FLAT, 'E', 'F', 'G' + FLAT, 'G', 'A' + FLAT, 'A', 'B' + FLAT, 'B'];
+  function transShow() { const o = $('outTrans'); if (o) o.textContent = (transOff > 0 ? '+' : transOff < 0 ? '\u2212' : '') + Math.abs(transOff); }
+  function transpose(n) {
+    const k = currentKey(), nk = ALL_KEYS.filter(function (x) { return x.mode === k.mode && x.pc === mod(k.pc + n, 12); })[0];
+    if (!nk) return;
+    let specs = null;
+    if (state.abstract && state.abstract.templateId === 'manual') {
+      const names = nk.flats ? PC_FLAT : PC_SHARP;
+      specs = state.abstract.bars.map(function (bar) {
+        return bar.map(function (sp) {
+          const rootPc = mod(sp.rootPc + n, 12), bassPc = sp.bassPc === null || sp.bassPc === undefined ? null : mod(sp.bassPc + n, 12);
+          const rootName = names[rootPc], bassName = bassPc === null ? null : names[bassPc];
+          return { rootName: rootName, rootPc: rootPc, qual: sp.qual, bassPc: bassPc, bassName: bassName, name: rootName + QUAL[sp.qual].sym + (bassName ? '/' + bassName : '') };
+        });
+      });
+    }
+    E.selKey.value = nk.id; E.selKey.dispatchEvent(new Event('change', { bubbles: true }));   // generated progression: realised again in the new key
+    if (specs) applyBars(specs, null);
+    transOff += n; transShow();
+    setStatus(n > 0 ? 'Transposed up one semitone.' : 'Transposed down one semitone.', false);
+  }
   function reset() {
     stopPlayback();
-    applyDefaults();
+    applyDefaults(); transOff = 0; transShow();
     resetExtras();                                                     // ADDED: drums, editor, export options back to defaults
     state.abstract = null; state.realized = null;
     renderProgression(); setStatus('Settings reset.');
@@ -3843,12 +4281,202 @@ const I18N = (function () {
     }
   }
 
+
+  /* =====================================================================================
+     ADDED: SONG PARTS AND ARRANGEMENT
+     Six parts (Intro, Verse, Chorus, Bridge, Outro, End) each keep their own chords (and the key they were made in). The part that is open
+     lives in state.abstract / state.realized (so every existing function works on it unchanged); the other parts are stored in `parts`.
+     The arrangement `song` is a list { part, rep }. "Whole arrangement" joins the parts (songBuild) into one progression for the
+     player and the exports; tempo, time signature and all instrument settings are shared by all parts.
+     ===================================================================================== */
+  const parts = {};
+  let activePart = 'verse', songRun = null;
+  const song = [];
+  const SONG_MAX = 64, REP_MAX = 16;
+  function partData(id) {
+    if (id === activePart) return state.realized ? { abstract: state.abstract, realized: state.realized, keyId: E.selKey.value, transOff: transOff } : null;
+    return parts[id] || null;
+  }
+  function partBars(id) { const d = partData(id); return d && d.realized ? d.realized.bars.length : 0; }
+  function storeActive() { const d = partData(activePart); if (d) parts[activePart] = d; else delete parts[activePart]; }
+  function showPart(id) {                                              // makes part `id` the open part (the caller has stored the previous one)
+    activePart = id;
+    const d = parts[id] || null;
+    state.abstract = d ? d.abstract : null; state.realized = d ? d.realized : null;
+    if (d && d.keyId && ALL_KEYS.some(function (k) { return k.id === d.keyId; })) E.selKey.value = d.keyId;
+    transOff = d ? d.transOff : 0; transShow();
+    renderProgression();
+    setPlayingUI(Transport.isRunning());
+    refreshParts();
+  }
+  function songAnyContent() { return song.some(function (e) { return partBars(e.part) > 0; }); }
+  function canPlay() { return $('selPlayMode').value === 'song' ? songAnyContent() : !!state.realized; }
+  function buildSong(ring) {
+    const by = {};
+    SONG_PARTS.forEach(function (p) { const d = partData(p.id); by[p.id] = d ? d.realized : null; });
+    return songBuild(by, song, ring);
+  }
+  /* what the exports play: the arrangement (joined, with the ring-out bar) or the open part (End part: with ring-out bar) */
+  function exportSource() {
+    if ($('selPlayMode').value === 'song') {
+      storeActive();
+      const r = buildSong(true);
+      return r ? { real: r.prog, tag: 'song' } : null;
+    }
+    if (!state.realized) return null;
+    const bars = activePart === 'end' ? state.realized.bars.concat([songRingBar(state.realized.bars[state.realized.bars.length - 1])]) : state.realized.bars;
+    return { real: { bars: bars }, tag: state.abstract ? state.abstract.style : 'part' };
+  }
+  function barsText(n) { return n === 0 ? 'empty' : n === 1 ? '1 bar' : n + ' bars'; }
+  function refreshParts() {                                           // option texts of the part list, row lengths and the summary
+    const sel = $('selPart');
+    if (!sel) return;
+    if (!sel.options.length) SONG_PARTS.forEach(function (p) { const o = document.createElement('option'); o.value = p.id; sel.appendChild(o); });
+    [].forEach.call(sel.options, function (o) { const n = partBars(o.value), t = songPartName(o.value) + ' – ' + barsText(n); if (o.textContent !== t) o.textContent = t; });
+    if (sel.value !== activePart) sel.value = activePart;
+    const list = $('songList');
+    [].forEach.call(list.children, function (li, i) { const t = barsText(partBars(song[i].part)); const sp = li.querySelector('.slen'); if (sp && sp.textContent !== t) sp.textContent = t; });
+    updateSongInfo();
+    if (!Transport.isRunning()) { E.btnPlay.disabled = !canPlay(); updateMidiButton(); }
+  }
+  function updateSongInfo() {
+    const p = $('songInfo');
+    if (!song.length) { p.textContent = 'The list is empty.'; return; }
+    let bars = 0;
+    for (let i = 0; i < song.length; i++) { bars += partBars(song[i].part) * song[i].rep; if (song[i].part === 'end' && partBars('end') > 0) break; }   // the End part finishes the song
+    const m = meterNow(), bpm = Number(E.rngBpm.value) || 100, secs = Math.round(bars * m.pulses * 60 / bpm / m.ppb), mm = Math.floor(secs / 60), ss = secs % 60;
+    p.textContent = 'Total: ' + bars + ' bars, about ' + mm + ':' + (ss < 10 ? '0' : '') + ss + ' at ' + bpm + ' BPM';
+  }
+  function renderSong(focusSel) {
+    const list = $('songList');
+    list.textContent = '';
+    song.forEach(function (e, i) {
+      const n = i + 1, li = document.createElement('li');
+      li.className = 'songrow'; li.dataset.i = String(i);
+      const no = el('span', 'songno', n + '.'); no.setAttribute('aria-hidden', 'true'); li.appendChild(no);
+      const sp = document.createElement('select'); sp.className = 'sp'; sp.setAttribute('aria-label', 'Section ' + n + ': part');
+      SONG_PARTS.forEach(function (p) { const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; sp.appendChild(o); });
+      sp.value = e.part; li.appendChild(sp);
+      const sr = document.createElement('select'); sr.className = 'sr'; sr.setAttribute('aria-label', 'Section ' + n + ': repeats');
+      for (let r = 1; r <= REP_MAX; r++) { const o = document.createElement('option'); o.value = String(r); o.textContent = r + '×'; sr.appendChild(o); }
+      sr.value = String(e.rep); li.appendChild(sr);
+      li.appendChild(el('span', 'slen', barsText(partBars(e.part))));
+      [['up', '↑', 'Move section ' + n + ' up', i === 0], ['down', '↓', 'Move section ' + n + ' down', i === song.length - 1], ['del', '✕', 'Remove section ' + n, false]].forEach(function (b) {
+        const bt = document.createElement('button'); bt.type = 'button'; bt.className = b[0]; bt.textContent = b[1]; bt.setAttribute('aria-label', b[2]); bt.disabled = b[3];
+        li.appendChild(bt);
+      });
+      list.appendChild(li);
+    });
+    updateSongInfo();
+    if (!Transport.isRunning()) { E.btnPlay.disabled = !canPlay(); updateMidiButton(); }
+    if (focusSel) { const t = list.querySelector(focusSel); if (t) t.focus(); }
+  }
+  function songChanged() { if (Transport.isRunning()) stopPlayback('Playback stopped because the arrangement changed.'); }
+  function songFileStatus(msg, isErr) { const p = $('songFileStatus'); p.textContent = msg; p.className = 'hint' + (isErr ? ' err' : ''); }
+  const SONG_FORMAT = 'acoustix-song';
+  function saveSong() {
+    storeActive();
+    try {
+      const out = {};
+      SONG_PARTS.forEach(function (p) {
+        const d = parts[p.id];
+        if (d && d.realized) out[p.id] = { key: d.keyId, bars: d.realized.bars.map(function (b) { return b.chords.map(function (c) { return c.name; }).join(' '); }) };
+      });
+      if (!Object.keys(out).length) { songFileStatus('There is nothing to save yet: no part has chords.', true); return; }
+      const data = { format: SONG_FORMAT, version: 1, meter: E.selMeter.value, bpm: Number(E.rngBpm.value), parts: out,
+                     arrangement: song.map(function (e) { return { part: e.part, repeat: e.rep }; }) };
+      const k = currentKey(), name = fileNameFor('txtSongName', 'acoustix-song-' + data.bpm + 'bpm', '.json');
+      saveBytes(new TextEncoder().encode(JSON.stringify(data, null, 2) + '\n'), name, 'application/json');
+      songFileStatus('Song saved: ' + name + ' (' + Object.keys(out).length + ' part(s), ' + song.length + ' section(s)).', false);
+    } catch (e) { songFileStatus('Saving failed: ' + ((e && e.message) || e), true); }
+  }
+  function loadSongFile(file) {
+    if (!file) return;
+    if (file.size > 400000) { songFileStatus('Could not load ' + file.name + ': the file is too large.', true); return; }
+    const fr = new FileReader();
+    fr.onerror = function () { songFileStatus('Could not load ' + file.name + ': the file cannot be read.', true); };
+    fr.onload = function () {
+      let data;
+      try { data = JSON.parse(String(fr.result).replace(/^﻿/, '')); } catch (e) { songFileStatus('Could not load ' + file.name + ': the file is not valid JSON', true); return; }
+      if (!data || data.format !== SONG_FORMAT || typeof data.parts !== 'object' || !data.parts) { songFileStatus('Could not load ' + file.name + ': the file is not a song of this app', true); return; }
+      const meter = METERS[data.meter] ? data.meter : E.selMeter.value, loaded = {};
+      for (let i = 0; i < SONG_PARTS.length; i++) {
+        const id = SONG_PARTS[i].id, pd = data.parts[id];
+        if (!pd || !Array.isArray(pd.bars)) continue;
+        const r = parseChordText(pd.bars.join(' | '), maxChordsPerBar(meter), false);
+        if (r.error) { songFileStatus('Could not load ' + file.name + ': part ' + songPartName(id) + ': ' + r.error, true); return; }
+        if (r.bars.length > 32) { songFileStatus('Could not load ' + file.name + ': part ' + songPartName(id) + ' has more than 32 bars', true); return; }
+        loaded[id] = { specs: r.bars, keyId: ALL_KEYS.some(function (k) { return k.id === pd.key; }) ? pd.key : E.selKey.value };
+      }
+      const ids = Object.keys(loaded);
+      if (!ids.length) { songFileStatus('Could not load ' + file.name + ': no chords found in the file', true); return; }
+      stopPlayback();
+      if (meter !== E.selMeter.value) { E.selMeter.value = meter; E.selMeter.dispatchEvent(new Event('change', { bubbles: true })); }
+      if (typeof data.bpm === 'number' && isFinite(data.bpm)) setBpm(Math.round(data.bpm));
+      Object.keys(parts).forEach(function (k) { delete parts[k]; });
+      ids.forEach(function (id) {
+        const key = ALL_KEYS.filter(function (k) { return k.id === loaded[id].keyId; })[0];
+        parts[id] = { abstract: { templateId: 'manual', style: 'manual', mode: key.mode, length: loaded[id].specs.length, mood: '', complexity: '', bars: loaded[id].specs },
+                      realized: realizeManual(loaded[id].specs, key), keyId: key.id, transOff: 0 };
+      });
+      song.length = 0;
+      (Array.isArray(data.arrangement) ? data.arrangement : []).slice(0, SONG_MAX).forEach(function (e) {
+        if (e && SONG_PARTS.some(function (p) { return p.id === e.part; })) song.push({ part: e.part, rep: Math.max(1, Math.min(REP_MAX, Math.round(Number(e.repeat)) || 1)) });
+      });
+      activePart = ids[0]; showPart(ids[0]);
+      renderSong();
+      songFileStatus('Song loaded from ' + file.name + ': ' + ids.length + ' part(s), ' + song.length + ' section(s).', false);
+    };
+    fr.readAsText(file);
+  }
+  function initSong() {
+    const sel = $('selPart'), list = $('songList');
+    refreshParts();
+    sel.addEventListener('change', function () { stopPlayback(); storeActive(); showPart(sel.value); });
+    $('selPlayMode').addEventListener('change', function () { stopPlayback(); E.btnPlay.disabled = !canPlay(); updateMidiButton(); });
+    $('btnSongAdd').addEventListener('click', function () {
+      if (song.length >= SONG_MAX) { $('songInfo').textContent = 'The list is full (64 sections).'; return; }
+      songChanged(); song.push({ part: activePart, rep: 1 }); renderSong('li:last-child select.sp');
+    });
+    $('btnSongStd').addEventListener('click', function () {
+      songChanged(); song.length = 0;
+      [['intro', 1], ['verse', 2], ['chorus', 2], ['bridge', 1], ['chorus', 1], ['outro', 1], ['end', 1]].forEach(function (e) { if (partBars(e[0]) > 0) song.push({ part: e[0], rep: e[1] }); });
+      renderSong();
+      if (!song.length) $('songInfo').textContent = 'No part has chords yet. Choose a part under “Song part” in the Generator and create its chords first.';
+    });
+    $('btnSongClear').addEventListener('click', function () { songChanged(); song.length = 0; renderSong(); });
+    list.addEventListener('change', function (e) {
+      const li = e.target.closest('.songrow'); if (!li) return;
+      const i = Number(li.dataset.i);
+      songChanged();
+      if (e.target.classList.contains('sp')) { song[i].part = e.target.value; li.querySelector('.slen').textContent = barsText(partBars(song[i].part)); }
+      else if (e.target.classList.contains('sr')) song[i].rep = Number(e.target.value);
+      updateSongInfo(); E.btnPlay.disabled = Transport.isRunning() || !canPlay(); updateMidiButton();
+    });
+    list.addEventListener('click', function (e) {
+      const b = e.target.closest('button'); if (!b) return;
+      const li = b.closest('.songrow'), i = Number(li.dataset.i);
+      songChanged();
+      if (b.classList.contains('up') && i > 0) { song.splice(i - 1, 0, song.splice(i, 1)[0]); renderSong('li:nth-child(' + i + ') button.up'); }
+      else if (b.classList.contains('down') && i < song.length - 1) { song.splice(i + 1, 0, song.splice(i, 1)[0]); renderSong('li:nth-child(' + (i + 2) + ') button.down'); }
+      else if (b.classList.contains('del')) { song.splice(i, 1); renderSong(song.length ? 'li:nth-child(' + Math.min(i + 1, song.length) + ') select.sp' : '#btnSongAdd'); if (!song.length) $('btnSongAdd').focus(); }
+    });
+    $('btnSongSave').addEventListener('click', saveSong);
+    $('btnSongLoad').addEventListener('click', function () { $('fileSong').click(); });
+    $('fileSong').addEventListener('change', function (e) { loadSongFile(e.target.files && e.target.files[0]); e.target.value = ''; });
+    E.rngBpm.addEventListener('input', updateSongInfo);
+    renderSong();
+  }
+
   /* ---------- event wiring (each listener is attached exactly once) ---------- */
   function bind() {
     E.btnGenerate.addEventListener('click', function () { generate(null); });
     E.btnAnother.addEventListener('click', function () { generate(state.abstract ? state.abstract.templateId : null); });
     E.btnReset.addEventListener('click', reset);
     E.selKey.addEventListener('change', onKeyChange);
+    E.selKey.addEventListener('change', function (e) { if (e.isTrusted) { transOff = 0; transShow(); } });   // a key chosen by hand starts the transposition count again
+    $('btnTransDn').addEventListener('click', function () { transpose(-1); });
+    $('btnTransUp').addEventListener('click', function () { transpose(1); });
     E.chkRoman.addEventListener('change', updateRomanVisibility);
     E.btnPlay.addEventListener('click', play);
     E.btnStop.addEventListener('click', function () { stopPlayback(); });
@@ -3887,7 +4515,7 @@ const I18N = (function () {
      pattern per time signature. The time signature is shared with the player.
      ===================================================================================== */
   const X = {};
-  ['countBox','countNum','countLbl','chkDrums','selDrumKit','selDrumGenre','selDrumPattern','selDrumMeter','drumInfo','drumSources','rngSwing','outSwing',
+  ['countBox','countNum','countLbl','chkDrums','selDrumKit','selDrumSrc','selDrumGenre','selDrumPattern','selDrumMeter','drumInfo','drumSources','rngSwing','outSwing',
    'swingNote','rngDrumVol','outDrumVol','matrixWrap','btnDrumClear','btnDrumReload','btnMidi','btnWav','selMidiPasses','chkMidiDrums','chkMidiCount','midiStatus','filePerc','btnPercFolder','btnPercClear','percSampStatus']
     .forEach(function (id) { X[id] = $(id); });
   const drum = { presetId: 'pop-rock', base: 'pop-rock', grid: emptyGrid('4/4'), custom: {}, cells: {}, cols: [], now: -1, vol: {} };
@@ -3895,7 +4523,7 @@ const I18N = (function () {
 
   /* ----- count-in / beat display ----- */
   function showExtra(ev) {
-    if (ev.kind === 'play' && (!arpTab.play || arpTab.play.bar !== ev.bar || arpTab.play.chord !== ev.chord)) { arpTab.play = { bar: ev.bar, chord: ev.chord }; if (M.selArpTabChord.value === 'follow') arpTabRender(); }
+    if (ev.kind === 'play' && (!arpTab.play || arpTab.play.bar !== ev.bar || arpTab.play.chord !== ev.chord)) { arpTab.play = { bar: ev.bar, chord: ev.chord }; if (M.selArpTabChord.value === 'follow') arpTabRender(); if ($('selStrumDiagChord').value === 'follow') strumDiagRender(); }
     E.beatDots.classList.toggle('ci', ev.kind === 'count');
     if (ev.kind === 'count') {
       X.countBox.className = 'countbox ci';
@@ -3908,7 +4536,7 @@ const I18N = (function () {
     }
   }
   function clearExtra() {
-    if (arpTab.play) { arpTab.play = null; if (M.selArpTabChord.value === 'follow') arpTabRender(); }
+    if (arpTab.play) { arpTab.play = null; if (M.selArpTabChord.value === 'follow') arpTabRender(); if ($('selStrumDiagChord').value === 'follow') strumDiagRender(); }
     X.countBox.className = 'countbox'; X.countNum.textContent = '–'; X.countLbl.textContent = 'Ready';
     E.beatDots.classList.remove('ci');
     highlightStep(-1);
@@ -3945,15 +4573,16 @@ const I18N = (function () {
 
   /* ADDED: round volume knob (accessible slider). Drag up/down (or left/right), mouse wheel, arrow keys (±5), PageUp/PageDown (±10),
      Home/End; double click or Delete resets to 80 %. Range 0..100 %; the pointer angle runs from -135° to +135°. */
-  function makeKnob(label, value, onChange, resetTo) {
+  function makeKnob(label, value, onChange, resetTo, textOf) {
     const rv = resetTo === undefined ? 80 : resetTo;                   // double click / Delete: 80 % for volumes, 0 % for effects
     const k = el('span', 'knob'); k.tabIndex = 0; k.setAttribute('role', 'slider');
     k.setAttribute('aria-label', label); k.setAttribute('aria-valuemin', '0'); k.setAttribute('aria-valuemax', '100');
     const dot = el('span', 'knob-dot'); k.appendChild(dot);
     let val = value;
     function paint() {
-      k.setAttribute('aria-valuenow', String(val)); k.setAttribute('aria-valuetext', val + ' %');
-      k.title = label + ': ' + val + ' %'; dot.style.transform = 'rotate(' + (-135 + val * 2.7) + 'deg)';
+      const tx = textOf ? textOf(val) : val + ' %';
+      k.setAttribute('aria-valuenow', String(val)); k.setAttribute('aria-valuetext', tx);
+      k.title = label + ': ' + tx; dot.style.transform = 'rotate(' + (-135 + val * 2.7) + 'deg)';
     }
     function set(v, fire) { v = Math.max(0, Math.min(100, Math.round(v))); if (v === val && fire !== 'force') return; val = v; paint(); if (fire) onChange(val); }
     let drag = null;
@@ -4041,7 +4670,7 @@ const I18N = (function () {
     }
     X.selDrumPattern.value = id;
     X.rngSwing.disabled = m.ppb === 3;
-    X.swingNote.textContent = m.ppb === 3 ? 'Not used in 6/8.' : '';
+    X.swingNote.textContent = m.ppb === 3 ? 'Not used in 6/8.' : 'Swing delays the “and” of every beat for drums, block chords, strums, arpeggio and bass; the metronome stays straight.';
     buildMatrix(); updateDrumInfo();
   }
   function updateDrumInfo() {
@@ -4072,9 +4701,9 @@ const I18N = (function () {
   }
   function resetExtras() {
     X.chkDrums.checked = false; E.chkChords.checked = true; X.selDrumGenre.value = 'pop';
-    X.rngDrumVol.value = 80; X.outDrumVol.textContent = '80 %'; AudioEngine.setDrumVolume(80);
+    X.rngDrumVol.value = 80; X.outDrumVol.textContent = '80 %'; AudioEngine.setDrumVolume(80); panResetAll();
     E.rngMetroVol.value = 80; updateMetroVolume();
-    X.selDrumKit.value = 'drums'; AudioEngine.setDrumKit('drums');
+    X.selDrumKit.value = 'drums'; AudioEngine.setDrumKit('drums'); X.selDrumSrc.value = 'builtin'; AudioEngine.setDrumSf2(false);
     X.selMidiPasses.value = '1'; X.chkMidiDrums.checked = false; X.chkMidiCount.checked = false;
     X.midiStatus.textContent = 'Standard MIDI file of the current progression.';
     drum.custom = {};
@@ -4084,15 +4713,16 @@ const I18N = (function () {
   }
 
   /* ----- MIDI export ----- */
-  function updateMidiButton() { if (X.btnMidi) X.btnMidi.disabled = !state.realized; if (X.btnWav) X.btnWav.disabled = !state.realized; }
+  function updateMidiButton() { if (X.btnMidi) X.btnMidi.disabled = !canPlay(); if (X.btnWav) X.btnWav.disabled = !canPlay(); }
   function exportMidi() {
-    if (!state.realized) return;
+    const src = exportSource();
+    if (!src) return;
     try {
       const k = currentKey(), meterKey = E.selMeter.value;
-      const tpl = TEMPLATES.filter(function (t) { return t.id === state.abstract.templateId; })[0];
+      const tpl = src.tag === 'song' || !state.abstract ? null : TEMPLATES.filter(function (t) { return t.id === state.abstract.templateId; })[0];
       const o = {
         meter: meterKey, bpm: Number(E.rngBpm.value), key: k, instrument: E.selInst.value,
-        arpInstrument: M.selArpInst.value, bassInstrument: M.selBassInst.value, bass: M.chkMidiBass.checked ? bassLive() : null, title: tpl ? tpl.name + ' in ' + k.label : 'Manual chord entry', countBars: X.chkMidiCount.checked ? Math.max(1, Number(E.selCountIn.value) || 1) : 0,
+        arpInstrument: M.selArpInst.value, bassInstrument: M.selBassInst.value, bass: M.chkMidiBass.checked ? bassLive() : null, title: src.tag === 'song' ? 'Song arrangement' : tpl ? tpl.name + ' in ' + k.label : 'Manual chord entry', countBars: X.chkMidiCount.checked ? Math.max(1, Number(E.selCountIn.value) || 1) : 0,
         passes: Number(X.selMidiPasses.value), drums: X.chkMidiDrums.checked ? drum.grid : null,
         swing: Number(X.rngSwing.value) / 100, kit: currentKit(), rowVol: drum.vol,
         arp: $('chkMidiArp').checked ? arpLive() : null,               // arpeggio ...
@@ -4102,8 +4732,8 @@ const I18N = (function () {
         cpat: M.chkMidiPat.checked ? exportCpat() : null,  // chord rhythm pattern for the block chords
         strum: C.chkStrum.checked ? exportStrum() : null, strumInstrument: C.selStrumSound.value   // ADDED: guitar strumming layer
       };
-      const bytes = buildMidi(state.realized, o);
-      const name = 'acoustix-' + state.abstract.style + '-' + k.name.replace(SHARP, 's').replace(FLAT, 'b') + '-' + k.mode + '-' + o.bpm + 'bpm.mid';
+      const bytes = buildMidi(src.real, o);
+      const name = 'acoustix-' + src.tag + '-' + k.name.replace(SHARP, 's').replace(FLAT, 'b') + '-' + k.mode + '-' + o.bpm + 'bpm.mid';
       const url = URL.createObjectURL(new Blob([bytes], { type: 'audio/midi' }));
       const a = document.createElement('a');
       a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
@@ -4134,7 +4764,8 @@ const I18N = (function () {
     });
   }
   async function exportWav() {
-    if (!state.realized) return;
+    const src = exportSource();
+    if (!src) return;
     X.btnWav.disabled = true; X.midiStatus.textContent = 'Rendering WAV …';
     await new Promise(function (r) { setTimeout(r, 40); });              // let the browser paint the message before the heavy work starts
     try {
@@ -4149,7 +4780,7 @@ const I18N = (function () {
         cpat: M.chkMidiPat.checked ? exportCpat() : null,
         strum: C.chkStrum.checked ? exportStrum() : null, strumInstrument: C.selStrumSound.value
       };
-      const plan = exportPlan(state.realized, o);
+      const plan = exportPlan(src.real, o);
       if (plan.endSec > 600) throw new Error('Longer than 10 minutes – reduce the passes.');
       const frames = Math.ceil((plan.endSec + tail) * rate);
       const eng = createAudioEngine(function () { return new OAC(2, frames, rate); }, { maxVoices: 1e9 });
@@ -4158,10 +4789,13 @@ const I18N = (function () {
       Object.keys(banks.drums).forEach(function (n) { eng.setDrumSample(n, banks.drums[n], 'drums'); });
       Object.keys(banks.cajon).forEach(function (n) { eng.setDrumSample(n, banks.cajon[n], 'cajon'); });
       Object.keys(banks.perc).forEach(function (n) { eng.setDrumSample(n, banks.perc[n], 'perc'); });
-      eng.setDrumKit(o.kit); eng.setVolume(100);
+      eng.setDrumKit(o.kit); eng.setDrumSf2(X.selDrumSrc.value === 'sf2'); eng.setVolume(100);
       DRUM_ROWS.forEach(function (r) { eng.setDrumRowVolume(r, drum.vol[r]); });   // ADDED: per-row drum volumes
       eng.setChordVolume(Number(E.rngChordVol.value)); eng.setArpVolume(Number(E.rngArpVol.value)); eng.setBassVolume(Number(E.rngBassVol.value)); eng.setStrumVolume(Number(E.rngStrumVol.value));
-      Object.keys(FX).forEach(function (l) { Object.keys(FX[l]).forEach(function (k) { eng.setFx(l, k, FX[l][k]); }); });   // reverb / chorus eng.setDrumVolume(Number(X.rngDrumVol.value)); eng.setCountVolume(Number(E.rngCountVol.value));
+      Object.keys(FX).forEach(function (l) { Object.keys(FX[l]).forEach(function (k) { eng.setFx(l, k, FX[l][k]); }); });   // reverb / chorus
+      eng.setDrumVolume(Number(X.rngDrumVol.value)); eng.setCountVolume(Number(E.rngCountVol.value));
+      Object.keys(PAN).forEach(function (l) { eng.setPan(l, PAN[l]); });   // ADDED: stereo position of every layer
+      if (plan.fade) eng.fadeMaster(plan.fade.t0, plan.fade.t1);          // ADDED: the song rings out (End part)
       plan.chord.forEach(function (n) {
         const sound = n.snd || (n.bass ? bassInst : n.arp ? arpInst : inst);      // each layer has its own sound (guitar strums carry their own plucked sound)
         const t = n.t + (n.strum && o.chordSpread ? n.k * eng.strumOf(sound) : 0);
@@ -4180,7 +4814,7 @@ const I18N = (function () {
       if (peak < 1e-5) throw new Error('The rendering is silent (check the volume sliders).');
       const g = 0.9 / peak; chans.forEach(function (d) { for (let i = 0; i < d.length; i++) d[i] *= g; });
       const bytes = encodeWav(chans, buf.sampleRate);
-      const name = 'acoustix-' + state.abstract.style + '-' + k.name.replace(SHARP, 's').replace(FLAT, 'b') + '-' + k.mode + '-' + o.bpm + 'bpm.wav';
+      const name = 'acoustix-' + src.tag + '-' + k.name.replace(SHARP, 's').replace(FLAT, 'b') + '-' + k.mode + '-' + o.bpm + 'bpm.wav';
       saveBytes(bytes, name, 'audio/wav');
       X.midiStatus.textContent = 'WAV file created: ' + name + ' (' + Math.round(bytes.length / 1024) + ' KB, 16 bit, ' + Math.round(plan.endSec + tail) + ' s, ' + o.passes + ' pass(es)' +
         (o.countBars ? ', with count-in' : '') + (o.drums ? ', with drum track' : '') + ').';
@@ -4274,7 +4908,9 @@ const I18N = (function () {
   function arpLive() { return { on: M.chkArp.checked, grid: arp.grid, held: M.selArpGate.value === 'held', oct: octArp, guitar: M.chkArpGuitar.checked }; }   // read by the scheduler on every pulse
   /* Rows shown: always bass, root, 3rd, 5th, root/3rd/5th one octave up; 7th/6th, 9th, 11th, 13th only when a chord of the
      progression has that tone (the row is added automatically, its ticks are kept when it disappears). */
+  function arpLaneLabel(l) { return M.chkArpGuitar.checked && l.gl ? l.gl : l.label; }      // guitar mode: rows are strings of the shape
   function arpVisibleLanes() {
+    if (M.chkArpGuitar.checked) return ARP_LANES.filter(function (l) { return l.gr !== undefined; });
     const bars = state.realized ? state.realized.bars : [];
     return ARP_LANES.filter(function (l) {
       return !l.ext || bars.some(function (b) { return b.chords.some(function (c) { return arpNoteFor(c, l, M.chkArpGuitar.checked) !== null; }); });
@@ -4284,7 +4920,7 @@ const I18N = (function () {
     const b = arp.cells[id + ':' + i], v = arp.grid[id][i], lane = ARP_LANES.filter(function (l) { return l.id === id; })[0];
     b.className = 'cell s' + v + (arp.now === i ? ' now' : '');
     b.textContent = v === 1 ? '●' : v === 2 ? '○' : '';
-    b.setAttribute('aria-label', lane.label + ', ' + stepName(E.selMeter.value, i) + ': ' + ['off', 'on', 'soft'][v]);
+    b.setAttribute('aria-label', arpLaneLabel(lane) + ', ' + stepName(E.selMeter.value, i) + ': ' + ['off', 'on', 'soft'][v]);
   }
   function arpHighlight(i) {
     if (arp.now === i) return;
@@ -4298,7 +4934,7 @@ const I18N = (function () {
   }
   function arpBuild(force) {
     const meterKey = E.selMeter.value, n = stepsPerBar(meterKey), m = METERS[meterKey], lanes = arpVisibleLanes();
-    const sig = meterKey + '|' + lanes.map(function (l) { return l.id; }).join(',');
+    const sig = meterKey + '|' + (M.chkArpGuitar.checked ? 'g' : 'p') + lanes.map(function (l) { return l.id; }).join(',');
     if (!force && sig === arp.sig) return;                              // nothing visible changed: keep focus and cells
     arp.sig = sig;
     const tbl = el('table', 'matrix');
@@ -4313,7 +4949,7 @@ const I18N = (function () {
     const tbody = el('tbody'); arp.cells = {}; arp.cols = []; arp.now = -1;
     for (let i = 0; i < n; i++) arp.cols.push([]);
     lanes.slice().reverse().forEach(function (lane, r) {                // highest tone on top, like a keyboard
-      const tr = el('tr'), rh = el('th', 'rowh', lane.label); rh.scope = 'row'; tr.appendChild(rh);
+      const tr = el('tr'), rh = el('th', 'rowh', arpLaneLabel(lane)); rh.scope = 'row'; tr.appendChild(rh);
       for (let i = 0; i < n; i++) {
         const td = el('td', (m.ppb === 3 ? i % 2 === 0 && i > 0 : i % 4 === 0 && i > 0) ? 'bs' : '');
         const b = el('button', 'cell'); b.type = 'button'; b.dataset.i = String(i); b.dataset.lane = lane.id; b.dataset.r = String(r);
@@ -4340,6 +4976,7 @@ const I18N = (function () {
       sel.value = opts.some(function (o) { return o[0] === old; }) ? old : 'follow';
     }
     arpTabRender();
+    strumDiagSync();
   }
   function arpTabChord() {
     const real = state.realized; if (!real) return null;
@@ -4379,6 +5016,35 @@ const I18N = (function () {
     chordDiagram(M.arpChordBox, chordNameFor(cur.ch.name, state.german), data.shape);
     const shape = [0, 1, 2, 3, 4, 5].map(function (st) { const x = data.shape.filter(function (q) { return q.string === st; })[0]; return x ? String(x.fret) : 'x'; }).join(' ');
     M.arpTabInfo.textContent = 'Chord shape ' + chordNameFor(cur.ch.name, state.german) + ' (E A D G B e): ' + shape + (M.chkArpGuitar.checked ? '.' : '. Tip: tick “Play the notes of the guitar chord shape” so that the arpeggio really plays these strings.') + (data.missing ? ' ' + data.missing + ' note(s) cannot be played on a guitar (too high or too low).' : '');
+  }
+  /* ----- ADDED: chord diagram in the strumming panel (same guitar shape that the strums play; follows the playing chord) ----- */
+  const strumDiag = { key: '' };
+  function strumDiagChord() {
+    const real = state.realized; if (!real) return null;
+    const v = $('selStrumDiagChord').value; let b = 0, c = 0;
+    if (v === 'follow') { if (arpTab.play) { b = arpTab.play.bar; c = arpTab.play.chord; } }
+    else { const q = v.split(':'); b = Number(q[0]); c = Number(q[1]); }
+    const bar = real.bars[b], ch = bar && bar.chords[c];
+    return ch || null;
+  }
+  function strumDiagRender() {
+    const box = $('strumChordBox'), info = $('strumDiagInfo'), ch = strumDiagChord();
+    if (!ch) { box.textContent = ''; info.textContent = 'Generate a progression to see the chord diagram.'; return; }
+    const shape = guitarVoicing(ch), name = chordNameFor(ch.name, state.german);
+    chordDiagram(box, name, shape);
+    info.textContent = 'Chord shape ' + name + ' (E A D G B e): ' + [0, 1, 2, 3, 4, 5].map(function (st) { const x = shape.filter(function (q) { return q.string === st; })[0]; return x ? String(x.fret) : 'x'; }).join(' ') + '.';
+  }
+  function strumDiagSync() {
+    const sel = $('selStrumDiagChord'), old = sel.value, real = state.realized;
+    const opts = [['follow', 'Follows the playing chord']];
+    if (real) real.bars.forEach(function (b, bi) { b.chords.forEach(function (c, ci) { opts.push([bi + ':' + ci, 'Bar ' + (bi + 1) + (b.chords.length > 1 ? '.' + (ci + 1) : '') + ': ' + chordNameFor(c.name, state.german)]); }); });
+    const sig = opts.map(function (o) { return o.join('=') }).join('|');
+    if (sig !== strumDiag.key) {
+      strumDiag.key = sig; sel.textContent = '';
+      opts.forEach(function (o) { const op = el('option', '', o[1]); op.value = o[0]; sel.appendChild(op); });
+      sel.value = opts.some(function (o) { return o[0] === old; }) ? old : 'follow';
+    }
+    strumDiagRender();
   }
   /* ADDED: chord diagram (fretboard box) of a guitar shape: strings E A D G B e from left to right, x = not played, o = open string,
      dots = fingers; from the 5th fret upwards the fret number of the first row is written next to the box. */
@@ -4476,7 +5142,7 @@ const I18N = (function () {
     const meterKey = E.selMeter.value;
     arp.presetId = id;
     if (id === 'custom') { arp.grid = arp.custom[meterKey] || arpEmptyGrid(stepsPerBar(meterKey)); arp.custom[meterKey] = arp.grid; }
-    else arp.grid = arpGridFor(ARP_PRESETS.filter(function (p) { return p.id === id; })[0], meterKey);
+    else arp.grid = arpGridFor(ARP_PRESETS.filter(function (p) { return p.id === id; })[0], meterKey, M.chkArpGuitar.checked);
     M.selArpPat.value = id; arpBuild(true);
   }
   function arpMarkCustom() {
@@ -4510,8 +5176,12 @@ const I18N = (function () {
       arpTabRender();
     });
     M.selArpTabChord.addEventListener('change', arpTabRender);
+    $('selStrumDiagChord').addEventListener('change', strumDiagRender);
     M.btnArpTabPng.addEventListener('click', arpTabPng);
-    M.chkArpGuitar.addEventListener('change', function () { arpBuild(false); arpTabRender(); });
+    M.chkArpGuitar.addEventListener('change', function () {            // the rows change their meaning: ready-made patterns are laid out again for the new mode
+      if (arp.presetId !== 'custom') arpApply(arp.presetId); else arpBuild(false);
+      arpTabRender();
+    });
     arpTabSync();
   }
   /* ----- bass sequencer: rows Root / 3rd / 5th / 6th / 7th / Octave, columns = 16th steps. Default = follows the kick of the drum grid. ----- */
@@ -4673,14 +5343,14 @@ const I18N = (function () {
     const lim = maxChordsPerBar(E.selMeter.value), r = parseChordText(text, lim, state.german);
     if (r.error) return /^Bar 1 has /.test(r.error) ? 'At most ' + lim + ' chords per bar are possible in ' + E.selMeter.value + '. Use “|” to start a new bar.' : r.error.replace(/^Bar 1: /, '');
     specs.splice.apply(specs, [bi, 1].concat(r.bars));
-    if (specs.length > 16) return 'At most 16 bars are possible.';
+    if (specs.length > 32) return 'At most 32 bars are possible.';
     applyBars(specs, viaEnter ? bi : null); editMsg(EDIT_HINT, false);
     return '';
   }
   function addBar() {
     const specs = currentSpecs();
     if (!specs) return;
-    if (specs.length >= 16) { editMsg('At most 16 bars are possible.', true); return; }
+    if (specs.length >= 32) { editMsg('At most 32 bars are possible.', true); return; }
     specs.push(specs[specs.length - 1].slice());
     applyBars(specs, specs.length - 1);
     const w = state.barEls[specs.length - 1].querySelector('.chords'); startEdit(w, specs.length - 1);
@@ -4732,7 +5402,7 @@ const I18N = (function () {
     const meter = data && METERS[data.meter] ? data.meter : E.selMeter.value;
     const r = parseChordText(chordText, maxChordsPerBar(meter), false);
     if (r.error) return { error: r.error };
-    if (r.bars.length > 16) return { error: 'at most 16 bars are possible' };
+    if (r.bars.length > 32) return { error: 'at most 32 bars are possible' };
     return { specs: r.bars, data: data, meter: meter };
   }
   function applyProgressionFile(res) {
@@ -4965,6 +5635,14 @@ const I18N = (function () {
      ['rngStrumBright', 'outStrumBright', ' %'], ['rngStrumRing', 'outStrumRing', ' %']].forEach(function (p) {
       C[p[0]].addEventListener('input', function () { $(p[1]).textContent = C[p[0]].value + p[2]; });
     });
+    /* ADDED: Count-in switch and volume also live in the Mixer (on phones the footer checkbox is folded into the Player panel);
+       both copies mirror each other. */
+    function countMixSync() { $('chkCountMix').checked = E.chkCount.checked; $('rngCountVolMix').value = E.rngCountVol.value; $('outCountVolMix').textContent = E.rngCountVol.value + ' %'; }
+    E.chkCount.addEventListener('change', countMixSync);
+    $('chkCountMix').addEventListener('change', function () { E.chkCount.checked = $('chkCountMix').checked; E.chkCount.dispatchEvent(new Event('change', { bubbles: true })); });
+    E.rngCountVol.addEventListener('input', countMixSync);
+    $('rngCountVolMix').addEventListener('input', function () { E.rngCountVol.value = $('rngCountVolMix').value; E.rngCountVol.dispatchEvent(new Event('input', { bubbles: true })); countMixSync(); });
+    window.__countMixSync = countMixSync;
     C.chkStrum.addEventListener('change', function () { $('chkStrumMix').checked = C.chkStrum.checked; });   // the mixer switch mirrors the panel switch
     $('chkStrumMix').addEventListener('change', function () {            // ... and the other way round
       if (C.chkStrum.checked !== $('chkStrumMix').checked) { C.chkStrum.checked = $('chkStrumMix').checked; C.chkStrum.dispatchEvent(new Event('change', { bubbles: true })); }
@@ -5181,7 +5859,7 @@ const I18N = (function () {
     if (chordText.trim()) {
       const r = parseChordText(chordText, maxChordsPerBar(meter), false);
       if (r.error) return { error: 'chords: ' + r.error };
-      if (r.bars.length > 16) return { error: 'at most 16 bars are possible' };
+      if (r.bars.length > 32) return { error: 'at most 32 bars are possible' };
       plan.specs = r.bars;
     }
     function lanes(pat, defs, what) {
@@ -5301,10 +5979,11 @@ const I18N = (function () {
   /* --- SoundFont per layer (SF2 reader and voice: see SF2 and startSf2). Slots: chord, arp, bass, strum; each has its own
          file, preset and test button, built by buildSf2Slot() into <div class="sf2-slot" data-slot="..."> --- */
   const SF2_SLOTS = {
-    chord: { sel: 'selInst', title: 'SoundFont for block chords', notes: [48, 52, 55, 60, 64], gap: 0.06, len: 1.6 },
-    arp:   { sel: 'selArpInst', title: 'SoundFont for arpeggio', notes: [60, 64, 67, 72, 67, 64], gap: 0.3, len: 0.7 },
-    bass:  { sel: 'selBassInst', title: 'SoundFont for bass', notes: [28, 33, 38, 43], gap: 0.7, len: 0.9 },
-    strum: { sel: 'selStrumSound', title: 'SoundFont for guitar strumming', notes: GUITAR_TUNING, gap: 0.7, len: 0.9, strings: true }
+    chord: { sel: 'selInst', sum: 'Load a SoundFont (.sf2) for block chords', title: 'SoundFont for block chords', notes: [48, 52, 55, 60, 64], gap: 0.06, len: 1.6 },
+    arp:   { sel: 'selArpInst', sum: 'Load a SoundFont (.sf2) for the arpeggio', title: 'SoundFont for arpeggio', notes: [60, 64, 67, 72, 67, 64], gap: 0.3, len: 0.7 },
+    bass:  { sel: 'selBassInst', sum: 'Load a SoundFont (.sf2) for the bass', title: 'SoundFont for bass', notes: [28, 33, 38, 43], gap: 0.7, len: 0.9 },
+    strum: { sel: 'selStrumSound', sum: 'Load a SoundFont (.sf2) for guitar strumming', title: 'SoundFont for guitar strumming', notes: GUITAR_TUNING, gap: 0.7, len: 0.9, strings: true },
+    drum:  { sel: 'selDrumSrc', sum: 'Load a SoundFont (.sf2) for drums', title: 'SoundFont for drums', drums: true }
   };
   const sf2 = {};                                                       // slot -> { font, name }
   const sf2Cache = {};                                                  // "name:size:date" -> parsed font (one file used in several layers is read once)
@@ -5318,6 +5997,7 @@ const I18N = (function () {
   }
   function sf2Options(slot, on) {
     const opt = $(SF2_SLOTS[slot].sel).querySelector('option[value="sf2"]'), sp = $('selSf2Preset-' + slot);
+    const bd = $('sf2Badge-' + slot); if (bd) { bd.textContent = on ? 'loaded' : 'none loaded'; bd.classList.toggle('on', !!on); }
     opt.disabled = !on; opt.textContent = on ? 'SoundFont: ' + sp.selectedOptions[0].textContent : 'SoundFont (none loaded)';
     [sp.id, 'btnSf2Test-' + slot, 'btnSf2Remove-' + slot].forEach(function (id) { $(id).disabled = !on; });
   }
@@ -5330,9 +6010,10 @@ const I18N = (function () {
       sel.textContent = '';
       font.presets.forEach(function (p) { const o = el('option', '', String(p.bank).padStart(3, '0') + ':' + String(p.program).padStart(3, '0') + ' ' + p.name); o.value = String(p.index); sel.appendChild(o); });
       const find = function (fn) { return font.presets.filter(fn)[0]; };
-      const bassy = slot === 'bass', pn = bassy ? [33, 32, 34] : slot === 'strum' ? [25, 24] : slot === 'chord' ? [0, 24, 25] : [25, 24, 0];
+      const bassy = slot === 'bass', pn = slot === 'drum' ? [] : bassy ? [33, 32, 34] : slot === 'strum' ? [25, 24] : slot === 'chord' ? [0, 24, 25] : [25, 24, 0];
       let dflt = null;
       pn.forEach(function (n) { dflt = dflt || find(function (p) { return p.bank === 0 && p.program === n; }); });
+      if (slot === 'drum') dflt = find(function (p) { return p.bank === 128 && p.program === 0; }) || find(function (p) { return p.bank === 128; }) || find(function (p) { return /drum|kit|perc|schlag/i.test(p.name); });
       dflt = dflt || find(function (p) { return /guitar|gitarre|bass/i.test(p.name); }) || font.presets[0];
       sel.value = String(dflt.index);
       sf2[slot] = { font: font, name: file.name };
@@ -5345,6 +6026,12 @@ const I18N = (function () {
   function sf2Test(slot) {                                              // short test phrase through the layer's own SoundFont
     try {
       const d = SF2_SLOTS[slot], ctx = AudioEngine.ensure(); AudioEngine.resume();
+      if (slot === 'drum') {                                            // test groove: kick, hat, snare, hat, open hat, ride
+        AudioEngine.setDrumSf2(true); const t0 = ctx.currentTime + 0.1;
+        [['kick', 0], ['hat', 0.3], ['snare', 0.6], ['hat', 0.9], ['kick', 1.2], ['ohat', 1.5], ['snare', 1.8], ['ride', 2.1]].forEach(function (h) { AudioEngine.drum(h[0], t0 + h[1], 0.9); });
+        AudioEngine.setDrumSf2(X.selDrumSrc.value === 'sf2');           // the hits are already built: restore the real setting
+        sf2Msg(slot, 'Playing a short test groove with kick, hi-hat, snare and ride. Keys that the SoundFont does not contain use the built-in sound.', false); return;
+      }
       const t = ctx.currentTime + 0.1, inst = slot === 'strum' ? 'sf2:strum' : 'sf2', dest = slot === 'arp' ? 'arp' : slot === 'bass' ? 'bass' : undefined;
       d.notes.forEach(function (m, i) {
         const v = AudioEngine.startVoice(inst, m, t + i * d.gap, 0.5, dest);
@@ -5354,14 +6041,15 @@ const I18N = (function () {
     } catch (e) { sf2Msg(slot, 'Test failed: ' + ((e && e.message) || e), true); }
   }
   function buildSf2Slot(host) {
-    const slot = host.dataset.slot, d = SF2_SLOTS[slot], det = el('details'), sm = el('summary', '', d.title + ' (experimental)');
-    det.appendChild(sm);
+    const slot = host.dataset.slot, d = SF2_SLOTS[slot], det = el('details'), sm = el('summary', '', d.sum);
+    det.className = 'sf2-box'; det.appendChild(sm);
+    const badge = el('span', 'sf2-badge', 'none loaded'); badge.id = 'sf2Badge-' + slot; sm.appendChild(badge);
     det.appendChild(el('p', 'hint', 'Load a SoundFont 2 file (.sf2). Choose a preset, then pick “SoundFont” in the sound list of this layer. Only plain .sf2 files are supported (no .sf3, no .sfz). The file stays on your computer and must be loaded again after every visit.'));
     const f1 = el('div', 'field'), l1 = el('label', '', 'SoundFont file (.sf2)'), inp = el('input'); l1.htmlFor = 'fileSf2-' + slot;
     inp.type = 'file'; inp.id = 'fileSf2-' + slot; inp.accept = '.sf2,audio/x-soundfont'; f1.appendChild(l1); f1.appendChild(inp); f1.style.maxWidth = '26rem';
     const f2 = el('div', 'field'), l2 = el('label', '', 'SoundFont preset'), sel = el('select'); l2.htmlFor = 'selSf2Preset-' + slot;
     sel.id = 'selSf2Preset-' + slot; sel.disabled = true; const o = el('option', '', 'No SoundFont loaded'); o.value = ''; sel.appendChild(o); f2.appendChild(l2); f2.appendChild(sel); f2.style.maxWidth = '26rem';
-    const row = el('div', 'row spaced'), bt = el('button', '', d.strings ? 'Test: play open strings E A D G B e' : 'Test sound'), br = el('button', '', 'Remove SoundFont');
+    const row = el('div', 'row spaced'), bt = el('button', '', d.strings ? 'Test: play open strings E A D G B e' : d.drums ? 'Test: play a drum groove' : 'Test sound'), br = el('button', '', 'Remove SoundFont');
     bt.type = br.type = 'button'; bt.id = 'btnSf2Test-' + slot; br.id = 'btnSf2Remove-' + slot; bt.disabled = br.disabled = true; row.appendChild(bt); row.appendChild(br);
     const st = el('p', 'hint', 'No SoundFont loaded. Without one, the built-in synthetic sound is used.'); st.id = 'sf2Status-' + slot; st.setAttribute('role', 'status'); st.setAttribute('aria-live', 'polite');
     [f1, f2, row, st].forEach(function (n) { det.appendChild(n); });
@@ -5371,7 +6059,7 @@ const I18N = (function () {
     bt.addEventListener('click', function () { sf2Test(slot); });
     br.addEventListener('click', function () {
       delete sf2[slot]; AudioEngine.setSf2(slot, null); sel.textContent = ''; const o2 = el('option', '', 'No SoundFont loaded'); o2.value = ''; sel.appendChild(o2);
-      const target = $(d.sel), fallback = { chord: 'piano', arp: 'piano', bass: 'fingered', strum: 'steel' }[slot];
+      const target = $(d.sel), fallback = { chord: 'piano', arp: 'piano', bass: 'fingered', strum: 'steel', drum: 'builtin' }[slot];
       if (target.value === 'sf2') setSel(target, fallback);
       sf2Options(slot, false); sf2Msg(slot, 'SoundFont removed. The built-in synthetic sound is used.', false);
     });
@@ -5569,6 +6257,7 @@ const I18N = (function () {
     X.btnPercClear.addEventListener('click', function () { AudioEngine.clearDrumSamples('perc'); X.filePerc.value = ''; percMsg(0, []); });
     D.btnDrumSampClear.addEventListener('click', function () { AudioEngine.clearDrumSamples(currentKit()); D.fileDrums.value = ''; drumSampMsg(0, []); });
     X.selDrumKit.addEventListener('change', applyKit);
+    X.selDrumSrc.addEventListener('change', function () { AudioEngine.setDrumSf2(X.selDrumSrc.value === 'sf2'); });   // ADDED: SoundFont drums on / off
   }
 
   function initManualArp() {
@@ -5594,7 +6283,7 @@ const I18N = (function () {
       resetChordPattern(); resetStrumPattern(); setOct('arp', 0); setOct('chord', 0); setOct('bass', 0); setOct('strum', 0); C.chkChordSpread.checked = false;
       M.chkBass.checked = false; M.chkMidiBass.checked = false; M.selBassInst.value = 'fingered'; M.selBassGate.value = 'held'; bass.custom = {}; bassSetMode('follow');
     });
-    initChordPattern(); initStrumPattern(); initArpMatrix(); initDrumExtras(); initBass(); applyKit(); initFilesAndPacks(); initFx(); initPages();
+    initChordPattern(); initStrumPattern(); initArpMatrix(); initDrumExtras(); initBass(); applyKit(); initFilesAndPacks(); initFx(); initPan(); initPages(); initTuner(); initIcons();
     /* ADDED: second page "Help". The generator page and the help page are two views of the same document: the button row under the header
        switches between them (hash #help / #generator, so the browser's back button works). Playback is stopped and the bottom bar is hidden
        on the help page; every setting stays as it was. */
@@ -5624,6 +6313,20 @@ const I18N = (function () {
         });
       });
       if (location.hash === '#help') show('help', true);
+    }
+    function initPan() {                                                 // ADDED: round panning knob under the fader of every track (not Master)
+      const pt = function (v) { const p = (v - 50) * 2; return p === 0 ? 'centre' : (p < 0 ? 'left ' : 'right ') + Math.abs(p) + ' %'; };
+      const sh = function (v) { const p = (v - 50) * 2; return p === 0 ? 'C' : (p < 0 ? 'L' : 'R') + Math.abs(p); };
+      const knobs = [];
+      [['rngArpVol', 'arp', 'Arp'], ['rngChordVol', 'chord', 'Chords'], ['rngStrumVol', 'strum', 'Strums'], ['rngBassVol', 'bass', 'Bass'], ['rngMetroVol', 'metro', 'Metronome'], ['rngDrumVol', 'drum', 'Drums']].forEach(function (d) {
+        const ch = $(d[0]).closest('.pb-ch'), box = el('div', 'pb-pan'), out = el('span', 'pb-panv', 'C'); out.setAttribute('aria-hidden', 'true');
+        const k = makeKnob(d[2] + ' panning', 50, function (v) {
+          PAN[d[1]] = (v - 50) * 2; AudioEngine.setPan(d[1], PAN[d[1]] / 100); out.textContent = sh(v);
+        }, 50, pt);
+        k.classList.add('knob-pan'); knobs.push(k);
+        box.appendChild(k); box.appendChild(out); ch.appendChild(box);
+      });
+      panResetAll = function () { knobs.forEach(function (k) { k.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete' })); }); };
     }
     function initFx() {                                                  // ADDED: rotary reverb / chorus knobs at the top of every panel (no chorus for the drums)
       [['sheet-cpat', 'chord', 'Chords'], ['sheet-strum', 'strum', 'Strums'], ['sheet-arp', 'arp', 'Arp'], ['sheet-bass', 'bass', 'Bass'], ['sheet-drum', 'drum', 'Drums']].forEach(function (d) {
@@ -5705,6 +6408,129 @@ const I18N = (function () {
     sheetsCloseAll = closeAll;
   }
 
+  /* ----- ADDED: guitar tuner. Reference tones (additive synthesis, own AudioContext) and microphone pitch detection (YIN-style
+         difference function on a 4096-sample window; 60 to 1200 Hz). Everything stays in the browser; the microphone only runs while
+         the tuner panel is open and is released when it closes. ----- */
+  function initTuner() {
+    const sheet = $('sheet-tuner'), btnMic = $('btnTunMic'), sel = $('selTunRef'), meter = $('tunMeter');
+    const TUN = [40, 45, 50, 55, 59, 64], SH = ['C', 'C\u266F', 'D', 'E\u266D', 'E', 'F', 'F\u266F', 'G', 'A\u266D', 'A', 'B\u266D', 'B'];
+    const t = { ctx: null, stream: null, src: null, an: null, raf: 0, buf: null, hist: [], lastSay: '', lastSayAt: 0, tone: null, toneBtn: null };
+    const a4 = function () { return Number(sel.value) || 440; };
+    const freqOf = function (midi) { return a4() * Math.pow(2, (midi - 69) / 12); };
+    function noteName(pc) { let n = SH[pc]; if (state.german) n = n === 'B' ? 'H' : n === 'B\u266D' ? 'B' : n; return n; }
+    function ensureCtx() {
+      if (!t.ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; t.ctx = new AC(); }
+      if (t.ctx.state === 'suspended') t.ctx.resume();
+      return t.ctx;
+    }
+    /* ---- reference tone: fundamental plus a few decaying harmonics, 4 s, a second press stops it ---- */
+    function stopTone() {
+      if (t.tone) { try { t.tone.g.gain.cancelScheduledValues(t.ctx.currentTime); t.tone.g.gain.setTargetAtTime(0, t.ctx.currentTime, 0.04); t.tone.osc.forEach(function (o) { o.stop(t.ctx.currentTime + 0.3); }); } catch (e) { /* already stopped */ } clearTimeout(t.tone.to); }
+      if (t.toneBtn) t.toneBtn.setAttribute('aria-pressed', 'false');
+      t.tone = null; t.toneBtn = null;
+    }
+    function playTone(btn) {
+      const same = t.toneBtn === btn; stopTone(); if (same) return;
+      const ctx = ensureCtx(); if (!ctx) { $('tunSay').textContent = 'Audio is not available in this browser.'; return; }
+      const f = freqOf(TUN[Number(btn.dataset.string)]), g = ctx.createGain(), now = ctx.currentTime, osc = [];
+      g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(0.28, now + 0.02); g.gain.exponentialRampToValueAtTime(0.0008, now + 4);
+      g.connect(ctx.destination);
+      [1, 2, 3, 4].forEach(function (k, i) {
+        const o = ctx.createOscillator(), og = ctx.createGain(); o.type = 'sine'; o.frequency.value = f * k; og.gain.value = [1, 0.45, 0.2, 0.08][i];
+        o.connect(og); og.connect(g); o.start(now); o.stop(now + 4.1); osc.push(o);
+      });
+      t.tone = { g: g, osc: osc, to: setTimeout(stopTone, 4100) }; t.toneBtn = btn; btn.setAttribute('aria-pressed', 'true');
+    }
+    [].forEach.call(sheet.querySelectorAll('.tun-str'), function (b) { b.addEventListener('click', function () { playTone(b); }); });
+    /* ---- pitch detection ---- */
+    function detect(x, sr) {                                         // returns frequency in Hz or 0
+      const W = 2048, maxTau = Math.min(Math.floor(sr / 60), 1500), minTau = Math.floor(sr / 1200), d = new Float32Array(maxTau + 1);
+      let rms = 0; for (let i = 0; i < W + maxTau; i++) rms += x[i] * x[i]; rms = Math.sqrt(rms / (W + maxTau));
+      if (rms < 0.008) return 0;                                      // too quiet
+      for (let tau = 1; tau <= maxTau; tau++) { let sum = 0; for (let i = 0; i < W; i++) { const v = x[i] - x[i + tau]; sum += v * v; } d[tau] = sum; }
+      let run = 0; const cm = new Float32Array(maxTau + 1); cm[0] = 1;
+      for (let tau = 1; tau <= maxTau; tau++) { run += d[tau]; cm[tau] = run ? d[tau] * tau / run : 1; }
+      let tau = -1;
+      for (let k = minTau; k < maxTau; k++) { if (cm[k] < 0.12) { while (k + 1 < maxTau && cm[k + 1] < cm[k]) k++; tau = k; break; } }
+      if (tau < 0) return 0;
+      const a = cm[tau - 1], b = cm[tau], c = cm[tau + 1 <= maxTau ? tau + 1 : tau], den = a + c - 2 * b;
+      const shift = den ? 0.5 * (a - c) / den : 0;                     // parabolic interpolation
+      return sr / (tau + shift);
+    }
+    function show(f) {
+      const note = $('tunNote'), mark = $('tunMark'), cEl = $('tunCents'), hEl = $('tunHz');
+      if (!f) { note.textContent = '\u2013'; hEl.textContent = '\u2013 Hz'; cEl.textContent = '\u2013 cents'; mark.style.left = '50%'; meter.className = 'tun-meter'; meter.setAttribute('aria-valuenow', '0'); meter.setAttribute('aria-valuetext', 'No signal'); return null; }
+      const midiF = 69 + 12 * Math.log2(f / a4()), midi = Math.round(midiF), cents = Math.round((midiF - midi) * 100);
+      const nm = noteName(((midi % 12) + 12) % 12), oct = Math.floor(midi / 12) - 1;
+      note.textContent = nm + oct; hEl.textContent = f.toFixed(1) + ' Hz'; cEl.textContent = (cents > 0 ? '+' : cents < 0 ? '\u2212' : '') + Math.abs(cents) + ' cents';
+      mark.style.left = (50 + Math.max(-50, Math.min(50, cents))) + '%';
+      const ok = Math.abs(cents) <= 5; meter.className = 'tun-meter ' + (ok ? 'ok' : 'off');
+      const word = ok ? 'in tune' : cents < 0 ? 'too low' : 'too high';
+      meter.setAttribute('aria-valuenow', String(Math.max(-50, Math.min(50, cents)))); meter.setAttribute('aria-valuetext', nm + ' ' + Math.abs(cents) + ' cents ' + (ok ? 'in tune' : cents < 0 ? 'too low' : 'too high'));
+      const str = TUN.indexOf(midi);
+      return { key: nm + oct + '|' + word, nm: nm + oct, word: word, cents: cents, str: str };
+    }
+    function say(r) {                                                // polite live text only when note or state changes, at most once per second
+      const now = Date.now(), el = $('tunSay');
+      if (!r) { if (t.lastSay !== 'none' && now - t.lastSayAt > 1500) { el.textContent = 'Listening \u2026 pluck a string.'; t.lastSay = 'none'; t.lastSayAt = now; } return; }
+      if (r.key === t.lastSay || now - t.lastSayAt < 1000) return;
+      t.lastSay = r.key; t.lastSayAt = now;
+      el.textContent = r.nm + ' ' + (r.word === 'in tune' ? 'is in tune.' : r.word === 'too low' ? 'is too low: tighten the string.' : 'is too high: loosen the string.');
+    }
+    function loop() {
+      if (!t.an) return;
+      t.an.getFloatTimeDomainData(t.buf);
+      const f = detect(t.buf, t.ctx.sampleRate);
+      t.hist.push(f); if (t.hist.length > 5) t.hist.shift();
+      const vals = t.hist.filter(function (v) { return v > 0; }).sort(function (p, q) { return p - q; });
+      const med = vals.length >= 3 ? vals[Math.floor(vals.length / 2)] : 0;   // median of the last frames: stable display, outliers ignored
+      say(show(med));
+      t.raf = requestAnimationFrame(loop);
+    }
+    function stopMic() {
+      cancelAnimationFrame(t.raf); t.raf = 0;
+      if (t.stream) { t.stream.getTracks().forEach(function (tr) { tr.stop(); }); }
+      if (t.src) { try { t.src.disconnect(); } catch (e) { /* ignore */ } }
+      t.stream = null; t.src = null; t.an = null; t.hist = [];
+      btnMic.textContent = 'Start microphone'; btnMic.setAttribute('aria-pressed', 'false');
+      show(0); $('tunSay').textContent = 'Microphone is off.'; t.lastSay = '';
+    }
+    function startMic() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { $('tunSay').textContent = 'The microphone is not available in this browser (a secure https connection is required). The reference tones still work.'; return; }
+      const ctx = ensureCtx(); if (!ctx) { $('tunSay').textContent = 'Audio is not available in this browser.'; return; }
+      navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }).then(function (stream) {
+        if (!sheet.classList.contains('open')) { stream.getTracks().forEach(function (tr) { tr.stop(); }); return; }
+        t.stream = stream; t.src = ctx.createMediaStreamSource(stream); t.an = ctx.createAnalyser(); t.an.fftSize = 4096; t.buf = new Float32Array(t.an.fftSize);
+        t.src.connect(t.an);                                         // analyser only: nothing is routed to the speakers
+        btnMic.textContent = 'Stop microphone'; btnMic.setAttribute('aria-pressed', 'true');
+        $('tunSay').textContent = 'Listening \u2026 pluck a string.'; t.lastSay = 'none'; t.lastSayAt = Date.now();
+        loop();
+      }).catch(function () {
+        $('tunSay').textContent = 'The microphone could not be used: permission denied or no microphone found. The reference tones still work.';
+      });
+    }
+    btnMic.addEventListener('click', function () { if (t.stream) stopMic(); else startMic(); });
+    sel.addEventListener('change', function () { stopTone(); });
+    new MutationObserver(function () { if (!sheet.classList.contains('open')) { stopMic(); stopTone(); } }).observe(sheet, { attributes: true, attributeFilter: ['class'] });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) { stopMic(); stopTone(); } });
+    window.__tunerDetect = detect;                                   // exposed for the automated test only
+  }
+
+  /* ----- ADDED: icons for the buttons (see CSS "data-ic"). id -> icon name; tabs by data-sheet-tab. ----- */
+  function initIcons() {
+    const BY_ID = { btnPageGen: 'home', btnPageHelp: 'help', btnGenerate: 'gen', btnAnother: 'again', btnReset: 'reset', btnBarAdd: 'add', btnBarRemove: 'minus',
+      btnProgSave: 'save', btnProgLoad: 'load', btnPackLoad: 'load', btnPackApply: 'check', btnPackRemovePreset: 'x', btnPackRemovePack: 'trash', btnPackNew: 'pack', btnPackAdd: 'add',
+      btnPackSave: 'save', btnMidi: 'midi', btnWav: 'wav', btnServer: 'server', btnArpClear: 'trash', btnArpTabPng: 'png', btnCpatClear: 'trash', btnStrumClear: 'trash',
+      btnStrumSave: 'save', btnStrumLoad: 'load', btnTunMic: 'mic', btnBassClear: 'trash', btnDrumClear: 'trash', btnDrumReload: 'again', btnDrumFolder: 'folder',
+      btnDrumSampClear: 'x', btnPercFolder: 'folder', btnPercClear: 'x', btnDrumMidi: 'midi', btnDrumWav: 'wav', btnHelpBack: 'back', btnPlay: 'play', btnStop: 'stop', btnMixer: 'mixer' };
+    const BY_TAB = { player: 'player', arp: 'arp', cpat: 'chords', strum: 'strum', bass: 'bass', drum: 'drums', tuner: 'tuner' };
+    const put = function (b, name) { if (b && ICON_OK[name]) { b.setAttribute('data-ic', name); b.style.setProperty('--ic', 'var(--ic-' + name + ')'); } };
+    const ICON_OK = {}; Object.keys(BY_ID).forEach(function (k) { ICON_OK[BY_ID[k]] = 1; }); Object.keys(BY_TAB).forEach(function (k) { ICON_OK[BY_TAB[k]] = 1; });
+    Object.keys(BY_ID).forEach(function (id) { put($(id), BY_ID[id]); });
+    [].forEach.call(document.querySelectorAll('[data-sheet-tab]'), function (b) { put(b, BY_TAB[b.getAttribute('data-sheet-tab')]); });
+    [].forEach.call(document.querySelectorAll('.sf2-slot button'), function (b) { put(b, /^btnSf2Test/.test(b.id) ? 'test' : 'x'); });   // built later: see initFilesAndPacks
+  }
+
   /* ----- language and chord notation (header) ----- */
   function store(k, v) { try { localStorage.setItem('acoustix.' + k, v); } catch (e) { /* storage may be blocked */ } }
   function stored(k) { try { return localStorage.getItem('acoustix.' + k); } catch (e) { return null; } }
@@ -5738,12 +6564,17 @@ const I18N = (function () {
   bind();
   initExtras();                                                        // ADDED
   initManualArp();                                                     // ADDED
+  initSong();                                                          // ADDED: song parts and arrangement
   applyDefaults();
   generate(null);                                                      // show a progression immediately (no audio is started)
   setStatus('');
   initSheets();                                                        // ADDED: phone layout (panels fold up from the footer)
   initLanguage();                                                      // ADDED: language file + chord notation
 })();
+</script>
+<script>
+/* ADDED: on phones the file / pack / export folds start closed (they stay open on larger screens). Running once at load only. */
+(function () { try { if (window.matchMedia && window.matchMedia('(max-width: 40rem)').matches) [].forEach.call(document.querySelectorAll('details.fold'), function (d) { d.removeAttribute('open'); }); } catch (e) {} })();
 </script>
 </body>
 </html>
