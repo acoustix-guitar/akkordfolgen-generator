@@ -434,6 +434,9 @@ details.fold > summary::-webkit-details-marker { display: none; }
   .pb-lab, .pb-ch .check { height: 2.5rem; }
 }
 
+/* ADDED: song part that is open / playing, shown in the Progression card */
+.partnow { margin: 0 0 .3rem; font-weight: 700; color: var(--accent); font-size: 1.1rem; }
+.partnow.playing { background: var(--accent-soft); border-left: 5px solid var(--accent); padding: .15rem .5rem; border-radius: 6px; }
 /* ADDED: song arrangement list */
 .songlist { list-style: none; margin: .4rem 0 0; padding: 0; display: grid; gap: .4rem; }
 .songrow { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .4rem; border: 1px solid var(--line); border-radius: 8px; padding: .3rem .4rem; background: var(--bg); }
@@ -502,6 +505,7 @@ details.fold > summary::-webkit-details-marker { display: none; }
   <!-- ADDED: on phones this part stays pinned at the top of the screen while a panel is open (see .prog-pin in the CSS) -->
   <div class="prog-pin">
   <h2 id="h-prog">Progression</h2>
+  <p class="partnow" id="partNow"></p>
   <p class="prog-meta" id="progMeta">No progression yet.</p>
   <div class="check"><input type="checkbox" id="chkRoman" checked><label for="chkRoman">Show Roman numerals</label></div>
   <div id="barsHost"><p class="empty">Press “Generate Progression” to create a chord progression.</p></div>
@@ -4148,8 +4152,9 @@ const I18N = (function () {
     clearHighlight();
     clearExtra();                                                      // ADDED: reset count-in display and drum step highlight
     E.posText.textContent = 'Stopped';
-    if (songRun) { const pre = songRun.prePart; songRun = null; if (activePart !== pre) showPart(pre); }   // ADDED: after the arrangement the part that was open before is shown again
+    if (songRun) { const pre = songRun.prePart; songRun = null; nowRep = null; if (activePart !== pre) showPart(pre); }   // ADDED: after the arrangement the part that was open before is shown again
     setPlayingUI(false);
+    nowRep = null; updatePartNow();
     if (message && was) setStatus(message);
   }
   function play() {
@@ -4172,6 +4177,7 @@ const I18N = (function () {
       if (run.missing.length) setStatus('Parts without chords are skipped: ' + run.missing.map(songPartName).join(', ') + '.', false);
       songRun = { map: run.map, prePart: activePart };
       if (run.map[0].part !== activePart) showPart(run.map[0].part);
+      nowRep = [1, run.map[0].reps]; updatePartNow();
     }
     setPlayingUI(true);
     const looping = E.chkLoop.checked && !(run ? run.ended : activePart === 'end');   // the End part finishes the song: no repeat
@@ -4185,6 +4191,7 @@ const I18N = (function () {
           const mp = songRun ? songRun.map[ev.bar] : null;
           if (mp) {                                                    // arrangement: show the part that is playing, bar numbers local to the part
             if (mp.part !== activePart) showPart(mp.part);
+            nowRep = mp.ring ? 'ring' : [mp.rep + 1, mp.reps]; updatePartNow();
             const nb = state.realized.bars[mp.local];
             ev = Object.assign({}, ev, { bar: mp.local, chord: mp.ring ? nb.chords.length - 1 : ev.chord });
             showEvent(ev); showExtra(ev);
@@ -4371,6 +4378,13 @@ const I18N = (function () {
     const bars = activePart === 'end' ? state.realized.bars.concat([songRingBar(state.realized.bars[state.realized.bars.length - 1])]) : state.realized.bars;
     return { real: { bars: bars }, tag: state.abstract ? state.abstract.style : 'part' };
   }
+  let nowRep = null;                                                   // while the arrangement plays: [repeat, repeats] or 'ring'
+  function updatePartNow() {                                           // "Part: Chorus (2/2)" in the Progression card
+    const p = $('partNow'), n = songPartName(activePart);
+    const t = nowRep === 'ring' ? 'Part: ' + n + ' \u2013 ringing out' : nowRep && nowRep[1] > 1 ? 'Part: ' + n + ' (' + nowRep[0] + '/' + nowRep[1] + ')' : 'Part: ' + n;
+    if (p.textContent !== t) p.textContent = t;
+    p.classList.toggle('playing', !!songRun);
+  }
   function barsText(n) { return n === 0 ? 'empty' : n === 1 ? '1 bar' : n + ' bars'; }
   function refreshParts() {                                           // option texts of the part list, row lengths and the summary
     const sel = $('selPart');
@@ -4381,6 +4395,7 @@ const I18N = (function () {
     const list = $('songList');
     [].forEach.call(list.children, function (li, i) { if (!song[i]) return; const t = barsText(partBars(song[i].part)); const sp = li.querySelector('.slen'); if (sp && sp.textContent !== t) sp.textContent = t; });
     updateSongInfo();
+    updatePartNow();
     if (!Transport.isRunning()) { E.btnPlay.disabled = !canPlay(); updateMidiButton(); }
   }
   function updateSongInfo() {
