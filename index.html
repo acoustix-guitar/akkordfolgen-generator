@@ -493,6 +493,7 @@ details.fold > summary::-webkit-details-marker { display: none; }
     <button type="button" id="btnGenerate" class="primary">Generate Progression</button>
     <button type="button" id="btnAnother">Generate Another</button>
     <button type="button" id="btnReset">Reset</button>
+    <button type="button" id="btnGenSong">Generate complete song</button>
   </div>
 </section>
 
@@ -515,6 +516,10 @@ details.fold > summary::-webkit-details-marker { display: none; }
   <!-- ADDED: song arrangement: the parts (Intro ... End) in a list with repeats -->
   <details class="fold" open id="songFold"><summary>Song arrangement</summary>
   <p class="hint">Each song part (Intro, Verse, Chorus, Bridge, Outro, End) keeps its own chords: choose the part under “Song part” in the Generator and create or type its chords. Here you list the parts in the order they are played and how often each is repeated. Then choose “Whole arrangement” under “What to play” in the Player panel: playing and the MIDI / WAV export follow this list. After the End part the last chord rings out.</p>
+  <div class="row spaced">
+    <button type="button" id="btnSongGen" class="primary">Generate complete song</button>
+    <button type="button" id="btnSongUndo" disabled>Undo generation</button>
+  </div>
   <ol class="songlist" id="songList" aria-label="Song sections"></ol>
   <div class="row spaced">
     <button type="button" id="btnSongAdd">Add section</button>
@@ -522,6 +527,14 @@ details.fold > summary::-webkit-details-marker { display: none; }
     <button type="button" id="btnSongClear">Clear list</button>
   </div>
   <p class="hint" id="songInfo" role="status" aria-live="polite"></p>
+  <div class="grid">
+    <div class="field"><label for="txtSongTitle">Song title for the chord chart (optional)</label><input type="text" id="txtSongTitle" class="txt-in" maxlength="80" autocomplete="off" placeholder="e.g. My first song"></div>
+  </div>
+  <div class="row spaced">
+    <button type="button" id="btnSongPng">Chord chart as PNG</button>
+    <button type="button" id="btnSongPdf">Chord chart as PDF</button>
+  </div>
+  <p class="hint" id="songChartStatus" role="status" aria-live="polite">The chord chart lists every section of the list (up to the End part) with its bars and repeats, like a lead sheet.</p>
   <div class="grid">
     <div class="field"><label for="txtSongName">File name (optional)</label><input type="text" id="txtSongName" class="txt-in" maxlength="80" autocomplete="off" spellcheck="false" placeholder="e.g. my-song"></div>
   </div>
@@ -1002,6 +1015,8 @@ details.fold > summary::-webkit-details-marker { display: none; }
       <li>In the Player panel choose “Whole arrangement” under “What to play”. Play then runs through the list; the display switches to the part that is playing and shows its repeat, for example “Chorus (2/2)”. “Repeat” in the bottom bar repeats the whole arrangement until the End part. “This part only” plays just the open part as before.</li>
       <li>The End part is the finish: when it has been played, the player stops by itself. The last chord rings out for one bar while the sound fades away, even when Repeat is on. Sections after the End part in the list are not played. The same ring-out is part of the MIDI and WAV export.</li>
       <li>MIDI and WAV export follow “What to play”: with “Whole arrangement” the whole song is exported (the MIDI file contains a marker for every section). The ring-out in the MIDI file is a held chord with a volume fade (CC 7).</li>
+      <li>“Generate complete song” (in the Generator and under “Song arrangement”) creates all six parts at once from the Style, Mood, Key and Harmonic complexity of the Generator: Intro 4 bars, Verse 8, Chorus 8, Bridge 4, Outro (the Intro chords again) and a short End cadence, and fills the list with the standard order. “Undo generation” brings back what was there before. It replaces all parts, so save a song you want to keep first.</li>
+      <li>“Chord chart as PNG” and “Chord chart as PDF” draw a lead sheet of the list (up to the End part): title, time signature and tempo, then every section with its name, “Play 2x” and its bars in rows of four. The title comes from “Song title for the chord chart”. The chord names follow the chord notation of the page (B or H). The PNG is one tall image, the PDF is A4 and has several pages when the song is long. The PDF page is a picture: its text cannot be selected.</li>
       <li>“Save song” stores all parts and the list in one small file (JSON); “Load song” reads it back. Songs are loaded with the typed-chord format, so Roman numerals are computed again. A part that has no chords is skipped while playing.</li>
       <li>Tempo, time signature and the instrument settings are the same for all parts. Reset clears only the open part.</li>
     </ul>
@@ -2349,6 +2364,35 @@ function songBuild(realByPart, song, ring) {
     map.push({ entry: lm.entry, rep: lm.rep, reps: lm.reps, part: lm.part, local: lm.local, ring: true });
   }
   return { prog: { bars: bars }, map: map, missing: missing, ended: lastPart === 'end' };
+}
+/* ---------- ADDED: minimal PDF writer (pure) ----------
+   makePdf(jpegs, pxW, pxH, title) -> Uint8Array. One A4 page per JPEG (DeviceRGB, DCT); the image fills the page.
+   Objects: 1 catalog, 2 page tree, then image / content / page for every page; classic cross-reference table. */
+function makePdf(jpegs, pxW, pxH, title) {
+  const PW = 595.28, PH = 841.89, enc = new TextEncoder(), chunks = [], offs = [];
+  let len = 0;
+  function put(x) { const b = typeof x === 'string' ? enc.encode(x) : x; chunks.push(b); len += b.length; }
+  function esc(t) { return String(t).replace(/[^\x20-\x7E]/g, '?').replace(/([()\\])/g, '\\$1'); }
+  const n = jpegs.length;
+  put(new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34, 0x0A, 0x25, 0xE2, 0xE3, 0xCF, 0xD3, 0x0A]));      // %PDF-1.4 + binary marker
+  function obj(id, body) { offs[id] = len; put(id + ' 0 obj\n'); put(body); put('\nendobj\n'); }
+  const kids = []; for (let i = 0; i < n; i++) kids.push((5 + 3 * i) + ' 0 R');
+  obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+  obj(2, '<< /Type /Pages /Kids [' + kids.join(' ') + '] /Count ' + n + ' >>');
+  for (let i = 0; i < n; i++) {
+    const img = 3 + 3 * i, con = 4 + 3 * i, pg = 5 + 3 * i, stream = 'q ' + PW + ' 0 0 ' + PH + ' 0 0 cm /Im0 Do Q';
+    offs[img] = len; put(img + ' 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + pxW + ' /Height ' + pxH + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + jpegs[i].length + ' >>\nstream\n');
+    put(jpegs[i]); put('\nendstream\nendobj\n');
+    obj(con, '<< /Length ' + stream.length + ' >>\nstream\n' + stream + '\nendstream');
+    obj(pg, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + PW + ' ' + PH + '] /Resources << /XObject << /Im0 ' + img + ' 0 R >> >> /Contents ' + con + ' 0 R >>');
+  }
+  const info = 3 + 3 * n; obj(info, '<< /Title (' + esc(title || 'Chord chart') + ') /Producer (Wolfram Fiedler ACOUSTIX GUITAR) >>');
+  const xref = len, total = info + 1;
+  put('xref\n0 ' + total + '\n0000000000 65535 f \n');
+  for (let i = 1; i < total; i++) put(('0000000000' + offs[i]).slice(-10) + ' 00000 n \n');
+  put('trailer\n<< /Size ' + total + ' /Root 1 0 R /Info ' + info + ' 0 R >>\nstartxref\n' + xref + '\n%%EOF\n');
+  const out = new Uint8Array(len); let p = 0; chunks.forEach(function (c) { out.set(c, p); p += c.length; });
+  return out;
 }
 // <EXTRA-END>
 
@@ -4335,7 +4379,7 @@ const I18N = (function () {
     [].forEach.call(sel.options, function (o) { const n = partBars(o.value), t = songPartName(o.value) + ' – ' + barsText(n); if (o.textContent !== t) o.textContent = t; });
     if (sel.value !== activePart) sel.value = activePart;
     const list = $('songList');
-    [].forEach.call(list.children, function (li, i) { const t = barsText(partBars(song[i].part)); const sp = li.querySelector('.slen'); if (sp && sp.textContent !== t) sp.textContent = t; });
+    [].forEach.call(list.children, function (li, i) { if (!song[i]) return; const t = barsText(partBars(song[i].part)); const sp = li.querySelector('.slen'); if (sp && sp.textContent !== t) sp.textContent = t; });
     updateSongInfo();
     if (!Transport.isRunning()) { E.btnPlay.disabled = !canPlay(); updateMidiButton(); }
   }
@@ -4429,6 +4473,162 @@ const I18N = (function () {
     };
     fr.readAsText(file);
   }
+
+  /* ---------- ADDED: generate a complete song ----------
+     Uses the Style, Mood, Key and Harmonic complexity of the generator. Intro (4 bars), Verse (8), Chorus (8) and Bridge (4) are generated
+     one after the other, each from a different template than the one before; the Outro repeats the Intro chords; the End part is a short
+     cadence (dominant seventh, then tonic). The list is filled with the standard order and "Whole arrangement" is switched on.
+     One undo step restores everything that was there before. */
+  let songUndo = null;
+  function generateSong() {
+    stopPlayback();
+    storeActive();
+    songUndo = { parts: Object.assign({}, parts), song: song.map(function (e) { return { part: e.part, rep: e.rep }; }), active: activePart, mode: $('selPlayMode').value };
+    const key = currentKey(), base = readSettings(), meter = E.selMeter.value;
+    function gen(len, avoid) { return generateProgression(Object.assign({}, base, { length: len, mode: key.mode }), Math.random, avoid); }
+    function mk(a) { return { abstract: a, realized: realize(a, key), keyId: key.id, transOff: 0 }; }
+    const verse = gen(8, null), chorus = gen(8, verse.templateId), bridge = gen(4, chorus.templateId), intro = gen(4, verse.templateId);
+    const names = key.flats ? PC_FLAT : PC_SHARP, minor = key.mode === 'minor';
+    const r = parseChordText(names[mod(key.pc + 7, 12)] + '7 | ' + names[key.pc] + (minor ? 'm' : ''), maxChordsPerBar(meter), false);
+    const endSpecs = r.bars;
+    Object.keys(parts).forEach(function (k) { delete parts[k]; });
+    parts.intro = mk(intro); parts.verse = mk(verse); parts.chorus = mk(chorus); parts.bridge = mk(bridge); parts.outro = mk(intro);
+    parts.end = { abstract: { templateId: 'manual', style: 'manual', mode: key.mode, length: endSpecs.length, mood: '', complexity: '', bars: endSpecs }, realized: realizeManual(endSpecs, key), keyId: key.id, transOff: 0 };
+    song.length = 0;
+    [['intro', 1], ['verse', 2], ['chorus', 2], ['bridge', 1], ['chorus', 1], ['outro', 1], ['end', 1]].forEach(function (e) { song.push({ part: e[0], rep: e[1] }); });
+    $('selPlayMode').value = 'song';
+    transOff = 0;
+    showPart('verse');
+    renderSong();
+    $('btnSongUndo').disabled = false;
+    setStatus('A complete song was generated: Intro, Verse, Chorus, Bridge, Outro and End. “What to play” is set to “Whole arrangement”; press Play.');
+  }
+  function undoSong() {
+    if (!songUndo) return;
+    stopPlayback();
+    Object.keys(parts).forEach(function (k) { delete parts[k]; });
+    Object.keys(songUndo.parts).forEach(function (k) { parts[k] = songUndo.parts[k]; });
+    song.length = 0; songUndo.song.forEach(function (e) { song.push(e); });
+    $('selPlayMode').value = songUndo.mode;
+    const a = songUndo.active; songUndo = null;
+    activePart = a; showPart(a);
+    renderSong();
+    $('btnSongUndo').disabled = true;
+    setStatus('The generated song was undone.');
+  }
+
+  /* ---------- ADDED: chord chart (PNG / PDF) ----------
+     A lead sheet of the arrangement: title, time signature and tempo, then every section of the list (up to the End part) with its name,
+     "Play Nx" and the bars in rows of four. Chords are drawn with the quality raised (Am -> A^m). The page is drawn on a canvas (A4 at 200 dpi):
+     the PNG is one tall image, the PDF holds the same drawing page by page (the page is an image, so its text cannot be selected). */
+  const CH = { W: 1654, H: 2339, M: 157, COLS: 4, ROW: 86, K: 1.654 };
+  function chartSections() {
+    storeActive();
+    const out = [];
+    for (let i = 0; i < song.length; i++) {
+      const e = song[i], d = partData(e.part);
+      if (!d || !d.realized || !d.realized.bars.length) continue;
+      out.push({ part: e.part, name: songPartName(e.part), rep: e.rep, bars: d.realized.bars.map(function (b) { return b.chords.map(function (c) { return dispName(c.name); }); }) });
+      if (e.part === 'end') break;
+    }
+    return out;
+  }
+  function chordSplit(name) {                                          // "Cmaj7/E" -> { root: "C", sup: "maj7", bass: "/E" }
+    const m = /^[A-H][♯♭#b]?/.exec(name), root = m ? m[0] : name.charAt(0), rest = name.slice(root.length), i = rest.indexOf('/');
+    return { root: root, sup: i < 0 ? rest : rest.slice(0, i), bass: i < 0 ? '' : rest.slice(i) };
+  }
+  const CH_FONT = 'Arial, Helvetica, sans-serif';
+  function chordWidths(g, p, sz) {
+    g.font = sz + 'px ' + CH_FONT; const a = g.measureText(p.root).width, c = g.measureText(p.bass).width;
+    g.font = Math.round(sz * 0.62) + 'px ' + CH_FONT; const b = g.measureText(p.sup).width;
+    return [a, b, c];
+  }
+  function chordFit(g, name, maxW, size) {                              // largest font size (<= size) at which the chord fits into maxW
+    const p = chordSplit(name);
+    let sz = size, w = chordWidths(g, p, sz);
+    while (w[0] + w[1] + w[2] > maxW && sz > 14) { sz -= 2; w = chordWidths(g, p, sz); }
+    return sz;
+  }
+  function drawChord(g, name, cx, cy, sz) {
+    const p = chordSplit(name), w = chordWidths(g, p, sz);
+    let x = cx - (w[0] + w[1] + w[2]) / 2;
+    g.textAlign = 'left'; g.fillStyle = '#000';
+    g.font = sz + 'px ' + CH_FONT; g.fillText(p.root, x, cy); x += w[0];
+    if (p.sup) { g.font = Math.round(sz * 0.62) + 'px ' + CH_FONT; g.fillText(p.sup, x, cy - sz * 0.36); x += w[1]; }
+    if (p.bass) { g.font = sz + 'px ' + CH_FONT; g.fillText(p.bass, x, cy); }
+  }
+  function chartBlocks(sections, title, meta) {                         // list of { h, draw(g, y) } (y = top of the block)
+    const k = CH.K, cw = (CH.W - 2 * CH.M) / CH.COLS, blocks = [];
+    blocks.push({ h: Math.round(190 * k), draw: function (g, y) {
+      g.textAlign = 'center'; g.fillStyle = '#000'; g.font = '700 ' + Math.round(50 * k) + 'px ' + CH_FONT; g.fillText(title, CH.W / 2, y + Math.round(50 * k));
+      g.textAlign = 'left'; g.fillStyle = '#333'; g.font = Math.round(21 * k) + 'px ' + CH_FONT; g.fillText(meta, CH.M, y + Math.round(125 * k));
+    } });
+    sections.forEach(function (sec) {
+      const showPlay = !(sec.part === 'end' && sec.rep === 1), top = Math.round((showPlay ? 47 : 30) * k), rows = Math.ceil(sec.bars.length / CH.COLS);
+      blocks.push({ tail: Math.round(46 * k), h: top + rows * CH.ROW + Math.round(46 * k), draw: function (g, y) {
+        g.textAlign = 'left'; g.fillStyle = '#000'; g.font = '700 ' + Math.round(21 * k) + 'px ' + CH_FONT; g.fillText(sec.name, CH.M, y + Math.round(14 * k));
+        if (showPlay) { g.textAlign = 'right'; g.fillStyle = '#444'; g.font = Math.round(21 * k) + 'px ' + CH_FONT; g.fillText('Play ' + sec.rep + 'x', CH.W - CH.M, y + Math.round(39 * k)); }
+        g.strokeStyle = '#000'; g.lineWidth = 2;
+        sec.bars.forEach(function (bar, i) {
+          const x = CH.M + (i % CH.COLS) * cw, yy = y + top + Math.floor(i / CH.COLS) * CH.ROW;
+          g.strokeRect(x, yy, cw, CH.ROW);
+          const slot = cw / bar.length;
+          const fs = Math.min.apply(null, bar.map(function (c) { return chordFit(g, c, slot - 8, Math.round(27 * k)); }));   // one size for all chords of a bar
+          bar.forEach(function (c, ci) { drawChord(g, c, x + slot * (ci + 0.5), yy + CH.ROW * 0.64, fs); });
+        });
+      } });
+    });
+    return blocks;
+  }
+  function chartCanvas(w, h) { const cv = document.createElement('canvas'); cv.width = w; cv.height = h; const g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, w, h); return { cv: cv, g: g }; }
+  function chartTexts() {
+    const t = ($('txtSongTitle').value || '').trim() || ($('selLang').value === 'de' ? 'Titel' : 'Title');
+    return { title: t, meta: E.selMeter.value + ' - ' + Number(E.rngBpm.value) + ' BPM' };
+  }
+  function chartPages(blocks) {                                         // page break only between blocks
+    const pages = [[]], top = CH.M, bottom = CH.H - Math.round(CH.M * 0.7);
+    let y = top;
+    blocks.forEach(function (b) {
+      if (y + b.h - (b.tail || 0) > bottom && pages[pages.length - 1].length) { pages.push([]); y = top; }
+      pages[pages.length - 1].push({ b: b, y: y }); y += b.h;
+    });
+    return pages;
+  }
+  function songChartPng() {
+    const secs = chartSections(), msg = function (t, e) { const p = $('songChartStatus'); p.textContent = t; p.className = 'hint' + (e ? ' err' : ''); };
+    if (!secs.length) { msg('There is nothing to draw yet: the list has no section with chords.', true); return; }
+    try {
+      const tx = chartTexts(), blocks = chartBlocks(secs, tx.title, tx.meta);
+      let total = CH.M; blocks.forEach(function (b) { total += b.h; });
+      const c = chartCanvas(CH.W, Math.max(CH.H, Math.min(total + CH.M, 15000)));
+      let y = CH.M; blocks.forEach(function (b) { b.draw(c.g, y); y += b.h; });
+      c.cv.toBlob(function (blob) {
+        if (!blob) { msg('PNG export failed: the browser could not create the image.', true); return; }
+        blob.arrayBuffer().then(function (buf) {
+          const name = fileNameFor('txtSongName', 'acoustix-song-chart-' + Number(E.rngBpm.value) + 'bpm', '.png');
+          saveBytes(new Uint8Array(buf), name, 'image/png'); msg('Chord chart saved as PNG: ' + name + '.', false);
+        });
+      }, 'image/png');
+    } catch (e) { msg('PNG export failed: ' + ((e && e.message) || e), true); }
+  }
+  function songChartPdf() {
+    const secs = chartSections(), msg = function (t, e) { const p = $('songChartStatus'); p.textContent = t; p.className = 'hint' + (e ? ' err' : ''); };
+    if (!secs.length) { msg('There is nothing to draw yet: the list has no section with chords.', true); return; }
+    try {
+      const tx = chartTexts(), pages = chartPages(chartBlocks(secs, tx.title, tx.meta));
+      const jpgs = pages.map(function (pg) {
+        const c = chartCanvas(CH.W, CH.H);
+        pg.forEach(function (it) { it.b.draw(c.g, it.y); });
+        const b64 = c.cv.toDataURL('image/jpeg', 0.95).split(',')[1], bin = atob(b64), u = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+        return u;
+      });
+      const name = fileNameFor('txtSongName', 'acoustix-song-chart-' + Number(E.rngBpm.value) + 'bpm', '.pdf');
+      saveBytes(makePdf(jpgs, CH.W, CH.H, tx.title), name, 'application/pdf');
+      msg('Chord chart saved as PDF: ' + name + ' (' + pages.length + ' page' + (pages.length > 1 ? 's' : '') + ').', false);
+    } catch (e) { msg('PDF export failed: ' + ((e && e.message) || e), true); }
+  }
+
   function initSong() {
     const sel = $('selPart'), list = $('songList');
     refreshParts();
@@ -4461,6 +4661,11 @@ const I18N = (function () {
       else if (b.classList.contains('down') && i < song.length - 1) { song.splice(i + 1, 0, song.splice(i, 1)[0]); renderSong('li:nth-child(' + (i + 2) + ') button.down'); }
       else if (b.classList.contains('del')) { song.splice(i, 1); renderSong(song.length ? 'li:nth-child(' + Math.min(i + 1, song.length) + ') select.sp' : '#btnSongAdd'); if (!song.length) $('btnSongAdd').focus(); }
     });
+    $('btnSongGen').addEventListener('click', generateSong);
+    $('btnGenSong').addEventListener('click', generateSong);
+    $('btnSongUndo').addEventListener('click', undoSong);
+    $('btnSongPng').addEventListener('click', songChartPng);
+    $('btnSongPdf').addEventListener('click', songChartPdf);
     $('btnSongSave').addEventListener('click', saveSong);
     $('btnSongLoad').addEventListener('click', function () { $('fileSong').click(); });
     $('fileSong').addEventListener('change', function (e) { loadSongFile(e.target.files && e.target.files[0]); e.target.value = ''; });
@@ -5369,7 +5574,7 @@ const I18N = (function () {
   const PROG_FORMAT = 'acoustix-chord-progression';
   /* ADDED: file name typed by the person (illegal characters removed, extension added); empty -> suggestion */
   function fileNameFor(inputId, fallbackBase, ext) {
-    let v = ($(inputId).value || '').trim().replace(/[\\\/:*?"<>|\u0000-\u001f]/g, '_').replace(/\.(json|txt|png)$/i, '').replace(/^\.+/, '').slice(0, 80).trim();
+    let v = ($(inputId).value || '').trim().replace(/[\\\/:*?"<>|\u0000-\u001f]/g, '_').replace(/\.(json|txt|png|pdf)$/i, '').replace(/^\.+/, '').slice(0, 80).trim();
     return (v || fallbackBase) + ext;
   }
   function progStatus(msg, isErr) { const p = $('progFileStatus'); p.textContent = msg; p.className = 'hint' + (isErr ? ' err' : ''); }
@@ -6518,7 +6723,7 @@ const I18N = (function () {
 
   /* ----- ADDED: icons for the buttons (see CSS "data-ic"). id -> icon name; tabs by data-sheet-tab. ----- */
   function initIcons() {
-    const BY_ID = { btnPageGen: 'home', btnPageHelp: 'help', btnGenerate: 'gen', btnAnother: 'again', btnReset: 'reset', btnBarAdd: 'add', btnBarRemove: 'minus',
+    const BY_ID = { btnPageGen: 'home', btnPageHelp: 'help', btnGenerate: 'gen', btnGenSong: 'gen', btnSongGen: 'gen', btnSongUndo: 'reset', btnSongAdd: 'add', btnSongClear: 'trash', btnSongSave: 'save', btnSongLoad: 'load', btnSongPng: 'png', btnSongPdf: 'save', btnAnother: 'again', btnReset: 'reset', btnBarAdd: 'add', btnBarRemove: 'minus',
       btnProgSave: 'save', btnProgLoad: 'load', btnPackLoad: 'load', btnPackApply: 'check', btnPackRemovePreset: 'x', btnPackRemovePack: 'trash', btnPackNew: 'pack', btnPackAdd: 'add',
       btnPackSave: 'save', btnMidi: 'midi', btnWav: 'wav', btnServer: 'server', btnArpClear: 'trash', btnArpTabPng: 'png', btnCpatClear: 'trash', btnStrumClear: 'trash',
       btnStrumSave: 'save', btnStrumLoad: 'load', btnTunMic: 'mic', btnBassClear: 'trash', btnDrumClear: 'trash', btnDrumReload: 'again', btnDrumFolder: 'folder',
